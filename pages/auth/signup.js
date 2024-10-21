@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from 'next/router';  // Import useRouter from Next.js
+import routes from '../../routes';  // Import the centralized routes
 import Button from "../../components/ui/button";
 import Image from 'next/image';
 
@@ -19,17 +20,17 @@ export default function Signup() {
 
   // Navigate to Login page
   const navigateToLogin = () => {
-    router.push('/auth/login');
+    router.push(routes.auth.login);  // Using routes.js for navigation
   };
 
   // Navigate to OTP page when Google button is clicked
   const navigateToOTP = () => {
-    router.push('/auth/otp');
+    router.push(routes.auth.otp);  // Using routes.js for navigation
   };
 
   return (
     <div className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
-      style={{ backgroundImage: "url('/images/Wallpaper.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
+      style={{ backgroundImage: "url('/images/wall.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
         

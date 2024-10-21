@@ -1,5 +1,6 @@
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from 'next/router';  // Import useRouter from Next.js
+import routes from '../../routes';  // Import the centralized routes
 import Button from "../../components/ui/button";
 import Image from 'next/image';
 
@@ -13,12 +14,12 @@ export default function OTP() {
 
   // Navigate to Log In page
   const navigateToLogin = () => {
-    router.push('/auth/login');
+    router.push(routes.auth.login);  // Using routes.js for navigation
   };
 
   return (
     <div className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
-      style={{ backgroundImage: "url('/images/Wallpaper.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
+      style={{ backgroundImage: "url('/images/wall.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
         
@@ -31,7 +32,7 @@ export default function OTP() {
           {/* OTP Message */}
           <h3 className="text-lg font-semibold text-center mb-2 text-black">Code Verification</h3>
           <p className="text-sm text-center text-gray-500 mb-4">
-            We've sent an OTP verification on your Google account.
+            We&apos;ve sent an OTP verification on your Google account.
           </p>
 
           {/* OTP Input Fields */}
