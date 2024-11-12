@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Variables for Light/Dark Mode */
+:root {
+  --background: #ffffff;  /* Light mode background */
+  --foreground: #171717;  /* Light mode foreground */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;  /* Dark mode background */
+    --foreground: #ededed;  /* Dark mode foreground */
+  }
+}
+
+/* Apply the colors and font globally */
+body {
+  color: var(--foreground);  /* Use the foreground color for text */
+  background-color: var(--background);  /* Use the background color */
+  font-family: 'Chakra Petch', Arial, Helvetica, sans-serif;  /* Custom font with fallback */
+}
+
+/* Custom Utility Classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;  /* Tailwind's custom utility for balanced text wrapping */
+  }
+}
