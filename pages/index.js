@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import CreatePostModal from './modal-createpost';
 import ModalFilterCategory from './modal-filtercategory';
 import CreateCommunityModal from './modal-createcommunity'; // Import the CreateCommunityModal
-import Skeleton from '../components/ui/Skeleton';
+import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 

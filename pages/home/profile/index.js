@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import FollowerModal from './modal-follower';
 import FollowingModal from './modal-following';
 import EditProfileModal from './modal-editprofile';
-import Skeleton from '../../../components/ui/Skeleton';
+import Skeleton from '../../../components/ui/skeleton';
 import axios from 'axios';
 
 export default function Profile() {
