@@ -36,6 +36,7 @@ export default function Profile() {
   }, []);
 
   const handleProfileUpdate = (updatedData) => {
+    // Directly update userData in state to reflect changes immediately
     setUserData(prevData => ({
       ...prevData,
       ...updatedData,
@@ -73,6 +74,11 @@ export default function Profile() {
     }
   };
 
+  const closeModalAndFetchData = () => {
+    setIsEditProfileModalOpen(false); // Close modal
+    fetchUserData(); // Re-fetch user data to ensure the latest updates
+  };
+
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar />
@@ -103,7 +109,7 @@ export default function Profile() {
                   style={{
                     backgroundImage: `url(${userData?.headerImg || '/images/headers.png'})`,
                     height: '100px',
-                    borderRadius: '8px',  // Rounded corners for header image
+                    borderRadius: '8px',
                   }}
                 ></div>
 
@@ -112,9 +118,8 @@ export default function Profile() {
                   alt="Profile"
                   width={100}
                   height={100}
-                  className="rounded-full border-4 border-white mb-4"  // Circular profile image
+                  className="rounded-full border-4 border-white mb-4"
                   onClick={() => {
-                    // Trigger file input for profile picture
                     document.getElementById('profileFileInput').click();
                   }}
                 />
@@ -277,7 +282,12 @@ export default function Profile() {
       {/* Modals */}
       <FollowerModal isOpen={isFollowerModalOpen} onClose={() => setIsFollowerModalOpen(false)} followers={userData?.followers || []} />
       <FollowingModal isOpen={isFollowingModalOpen} onClose={() => setIsFollowingModalOpen(false)} following={userData?.following || []} />
-      <EditProfileModal isOpen={isEditProfileModalOpen} onClose={() => setIsEditProfileModalOpen(false)} onProfileUpdate={handleProfileUpdate} currentProfileData={userData} />
+      <EditProfileModal 
+        isOpen={isEditProfileModalOpen} 
+        onClose={closeModalAndFetchData} // Automatically refresh data after closing
+        onProfileUpdate={handleProfileUpdate} 
+        currentProfileData={userData} 
+      />
     </div>
   );
 }

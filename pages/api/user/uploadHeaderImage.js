@@ -83,9 +83,13 @@ export default async function handler(req, res) {
       console.error('Error uploading or resizing header image:', error);
       return res.status(500).json({ error: 'Error processing header image' });
     } finally {
-      // Cleanup: Delete the original file
+      // Cleanup: Delete the original file with error handling
       if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (error) {
+          console.error('Failed to delete file:', req.file.path, error);
+        }
       }
     }
   } else {

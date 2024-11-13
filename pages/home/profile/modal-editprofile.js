@@ -107,7 +107,9 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
 
       if (!response.ok) throw new Error('Profile update failed');
       
+      // Immediately update images and other profile data in the parent component
       onProfileUpdate(updatedData);
+      
       setProfileImage(tempProfileImage || profileImage);
       setHeaderImage(tempHeaderImage || headerImage);
       setTempProfileImage('');
