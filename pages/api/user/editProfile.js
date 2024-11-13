@@ -58,40 +58,40 @@ export default async function handler(req, res) {
 
     const { name, username, profileImageUrl, headerImageUrl } = fields;
 
-    const dataToUpdate = {};
+    const userUpdateData = {};
+    const profileUpdateData = {};
 
+    // Update username in the User model
     if (username) {
-      dataToUpdate.username = username;
+      userUpdateData.username = username;
     }
 
-    if (name || files.profile_img || files.header_img) {
-      dataToUpdate.profile = {
-        upsert: {
-          create: {
-            name: name || undefined,
-            profile_img: files.profile_img ? `/uploads/${path.basename(files.profile_img.filepath)}` : profileImageUrl,
-            header_img: files.header_img ? `/uploads/${path.basename(files.header_img.filepath)}` : headerImageUrl,
-          },
-          update: {
-            ...(name && { name }),
-            ...(files.profile_img && { profile_img: `/uploads/${path.basename(files.profile_img.filepath)}` }),
-            ...(files.header_img && { header_img: `/uploads/${path.basename(files.header_img.filepath)}` }),
-          },
-        },
-      };
+    // Update fields in the UserProfile model
+    if (name) {
+      profileUpdateData.name = name;
+    }
+    if (files.profile_img) {
+      profileUpdateData.profile_img = `/uploads/${path.basename(files.profile_img.filepath)}`;
+    }
+    if (files.header_img) {
+      profileUpdateData.header_img = `/uploads/${path.basename(files.header_img.filepath)}`;
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: parseInt(userId, 10) },
-      data: {
-        ...dataToUpdate,
-      },
-      include: {
-        profile: true,
-      },
-    });
+    // Perform the update operations
+    const [updatedUser, updatedProfile] = await Promise.all([
+      prisma.user.update({
+        where: { id: parseInt(userId, 10) },
+        data: userUpdateData,
+      }),
+      prisma.userProfile.upsert({
+        where: { userId: parseInt(userId, 10) },
+        update: profileUpdateData,
+        create: { ...profileUpdateData, userId: parseInt(userId, 10) },
+      })
+    ]);
 
-    return res.status(200).json({ message: 'Profile updated successfully', user: updatedUser });
+    // Return successful response with the updated user data
+    return res.status(200).json({ message: 'Profile updated successfully', user: updatedUser, profile: updatedProfile });
   } catch (error) {
     console.error('Error updating profile:', error.stack || error);
     return res.status(500).json({ error: 'Failed to update profile', details: error.message });

@@ -1,3 +1,4 @@
+// modal-editprofile.js
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -107,20 +108,18 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
 
       if (!response.ok) throw new Error('Profile update failed');
       
-      // Immediately update images and other profile data in the parent component
       onProfileUpdate(updatedData);
       
       setProfileImage(tempProfileImage || profileImage);
       setHeaderImage(tempHeaderImage || headerImage);
-      setTempProfileImage(''); // Reset temp to prevent stale data
+      setTempProfileImage('');
       setTempHeaderImage('');
       
-      // Show success modal after saving
       setShowSuccessModal(true);
       setTimeout(() => {
         setShowSuccessModal(false);
         onClose();
-      }, 2000); // Show success modal for 2 seconds, then close
+      }, 2000);
     } catch (error) {
       setErrorMessage('Failed to update profile.');
     } finally {

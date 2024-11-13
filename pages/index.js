@@ -1,4 +1,3 @@
-// index.js
 import Link from 'next/link';
 import Navbar from '../components/ui/navbar';
 import Image from 'next/image';
@@ -6,41 +5,43 @@ import PostContainer from './home/postcontainer';
 import { useState, useEffect } from 'react';
 import CreatePostModal from './modal-createpost';
 import ModalFilterCategory from './modal-filtercategory';
-import CreateCommunityModal from './modal-createcommunity'; // Import the CreateCommunityModal
+import CreateCommunityModal from './modal-createcommunity';
 import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
-  const [isFilterModalOpen, setFilterModalOpen] = useState(false); // State for filter modal
-  const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false); // State for Create Community modal
+  const [isFilterModalOpen, setFilterModalOpen] = useState(false);
+  const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await axios.get('/api/user/profile');
-        setUserData(response.data);
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Function to fetch user data from the API
+  const fetchUserData = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('/api/user/profile');
+      setUserData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  // Fetch user data on component mount
+  useEffect(() => {
     fetchUserData();
   }, []);
 
+  // Handlers for opening and closing modals
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
-
-  const openFilterModal = () => setFilterModalOpen(true); // Open filter modal
-  const closeFilterModal = () => setFilterModalOpen(false); // Close filter modal
-
-  const openCreateCommunityModal = () => setCreateCommunityModalOpen(true); // Open Create Community modal
-  const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false); // Close Create Community modal
+  const openFilterModal = () => setFilterModalOpen(true);
+  const closeFilterModal = () => setFilterModalOpen(false);
+  const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
+  const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
 
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
@@ -161,8 +162,8 @@ export default function Home() {
           <div className="flex items-center mt-5 mb-[43px] relative">
             <hr className="flex-grow border-t border-[#000000]" />
             <motion.button
-              whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }} // Hover effect
-              whileTap={{ scale: 0.95 }} // Click animation
+              whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }}
+              whileTap={{ scale: 0.95 }}
               className="ml-3 flex items-center justify-center text-[#787070] text-[13px] font-medium rounded-[4px]"
               style={{
                 width: '170px',
@@ -171,7 +172,7 @@ export default function Home() {
                 backgroundColor: '#F4F3F3',
                 borderRadius: '4px',
               }}
-              onClick={openFilterModal} // Open filter modal on click
+              onClick={openFilterModal}
             >
               <Image src="/svg/filter.svg" alt="Filter Icon" width={16} height={16} className="mr-2" />
               Filter Category
@@ -202,13 +203,13 @@ export default function Home() {
             <hr className="border-t border-black w-full mb-3" style={{ height: '1px' }} />
             <ul className="space-y-2 text-black">
               <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" /> 
+                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
                 <span className="text-[16px]">
                   <strong>Sam</strong> started following you.
                 </span>
               </li>
               <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" /> 
+                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
                 <span className="text-[16px]">
                   <strong>Alex</strong> liked your post.
                 </span>
@@ -226,12 +227,12 @@ export default function Home() {
           >
             <div className="flex justify-between items-center">
               <h2 className="font-semibold text-[18px] text-black">Communities</h2>
-              <button className="text-[#22C55E] text-[15px]" onClick={openCreateCommunityModal}> {/* Open Create Community modal */}
+              <button className="text-[#22C55E] text-[15px]" onClick={openCreateCommunityModal}>
                 See all
               </button>
             </div>
             <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
-            <div 
+            <div
               className="flex items-center mb-3 hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200 cursor-pointer"
               style={{ width: '100%' }}
               onClick={openCreateCommunityModal}
@@ -242,7 +243,7 @@ export default function Home() {
               </span>
             </div>
             <ul className="space-y-2 text-black">
-            <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200" style={{ width: '100%' }}>
+              <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200" style={{ width: '100%' }}>
                 <span className="text-[16px] font-semibold">p/Cottage</span>
                 <button
                   className="bg-[#22C55E] text-white font-semibold text-[13px] px-3 py-1 rounded-[6px]"
@@ -267,8 +268,8 @@ export default function Home() {
       </div>
 
       <CreatePostModal isOpen={isModalOpen} onClose={closeModal} />
-      <ModalFilterCategory isOpen={isFilterModalOpen} onClose={closeFilterModal} /> {/* Filter Modal */}
-      <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} /> {/* Create Community Modal */}
+      <ModalFilterCategory isOpen={isFilterModalOpen} onClose={closeFilterModal} />
+      <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
     </div>
   );
 }
