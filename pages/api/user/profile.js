@@ -1,6 +1,6 @@
 import prisma from '../../../lib/prisma';
 import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]'; // Ensure this path and export exist
+import { authOptions } from '../auth/[...nextauth]';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
