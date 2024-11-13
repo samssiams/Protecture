@@ -15,9 +15,10 @@ model User {
   username  String   @unique
   email     String?  @unique
   password  String?
+  otp       String?  // Field for OTP
 
   accounts    Account[]
-  profile     UserProfile? // Relation to the UserProfile model
+  profile     UserProfile?
 }
 
 model Account {
