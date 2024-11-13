@@ -1,21 +1,29 @@
 import { PrismaClient } from '@prisma/client';
 import formidable from 'formidable';
 import path from 'path';
+import fs from 'fs';
 import { getSession } from "next-auth/react";
 
 const prisma = new PrismaClient();
 
 export const config = {
   api: {
-    bodyParser: false, // Disable default body parsing for handling multipart form-data
+    bodyParser: false, // Disable body parsing for multipart form-data handling
   },
 };
+
+// Ensure uploads directory exists
+const uploadDir = path.join(process.cwd(), 'public/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Helper function to parse form-data
 const parseForm = (req) => {
   const form = formidable({
-    uploadDir: path.join(process.cwd(), '/public/uploads'), // Adjust path as needed
+    uploadDir, // Use prepared upload directory
     keepExtensions: true,
+    maxFileSize: 2 * 1024 * 1024, // Set file size limit (2 MB in this case)
   });
 
   return new Promise((resolve, reject) => {
@@ -34,27 +42,24 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Retrieve the session to get the user ID
   const session = await getSession({ req });
   if (!session || !session.user || !session.user.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   
-  const userId = session.user.id; // Extract user ID from session
+  const userId = session.user.id;
 
   try {
-    // Parse the incoming form data (fields and files)
     const { fields, files } = await parseForm(req);
-    console.log("Received fields:", fields); // Log incoming fields to see if they are correct
-    console.log("Received files:", files);   // Log incoming files
 
-    // Extract profile data from the request
+    // Log parsed fields and files
+    console.log("Received fields:", fields);
+    console.log("Received files:", files);
+
     const { name, username, profileImageUrl, headerImageUrl } = fields;
 
-    // Prepare data object for the Prisma update
     const dataToUpdate = {};
 
-    // Conditionally add username, name, and images to the update object
     if (username) {
       dataToUpdate.username = username;
     }
@@ -64,33 +69,31 @@ export default async function handler(req, res) {
         upsert: {
           create: {
             name: name || undefined,
-            profile_img: files.profile_img ? path.join('/uploads', path.basename(files.profile_img.filepath)) : profileImageUrl,
-            header_img: files.header_img ? path.join('/uploads', path.basename(files.header_img.filepath)) : headerImageUrl,
+            profile_img: files.profile_img ? `/uploads/${path.basename(files.profile_img.filepath)}` : profileImageUrl,
+            header_img: files.header_img ? `/uploads/${path.basename(files.header_img.filepath)}` : headerImageUrl,
           },
           update: {
             ...(name && { name }),
-            ...(files.profile_img && { profile_img: path.join('/uploads', path.basename(files.profile_img.filepath)) }),
-            ...(files.header_img && { header_img: path.join('/uploads', path.basename(files.header_img.filepath)) }),
+            ...(files.profile_img && { profile_img: `/uploads/${path.basename(files.profile_img.filepath)}` }),
+            ...(files.header_img && { header_img: `/uploads/${path.basename(files.header_img.filepath)}` }),
           },
         },
       };
     }
 
-    // Perform the update operation
     const updatedUser = await prisma.user.update({
       where: { id: parseInt(userId, 10) },
       data: {
         ...dataToUpdate,
       },
       include: {
-        profile: true, // Include updated profile data in the response
+        profile: true,
       },
     });
 
-    // Return successful response with the updated user data
     return res.status(200).json({ message: 'Profile updated successfully', user: updatedUser });
   } catch (error) {
-    console.error('Error updating profile:', error.stack || error); // Log the full error stack for more insights
+    console.error('Error updating profile:', error.stack || error);
     return res.status(500).json({ error: 'Failed to update profile', details: error.message });
   }
 }

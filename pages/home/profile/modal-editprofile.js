@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 export default function EditProfileModal({ isOpen, onClose, currentProfileData, onProfileUpdate }) {
   const profileInputRef = useRef(null);
   const headerInputRef = useRef(null);
-  const [name, setName] = useState(currentProfileData?.name || '');
-  const [username, setUsername] = useState(currentProfileData?.username || '');
-  const [profileImage, setProfileImage] = useState(currentProfileData?.profile_img || '');
-  const [headerImage, setHeaderImage] = useState(currentProfileData?.header_img || '');
-  
+
+  const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
+  const [profileImage, setProfileImage] = useState('');
+  const [headerImage, setHeaderImage] = useState('');
+
   const [tempProfileImage, setTempProfileImage] = useState('');
   const [tempHeaderImage, setTempHeaderImage] = useState('');
-  
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false); // State for success modal
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   useEffect(() => {
     const handleEsc = (event) => {
@@ -26,13 +26,13 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
   }, [onClose]);
 
   useEffect(() => {
-    if (isOpen) {
-      setName(currentProfileData?.name || '');
-      setUsername(currentProfileData?.username || '');
-      setProfileImage(currentProfileData?.profile_img || '');
-      setHeaderImage(currentProfileData?.header_img || '');
-      setTempProfileImage('');
-      setTempHeaderImage('');
+    if (isOpen && currentProfileData) {
+      setName(currentProfileData.name || '');
+      setUsername(currentProfileData.username || '');
+      setProfileImage(currentProfileData.profile_img || '');
+      setHeaderImage(currentProfileData.header_img || '');
+      setTempProfileImage(currentProfileData.profile_img || '');
+      setTempHeaderImage(currentProfileData.header_img || '');
       setErrorMessage('');
     }
   }, [isOpen, currentProfileData]);
@@ -92,8 +92,8 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
     setErrorMessage('');
 
     const updatedData = {
-      name: name || currentProfileData?.name || '',
-      username: username || currentProfileData?.username || '',
+      name,
+      username,
       profile_img: tempProfileImage || profileImage || currentProfileData?.profile_img || '',
       header_img: tempHeaderImage || headerImage || currentProfileData?.header_img || '',
     };
@@ -112,7 +112,7 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
       
       setProfileImage(tempProfileImage || profileImage);
       setHeaderImage(tempHeaderImage || headerImage);
-      setTempProfileImage('');
+      setTempProfileImage(''); // Reset temp to prevent stale data
       setTempHeaderImage('');
       
       // Show success modal after saving
