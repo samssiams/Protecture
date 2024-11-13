@@ -57,6 +57,7 @@ export const authOptions = {
   ],
   callbacks: {
     async session({ session, token }) {
+      // Log the token and session data for debugging purposes
       console.log("Session callback - token:", token);
 
       // Set the session user object to include necessary fields
@@ -69,6 +70,7 @@ export const authOptions = {
       return session;
     },
     async jwt({ token, user }) {
+      // Log the initial token and user data
       console.log("JWT callback - initial token:", token);
       console.log("JWT callback - user:", user);
 
