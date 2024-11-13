@@ -250,10 +250,6 @@ export default function Profile() {
               <button className="text-[#22C55E] text-[15px]">See all</button>
             </div>
             <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
-            <div className="flex items-center space-x-2 mb-3 ml-4">
-              <Image src="/svg/add.svg" alt="Add Community" width={12} height={12} />
-              <span className="text-black text-[17px] font-light">Create a community</span>
-            </div>
             <ul className="space-y-2 text-black">
               <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
                 <span className="text-[16px] font-semibold">p/Cottage</span>
