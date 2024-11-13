@@ -9,123 +9,118 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
   const [username, setUsername] = useState(currentProfileData?.username || '');
   const [profileImage, setProfileImage] = useState(currentProfileData?.profile_img || '');
   const [headerImage, setHeaderImage] = useState(currentProfileData?.header_img || '');
-
+  
   const [tempProfileImage, setTempProfileImage] = useState('');
   const [tempHeaderImage, setTempHeaderImage] = useState('');
-  const [profileFile, setProfileFile] = useState(null);
-  const [headerFile, setHeaderFile] = useState(null);
-
+  
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false); // State for success modal
+
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
 
   useEffect(() => {
     if (isOpen) {
+      setName(currentProfileData?.name || '');
+      setUsername(currentProfileData?.username || '');
       setProfileImage(currentProfileData?.profile_img || '');
       setHeaderImage(currentProfileData?.header_img || '');
       setTempProfileImage('');
       setTempHeaderImage('');
-      setProfileFile(null);
-      setHeaderFile(null);
-      setMessage('');
-      setName(currentProfileData?.name || '');
-      setUsername(currentProfileData?.username || '');
+      setErrorMessage('');
     }
   }, [isOpen, currentProfileData]);
 
   const handleProfileFileClick = () => profileInputRef.current.click();
   const handleHeaderFileClick = () => headerInputRef.current.click();
 
-  const handleFileChange = (event, type) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const uploadImage = async (file, endpoint) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-    const validExtensions = ['image/jpeg', 'image/png'];
-    if (!validExtensions.includes(file.type)) {
-      setMessage('Only JPG and PNG files are allowed.');
-      return;
-    }
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      });
 
-    const previewUrl = URL.createObjectURL(file);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Image upload failed');
+      }
 
-    if (type === 'profile') {
-      setTempProfileImage(previewUrl);
-      setProfileFile(file);
-    } else {
-      setTempHeaderImage(previewUrl);
-      setHeaderFile(file);
+      const data = await response.json();
+      return data.fileUrl;
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to upload image.');
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const uploadImage = async (file, endpoint) => {
-    const formData = new FormData();
-    formData.append('file', file);
+  const handleFileChange = async (event, type) => {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Image upload failed');
+    const validExtensions = ["image/jpeg", "image/png"];
+    if (!validExtensions.includes(file.type)) {
+      setErrorMessage("Only JPG and PNG files are allowed.");
+      return;
     }
 
-    const data = await response.json();
-    return data.fileUrl;
+    try {
+      const endpoint = type === 'profile'
+        ? '/api/user/uploadProfileImage'
+        : '/api/user/uploadHeaderImage';
+      const fileUrl = await uploadImage(file, endpoint);
+
+      if (type === 'profile') setTempProfileImage(fileUrl);
+      else setTempHeaderImage(fileUrl);
+    } catch {}
   };
 
   const handleSave = async () => {
     setLoading(true);
-    setMessage('');
+    setErrorMessage('');
+
+    const updatedData = {
+      name: name || currentProfileData?.name || '',
+      username: username || currentProfileData?.username || '',
+      profile_img: tempProfileImage || profileImage || currentProfileData?.profile_img || '',
+      header_img: tempHeaderImage || headerImage || currentProfileData?.header_img || '',
+    };
 
     try {
-      let profileImageUrl = profileImage;
-      let headerImageUrl = headerImage;
-
-      if (profileFile) {
-        profileImageUrl = await uploadImage(profileFile, '/api/user/uploadProfileImage');
-      }
-
-      if (headerFile) {
-        headerImageUrl = await uploadImage(headerFile, '/api/user/uploadHeaderImage');
-      }
-
-      const updatedData = {
-        name: name || currentProfileData?.name || '',
-        username: username || currentProfileData?.username || '',
-        profile_img: profileImageUrl,
-        header_img: headerImageUrl,
-      };
-
-      // Log the updated data before sending it
-      console.log('Sending data:', updatedData);
-
       const response = await fetch('/api/user/editProfile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
-      }
-
+      if (!response.ok) throw new Error('Profile update failed');
+      
       onProfileUpdate(updatedData);
-      setMessage('Profile updated successfully');
-      setProfileImage(profileImageUrl);
-      setHeaderImage(headerImageUrl);
+      setProfileImage(tempProfileImage || profileImage);
+      setHeaderImage(tempHeaderImage || headerImage);
       setTempProfileImage('');
       setTempHeaderImage('');
-      setProfileFile(null);
-      setHeaderFile(null);
-
+      
+      // Show success modal after saving
+      setShowSuccessModal(true);
       setTimeout(() => {
+        setShowSuccessModal(false);
         onClose();
-      }, 1500);
+      }, 2000); // Show success modal for 2 seconds, then close
     } catch (error) {
-      console.error('Error updating profile:', error);
-      setMessage(error.message || 'Failed to update profile.');
+      setErrorMessage('Failed to update profile.');
     } finally {
       setLoading(false);
     }
@@ -169,19 +164,13 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             <p className="text-[18px] mt-5 text-black font-bold">Profile Picture</p>
             <button onClick={handleProfileFileClick} className="mt-5 text-[#22C55E] font-bold">Edit</button>
           </div>
-          <div className="flex flex-col items-center mt-10 mb-8" style={{ cursor: 'pointer' }}>
-            <div
-              onClick={handleProfileFileClick}
-              className="relative rounded-full overflow-hidden w-[100px] h-[100px] border-4 border-white"
-              style={{ backgroundImage: `url(${tempProfileImage || profileImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-            >
-              {!tempProfileImage && !profileImage && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Image src="/svg/addimage.svg" alt="Add Image" width={24} height={24} />
-                </div>
-              )}
-            </div>
-            <span className="text-gray-500 mt-2">{(tempProfileImage || profileImage) ? 'Change Image' : 'Add Image'}</span>
+          <div className="flex flex-col items-center mt-10 mb-8" onClick={handleProfileFileClick} style={{ cursor: 'pointer' }}>
+            {(tempProfileImage || profileImage) ? (
+              <Image src={tempProfileImage || profileImage} alt="Profile" width={100} height={100} className="rounded-full border-4 border-white" />
+            ) : (
+              <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
+            )}
+            <span className="text-gray-500 mt-2">{(tempProfileImage || profileImage) ? "Change Image" : "Add Image"}</span>
           </div>
           <input
             type="file"
@@ -199,17 +188,12 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             <button onClick={handleHeaderFileClick} className="text-[#22C55E] font-bold">Edit</button>
           </div>
           <div className="flex flex-col items-center mt-10 mb-8" onClick={handleHeaderFileClick} style={{ cursor: 'pointer' }}>
-            <div
-              className="relative rounded-md overflow-hidden w-[300px] h-[100px]"
-              style={{ backgroundImage: `url(${tempHeaderImage || headerImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-            >
-              {!tempHeaderImage && !headerImage && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Image src="/svg/addimage.svg" alt="Add Image" width={24} height={24} />
-                </div>
-              )}
-            </div>
-            <span className="text-gray-500 mt-2">{(tempHeaderImage || headerImage) ? 'Change Image' : 'Add Image'}</span>
+            {(tempHeaderImage || headerImage) ? (
+              <Image src={tempHeaderImage || headerImage} alt="Header" width={300} height={100} className="rounded-md" />
+            ) : (
+              <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
+            )}
+            <span className="text-gray-500 mt-2">{(tempHeaderImage || headerImage) ? "Change Image" : "Add Image"}</span>
           </div>
           <input
             type="file"
@@ -253,11 +237,32 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
           {loading ? 'Saving...' : 'Save'}
         </button>
 
-        {/* Message Display */}
-        {message && (
-          <p className={`text-center mt-4 ${message.includes('failed') ? 'text-red-600' : 'text-green-600'}`}>{message}</p>
+        {/* Error Message */}
+        {errorMessage && (
+          <p className="text-red-600 text-center mt-4">{errorMessage}</p>
         )}
       </motion.div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div
+            className="bg-white rounded-lg p-6 shadow-lg border border-green-600"
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <p className="text-green-600 font-bold text-center">Profile updated successfully!</p>
+          </motion.div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

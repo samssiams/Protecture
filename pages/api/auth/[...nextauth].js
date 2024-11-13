@@ -1,4 +1,3 @@
-// pages/api/auth/[...nextauth].js
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaClient } from "@prisma/client";
@@ -12,33 +11,37 @@ export default NextAuth({
       name: "Credentials",
       credentials: {
         username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        // Find user by username
         const user = await prisma.user.findUnique({
-          where: { username: credentials.username }
+          where: { username: credentials.username },
         });
 
+        // If no user is found, throw an error
         if (!user) {
           throw new Error("User not found.");
         }
 
+        // Check if the password is correct
         const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
         if (!isPasswordCorrect) {
           throw new Error("Incorrect password.");
         }
 
+        // Return essential user data for session and token storage
         return {
           id: user.id,
           username: user.username,
           email: user.email, // Include email if available
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async session({ session, token }) {
-      // Ensure that session.user includes all necessary fields
+      // Set the session user object to include necessary fields
       session.user = {
         id: token.id,
         username: token.username,
@@ -47,20 +50,20 @@ export default NextAuth({
       return session;
     },
     async jwt({ token, user }) {
-      // Store user info in token on login
+      // If user exists, populate token with user info
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email; // Include email if needed
       }
       return token;
-    }
+    },
   },
   pages: {
-    signIn: '/auth/login',
+    signIn: '/auth/login', // Redirect for sign-in page
   },
   session: {
-    strategy: "jwt",
+    strategy: "jwt", // Use JWT strategy for session
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET, // Ensure the secret is set in your environment
 });

@@ -182,7 +182,26 @@ export default function Signup() {
         <div className="bg-gradient-to-r from-green-400 to-blue-500 p-8 text-white md:w-96 relative flex flex-col justify-center items-center min-h-[500px]">
           <h2 className="text-2xl font-bold mb-4 mt-[-30px] text-center">Join the Community</h2>
           <ul className="space-y-4">
-            {/* Additional feature points */}
+            <li className="flex items-center space-x-2">
+              <Image src="/svg/community_login.svg" alt="Community Icon" width={24} height={24} />
+              <p className="font-light">Share it with other architects</p>
+            </li>
+            <li className="flex items-center space-x-2">
+              <Image src="/svg/post_login.svg" alt="Post Icon" width={24} height={24} />
+              <p className="font-light">Feel free to post your work</p>
+            </li>
+            <li className="flex items-center space-x-2">
+              <Image src="/svg/handshake_login.svg" alt="Handshake Icon" width={24} height={24} />
+              <p className="font-light">Find and build a healthy community</p>
+            </li>
+            <li className="flex items-center space-x-2">
+              <Image src="/svg/security_login.svg" alt="Security Icon" width={24} height={24} />
+              <p className="font-light">Protection against AI exploitation</p>
+            </li>
+            <li className="flex items-center space-x-2">
+              <Image src="/svg/archi_login.svg" alt="Architecture Icon" width={24} height={24} />
+              <p className="font-light">A web dedicated to Architecture</p>
+            </li>
           </ul>
         </div>
       </div>
