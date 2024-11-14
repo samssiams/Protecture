@@ -2,8 +2,11 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-export default function CreatePostModal({ isOpen, onClose }) {
+export default function CreatePostModal({ isOpen, onClose, userData }) {
   const [selectedImage, setSelectedImage] = useState(null);
+
+  // Log the userData to check if it's passed correctly
+  console.log('User data:', userData);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -46,15 +49,17 @@ export default function CreatePostModal({ isOpen, onClose }) {
 
         {/* Profile Information */}
         <div className="flex items-center mt-4 mb-4">
+          {/* Log user profile image to check if it's correct */}
           <Image
-            src="/images/user.png"
+            src={userData?.profileImg || '/images/user.png'} // Use userData.profileImage or fallback to default
             alt="Profile Image"
             width={40}
             height={40}
             className="rounded-full"
           />
           <div className="ml-3">
-            <p className="text-black font-semibold text-[16px]">Joexsu</p>
+            {/* Log user name to verify it */}
+            <p className="text-black font-semibold text-[16px]">{userData?.name || 'Joexsu'}</p> {/* Display the user's name */}
           </div>
         </div>
 
@@ -89,7 +94,7 @@ export default function CreatePostModal({ isOpen, onClose }) {
         </div>
 
         {/* Add Image Section */}
-        <div 
+        <div
           className="w-full h-[150px] bg-gray-800 flex flex-col items-center justify-center rounded cursor-pointer"
           onClick={triggerFileInput}
         >
@@ -111,9 +116,7 @@ export default function CreatePostModal({ isOpen, onClose }) {
         </div>
 
         {/* Post Button */}
-        <button
-          className="w-full h-[40px] bg-[#28B446] text-white font-semibold rounded mt-4"
-        >
+        <button className="w-full h-[40px] bg-[#28B446] text-white font-semibold rounded mt-4">
           Post
         </button>
       </motion.div>
