@@ -42,7 +42,7 @@ export default function Login() {
         setErrorMessage('Invalid username or password. Please try again.');
         setIsModalOpen(true);
       } else {
-        router.push(routes.pages.home);
+        router.push('/');
       }
     } catch (error) {
       console.error('Login failed:', error);
