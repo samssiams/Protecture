@@ -9,6 +9,7 @@ import CreateCommunityModal from './modal-createcommunity';
 import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
+import Chatbot from '../components/ui/chatbot'; // Import the Chatbot component
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
@@ -270,6 +271,9 @@ export default function Home() {
       <CreatePostModal isOpen={isModalOpen} onClose={closeModal} />
       <ModalFilterCategory isOpen={isFilterModalOpen} onClose={closeFilterModal} />
       <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
+      
+      {/* Add Chatbot Component */}
+      <Chatbot />
     </div>
   );
 }
