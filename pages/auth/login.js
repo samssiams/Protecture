@@ -42,8 +42,7 @@ export default function Login() {
         setErrorMessage('Invalid username or password. Please try again.');
         setIsModalOpen(true);
       } else {
-        // Explicit redirection to home page after successful login
-        router.push('/home'); // Change '/home' to your desired page
+        router.push(routes.pages.home);
       }
     } catch (error) {
       console.error('Login failed:', error);
