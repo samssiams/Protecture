@@ -2,34 +2,20 @@ import React from "react";
 import Image from "next/image";
 
 const CommentView = ({ comments }) => {
-  // Placeholder comments
-  const placeholderComments = [
-    {
-      userImage: "/images/user.svg",
-      username: "User1",
-      text: "Lorem ipsum",
-      timestamp: "14:30",
-    },
-    {
-      userImage: "/images/user.svg",
-      username: "User2",
-      text: "Lorem ipsum",
-      timestamp: "14:31",
-    },
-    {
-      userImage: "/images/user.svg",
-      username: "User3",
-      text: "Lorem ipsum",
-      timestamp: "14:32",
-    },
-  ];
-
-  // Combine passed comments and placeholders for rendering
-  const allComments = comments.length > 0 ? comments : placeholderComments;
+  // Format the time to local date and display it in "hh:mm AM/PM" format
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp);
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const formattedTime = `${hours % 12 === 0 ? 12 : hours % 12}:${String(
+      minutes
+    ).padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
+    return formattedTime;
+  };
 
   return (
     <div className="overflow-y-auto max-h-[300px] px-4">
-      {allComments.map((comment, index) => (
+      {comments.map((comment, index) => (
         <div key={index} className="flex items-start mb-4">
           <Image
             src={comment.userImage}
@@ -40,12 +26,18 @@ const CommentView = ({ comments }) => {
           />
           <div className="ml-3">
             <div
-              className="rounded-[5px] bg-[#F4F3F3] border border-[#787070] px-4 py-2"
-              style={{ width: "149px", height: "41px" }}
+              className="w-fit flex flex-col gap-0 rounded-[5px] bg-[#F4F3F3] border border-[#787070] px-2 py-2"
             >
-              <span className="text-black text-[16px] font-normal">{comment.text}</span>
+              <span className="text-black text-[14px] font-semibold block">
+                {comment.username}
+              </span>
+              <span className="text-black text-[16px] font-normal">
+                {comment.text}
+              </span>
             </div>
-            <span className="text-gray-500 text-xs mt-1 block">{comment.timestamp}</span>
+            <span className="text-gray-500 text-xs mt-1 block">
+              {formatTime(comment.timestamp)}
+            </span>
           </div>
         </div>
       ))}

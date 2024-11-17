@@ -46,11 +46,11 @@ export default function Home() {
 
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
-      <Navbar />
+      {<Navbar/>}
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
         <div
-          className="bg-white p-6 rounded-[15px] shadow-lg sticky top-8"
+          className="mt-14 left-[10rem] bg-white p-6 rounded-[15px] shadow-lg fixed top-8"
           style={{
             width: '318px',
             height: '430px',
@@ -128,9 +128,9 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
+        <div className="z-50 flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
-            className="flex bg-white p-4 rounded-[15px] shadow-lg cursor-pointer"
+            className="fixed w-[41rem] z-50 flex bg-white p-4 rounded-[15px] shadow-lg cursor-pointer"
             onClick={openModal}
             style={{
               height: '92px',
@@ -160,12 +160,13 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center mt-5 mb-[43px] relative">
-            <hr className="flex-grow border-t border-[#000000]" />
+          <div className="pt-[9rem] z-50 flex items-center mt-5 mb-[43px] relative">
+            <hr className="fixed top-[220px] w-[30rem] z-50 flex-grow border-[.5] border-[#000000]" />
+            <hr className="fixed w-[30rem]  flex-grow border-[20rem] border-[#F0FDF4]"/>
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }}
               whileTap={{ scale: 0.95 }}
-              className="ml-3 flex items-center justify-center text-[#787070] text-[13px] font-medium rounded-[4px]"
+              className="fixed top-[207px] right-[609px] z-50 ml-3 flex items-center justify-center text-[#787070] text-[13px] font-medium rounded-[4px]"
               style={{
                 width: '170px',
                 height: '30px',
@@ -188,9 +189,9 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex flex-col space-y-5 sticky top-8">
+        <div className="right-[2rem] flex flex-col space-y-5 fixed top-8">
           <div
-            className="bg-white p-4 rounded-[15px] shadow-lg"
+            className=" mt-14 bg-white p-4 rounded-[15px] shadow-lg"
             style={{
               width: '316px',
               height: '200px',

@@ -19,7 +19,20 @@ export default async function handler(req, res) {
       // Fetch all posts with related user and comment data
       const posts = await prisma.post.findMany({
         include: {
-          comments: true, // Include related comments
+          comments: {
+            include: {
+              user: {
+                select: {
+                  username: true, // Fetch username from User
+                  profile: {
+                    select: {
+                      profile_img: true, // Fetch profile_img from UserProfile
+                    },
+                  },
+                },
+              },
+            },
+          }, // Include related comments
           user: {
             select: {
               username: true, // Fetch username from User
@@ -48,6 +61,13 @@ export default async function handler(req, res) {
       // Map the posts to include the voting state for the current user
       const postsWithVoteState = posts.map((post) => ({
         ...post,
+        comments: post.comments.map((comment) => ({
+          id: comment.id,
+          userImage: comment.user.profile?.profile_img || "/images/user.svg",
+          username: comment.user.username,
+          text: comment.comment_text,
+          timestamp: comment.created_at,
+        })), // Transform comments to include user details
         userVote: post.upvotes.length > 0
           ? "UPVOTE"
           : post.downvotes.length > 0

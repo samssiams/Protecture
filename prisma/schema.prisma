@@ -72,14 +72,15 @@ model Post {
 }
 
 model Comment {
-  id           Int      @id @default(autoincrement())
-  post_id      Int
-  user_id      Int
-  comment_text String    // Changed text field to String
-  created_at   DateTime  @default(now())
+  id          Int      @id @default(autoincrement()) // Ensure id is auto-incremented
+  post_id     Int
+  user_id     Int
+  comment_text String
+  created_at  DateTime @default(now())
 
-  post         Post      @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  // Relations
+  user  User  @relation(fields: [user_id], references: [id])
+  post  Post  @relation(fields: [post_id], references: [id])
 }
 
 model Upvote {

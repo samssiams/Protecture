@@ -1,18 +1,22 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import CommentView from "../home/commentview"; // Importing CommentView
+import CommentView from "../home/commentview";
+import { useSession } from "next-auth/react";
 
-export default function CommentModal({ isOpen, onClose, comments, userData, post }) {
+export default function CommentModal({ isOpen, onClose, comments, post }) {
   const [commentText, setCommentText] = useState("");
-  const [isPostOwner, setIsPostOwner] = useState(false); // State to track ownership
+  const [isPostOwner, setIsPostOwner] = useState(false);
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
+
+  const { data: session } = useSession(); // Fetch session
+  const currentUser = session?.user; // Get logged-in user's details
 
   useEffect(() => {
     if (isOpen) {
       commentInputRef.current.focus();
-      checkPostOwnership(); // Check if the logged-in user owns the post
+      checkPostOwnership();
     }
   }, [isOpen]);
 
@@ -23,11 +27,11 @@ export default function CommentModal({ isOpen, onClose, comments, userData, post
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ postId: post.id }), // Send the post ID to the backend
+        body: JSON.stringify({ postId: post.id }),
       });
 
       const data = await response.json();
-      setIsPostOwner(data.isOwner); // Update the ownership status
+      setIsPostOwner(data.isOwner);
     } catch (error) {
       console.error("Error checking post ownership:", error);
     }
@@ -66,18 +70,13 @@ export default function CommentModal({ isOpen, onClose, comments, userData, post
         },
         body: JSON.stringify({
           postId: post.id,
-          userId: userData.id, // Pass the current user's ID
           commentText,
         }),
       });
 
       if (response.ok) {
         const newComment = await response.json();
-
-        // Add the new comment to the existing comments
         comments.unshift(newComment);
-
-        // Clear the input field
         setCommentText("");
       } else {
         const errorData = await response.json();
@@ -89,7 +88,7 @@ export default function CommentModal({ isOpen, onClose, comments, userData, post
   };
 
   const handleImageDownload = () => {
-    window.open(post.image_url, "_blank"); // Open the image URL in a new tab
+    window.open(post.image_url, "_blank");
   };
 
   if (!isOpen) return null;
@@ -155,12 +154,11 @@ export default function CommentModal({ isOpen, onClose, comments, userData, post
 
         <hr className="border-gray-300 w-full mb-8" />
 
-        {/* Inject CommentView for rendering comments */}
         <CommentView comments={comments} />
 
         <div className="flex items-center space-x-3 mb-4 px-4">
           <Image
-            src={userData?.profileImg || "/images/user.svg"}
+            src={currentUser?.profileImg || "/images/user.png"}
             alt="Your Profile"
             width={40}
             height={40}
@@ -173,12 +171,12 @@ export default function CommentModal({ isOpen, onClose, comments, userData, post
               onChange={handleCommentChange}
               ref={commentInputRef}
               className="w-full h-[41px] rounded-[5px] p-2 bg-[#F4F3F3] text-black"
-              placeholder="Write something"
+              placeholder="Write something..."
               style={{
                 borderRadius: "5px",
                 borderColor: "787070",
                 borderWidth: "1px",
-                outline: "none", // Remove outline on focus
+                outline: "none",
               }}
             />
             <button

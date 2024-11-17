@@ -16,6 +16,9 @@ export const authOptions = {
       authorize: async (credentials) => {
         const user = await prisma.user.findFirst({
           where: { username: credentials.username },
+          include: {
+            profile: true, // Fetch related profile information
+          },
         });
 
         if (!user) {
@@ -34,12 +37,13 @@ export const authOptions = {
           id: user.id,
           username: user.username,
           email: user.email,
+          profileImg: user.profile?.profile_img || null, // Include profile image
         };
 
         return sessionUser;
       },
     }),
-  ],  
+  ],
   session: { strategy: "jwt" },
   jwt: { secret: process.env.NEXTAUTH_SECRET },
   callbacks: {
@@ -48,6 +52,7 @@ export const authOptions = {
         id: token.id,
         username: token.username,
         email: token.email,
+        profileImg: token.profileImg, // Include profile image in session
       };
       return session;
     },
@@ -56,6 +61,7 @@ export const authOptions = {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
+        token.profileImg = user.profileImg; // Include profile image in JWT
       }
       return token;
     },
