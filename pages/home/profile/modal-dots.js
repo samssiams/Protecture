@@ -1,19 +1,38 @@
-// pages/home/profile/modal-dots.js
-
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
 
-export default function DotsMenu({ isOpen, onClose, position = { left: 0, top: 0 } }) {
+export default function DotsMenu({ isOpen, onClose, position }) {
+  const modalRef = useRef(null);
+
+  useEffect(() => {
+    // Function to close the modal when clicking outside
+    const handleClickOutside = (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <motion.div
+      ref={modalRef}
       className="absolute bg-white rounded-[5px] border border-black shadow-lg"
       style={{
         width: '145px',
         height: '92px',
-        left: position.left - 160, // Adjust to move slightly to the left
-        top: position.top,
+        left: position.left - 160, // Adjusted to move the modal 20px to the left
+        top: position.top - 10,
         boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
         filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
         borderWidth: '1px',
@@ -23,7 +42,7 @@ export default function DotsMenu({ isOpen, onClose, position = { left: 0, top: 0
       exit={{ opacity: 0, scale: 0.8 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="flex flex-col p-3 space-y-1">
+      <div className="flex flex-col p-3 space-y-2">
         <button
           className="flex items-center space-x-2 w-full text-left hover:bg-gray-100 p-1 rounded"
           onClick={onClose}

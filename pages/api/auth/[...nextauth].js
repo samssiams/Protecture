@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-export default NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -13,57 +13,58 @@ export default NextAuth({
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        // Find user by username
-        const user = await prisma.user.findUnique({
+      authorize: async (credentials) => {
+        const user = await prisma.user.findFirst({
           where: { username: credentials.username },
         });
 
-        // If no user is found, throw an error
         if (!user) {
           throw new Error("User not found.");
         }
 
-        // Check if the password is correct
-        const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
+        const isPasswordCorrect = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
         if (!isPasswordCorrect) {
           throw new Error("Incorrect password.");
         }
 
-        // Return essential user data for session and token storage
-        return {
+        const sessionUser = {
           id: user.id,
           username: user.username,
-          email: user.email, // Include email if available
+          email: user.email,
         };
+
+        return sessionUser;
       },
     }),
-  ],
+  ],  
+  session: { strategy: "jwt" },
+  jwt: { secret: process.env.NEXTAUTH_SECRET },
   callbacks: {
     async session({ session, token }) {
-      // Set the session user object to include necessary fields
       session.user = {
         id: token.id,
         username: token.username,
-        email: token.email, // Include email if needed
+        email: token.email,
       };
       return session;
     },
     async jwt({ token, user }) {
-      // If user exists, populate token with user info
       if (user) {
         token.id = user.id;
         token.username = user.username;
-        token.email = user.email; // Include email if needed
+        token.email = user.email;
       }
       return token;
     },
   },
   pages: {
-    signIn: '/auth/login', // Redirect for sign-in page
+    signIn: "/auth/login",
   },
-  session: {
-    strategy: "jwt", // Use JWT strategy for session
-  },
-  secret: process.env.NEXTAUTH_SECRET, // Ensure the secret is set in your environment
-});
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: true, // Enable debug mode to check session-related logs
+};
+
+export default NextAuth(authOptions);

@@ -11,8 +11,15 @@ export default async function handler(req, res) {
       // Log session data to verify its contents
       console.log('Session data:', session);
 
+      // Ensure that session exists and user data is available
+      if (!session || !session.user) {
+        console.log('No session or user found in the session');
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
       // Extract username and email from session user object
-      const { username, email } = session?.user || {};
+      const { username, email } = session.user;
+      console.log('Extracted username:', username, 'email:', email);
 
       // Ensure that a unique identifier is present
       if (!username && !email) {
@@ -27,9 +34,12 @@ export default async function handler(req, res) {
           email: username ? undefined : email, // Use email if username is not present
         },
         include: {
-          profile: true,
+          profile: true, // Fetch the profile associated with the user
         },
       });
+
+      // Log user retrieval from the database
+      console.log('User fetched from the database:', user);
 
       // Handle case where user or user profile is not found
       if (!user || !user.profile) {

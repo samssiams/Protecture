@@ -8,17 +8,21 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        Int        @id @default(autoincrement()) // Primary key as Int
   role      String
-  user_id   String   @unique
-  google_id Int?     @unique
-  username  String   @unique
-  email     String?  @unique
+  user_id   String     @unique // User ID is still String
+  google_id Int?       @unique
+  username  String     @unique
+  email     String?    @unique
   password  String?
-  otp       String?  // Field for OTP
+  otp       String?    // Field for OTP
 
-  accounts    Account[]
+  accounts    Account[] 
   profile     UserProfile?
+  comments    Comment[]   // User can have many comments
+  posts       Post[]      // User can create many posts
+  upvotes     Upvote[]    // User can upvote many posts
+  downvotes   Downvote[]  // User can downvote many posts
 }
 
 model Account {
@@ -50,4 +54,52 @@ model UserProfile {
   user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  user_id     Int                    // Foreign key referencing User table
+  category_id String                 // Category for the post
+  image_url   String
+  description String
+  created_at  DateTime  @default(now()) // Automatically sets the creation time
+  counter     Int       @default(0)  // Counter for upvotes and downvotes
+  comments    Comment[]              // Relation to comments
+  upvotes     Upvote[]               // Relation to upvotes
+  downvotes   Downvote[]             // Relation to downvotes
+
+  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Comment {
+  id           Int      @id @default(autoincrement())
+  post_id      Int
+  user_id      Int
+  comment_text String    // Changed text field to String
+  created_at   DateTime  @default(now())
+
+  post         Post      @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model Upvote {
+  id        Int      @id @default(autoincrement())
+  post_id   Int
+  user_id   Int
+
+  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id]) // Composite key
+}
+
+model Downvote {
+  id        Int      @id @default(autoincrement())
+  post_id   Int
+  user_id   Int
+
+  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([post_id, user_id]) // Composite key
 }

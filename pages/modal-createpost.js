@@ -1,22 +1,69 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 
 export default function CreatePostModal({ isOpen, onClose, userData }) {
   const [selectedImage, setSelectedImage] = useState(null);
-
-  // Log the userData to check if it's passed correctly
-  console.log('User data:', userData);
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state to track post creation
+  const [error, setError] = useState(null); // Error state
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setSelectedImage(URL.createObjectURL(file));
+      setSelectedImage(file);
     }
   };
 
   const triggerFileInput = () => {
     document.getElementById('fileInput').click();
+  };
+
+  const handlePost = async () => {
+    setLoading(true); // Set loading to true when the post is being submitted
+    setError(null); // Clear any previous errors
+
+    // Create a FormData object
+    const formData = new FormData();
+    formData.append('description', description);
+    formData.append('category_id', category);
+    formData.append('image', selectedImage); // Image is appended as a file
+
+    // Log FormData for debugging
+    console.log('FormData keys and values:');
+    for (const pair of formData.entries()) {
+      console.log(`${pair[0]}:`, pair[1]);
+    }
+
+    try {
+      // Send the post request with FormData
+      const response = await axios.post('/api/post/createpost', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Important for sending FormData
+        },
+      });
+
+      console.log('Post response:', response); // Add this to inspect the response from the server
+
+      if (response.status === 201) {
+        // Post created successfully, close the modal
+        onClose();
+        setSelectedImage(null);
+        setDescription('');
+        setCategory('');
+      } else {
+        console.error('Failed to create post, response:', response); // Log any response error from server
+        setError('Failed to create post. Please try again.');
+      }
+    } catch (err) {
+      // Handle error during post creation
+      console.error('Error creating post:', err.response ? err.response.data : err); // Improved error logging
+      setError('Failed to create post. Please try again.');
+    } finally {
+      setLoading(false); // Set loading to false when done
+    }
   };
 
   if (!isOpen) return null;
@@ -49,7 +96,6 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
 
         {/* Profile Information */}
         <div className="flex items-center mt-4 mb-4">
-          {/* Log user profile image to check if it's correct */}
           <Image
             src={userData?.profileImg || '/images/user.png'} // Use userData.profileImage or fallback to default
             alt="Profile Image"
@@ -58,8 +104,7 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
             className="rounded-full"
           />
           <div className="ml-3">
-            {/* Log user name to verify it */}
-            <p className="text-black font-semibold text-[16px]">{userData?.name || 'Joexsu'}</p> {/* Display the user's name */}
+            <p className="text-black font-semibold text-[16px]">{userData?.name || 'Joexsu'}</p>
           </div>
         </div>
 
@@ -69,6 +114,8 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
             className="w-full h-[80px] px-3 text-black text-[14px] resize-none focus:outline-none placeholder-gray-500"
             placeholder="What will you post?"
             style={{ backgroundColor: 'transparent', border: 'none' }}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 
@@ -77,12 +124,15 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
           <select
             className="w-full h-[40px] px-3 rounded-[4px] bg-[#F4F3F3] text-black appearance-none"
             style={{ border: '1px solid #E0E0E0' }}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
           >
             <option>Select the house style category</option>
             <option>Modern</option>
             <option>Contemporary</option>
             <option>Victorian</option>
             <option>Traditional</option>
+            <option>Bungalow</option>
           </select>
           <Image
             src="/svg/drop.svg"
@@ -93,10 +143,13 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
           />
         </div>
 
-        {/* Add Image Section */}
+        {/* Add Image Section with Preview */}
         <div
-          className="w-full h-[150px] bg-gray-800 flex flex-col items-center justify-center rounded cursor-pointer"
+          className="w-full h-[150px] bg-gray-800 flex flex-col items-center justify-center rounded cursor-pointer overflow-hidden"
           onClick={triggerFileInput}
+          style={{
+            position: 'relative',
+          }}
         >
           <input
             id="fileInput"
@@ -106,7 +159,13 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
             className="hidden"
           />
           {selectedImage ? (
-            <Image src={selectedImage} alt="Selected" layout="fill" objectFit="cover" className="h-full rounded" />
+            <Image
+              src={URL.createObjectURL(selectedImage)} // Create an object URL for the image preview
+              alt="Selected"
+              layout="fill"
+              objectFit="cover"
+              className="rounded"
+            />
           ) : (
             <>
               <Image src="/svg/addimagewhite.svg" alt="Upload Icon" width={20} height={20} />
@@ -115,9 +174,23 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
           )}
         </div>
 
+        {/* Error and Loading states */}
+        {error && (
+          <p className="text-red-500 text-center mt-3">{error}</p>
+        )}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-[5px]">
+            <p className="text-white text-[18px] font-semibold">Posting...</p>
+          </div>
+        )}
+
         {/* Post Button */}
-        <button className="w-full h-[40px] bg-[#28B446] text-white font-semibold rounded mt-4">
-          Post
+        <button
+          onClick={handlePost}
+          className="w-full h-[40px] bg-[#28B446] text-white font-semibold rounded mt-4"
+          disabled={loading} // Disable button while posting
+        >
+          {loading ? 'Posting...' : 'Post'}
         </button>
       </motion.div>
     </div>

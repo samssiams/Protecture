@@ -23,7 +23,7 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await axios.get('/api/user/profile');
-      setUserData(response.data);
+      setUserData(response.data); // Store user data
     } catch (error) {
       console.error('Failed to fetch user data:', error);
     } finally {
@@ -268,7 +268,7 @@ export default function Home() {
         </div>
       </div>
 
-      <CreatePostModal isOpen={isModalOpen} onClose={closeModal} />
+      <CreatePostModal isOpen={isModalOpen} onClose={closeModal} userData={userData} />
       <ModalFilterCategory isOpen={isFilterModalOpen} onClose={closeFilterModal} />
       <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
       

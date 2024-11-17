@@ -1,152 +1,246 @@
-import Image from 'next/image';
-import { useEffect, useState, useRef } from 'react';
-import ModalDots from '../../pages/home/profile/modal-dots'; // Import the dots modal
-import CommentModal from '../../pages/home/modal-comment';
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import ModalDots from "../../pages/home/profile/modal-dots";
+import CommentModal from "../../pages/home/modal-comment";
 
 function PostContainer() {
-  const [userData, setUserData] = useState(null); // State to store the fetched user data
-  const [showModal, setShowModal] = useState(false); // State to control dots modal visibility
-  const [showCommentModal, setShowCommentModal] = useState(false); // State to control comment modal visibility
-  const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 }); // Store the position of the modal for dots
-  const modalRef = useRef(null); // Ref to the modal for detecting clicks outside
-  const [comments, setComments] = useState([]); // Comments state
+  const [posts, setPosts] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [votedPosts, setVotedPosts] = useState({}); // Track upvote/downvote state
 
-  // Fetch user profile data on component mount
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchPosts = async () => {
       try {
-        const response = await fetch('/api/user/profile');
+        const response = await fetch("/api/post/getposts");
         if (response.ok) {
           const data = await response.json();
-          setUserData(data); // Set the user data to state
+          setPosts(data);
+
+          // Initialize vote state
+          const initialVotes = data.reduce((acc, post) => {
+            if (post.userVote) {
+              acc[post.id] = post.userVote;
+            }
+            return acc;
+          }, {});
+          setVotedPosts(initialVotes);
         } else {
-          console.error("Error fetching user profile");
+          console.error("Error fetching posts");
         }
       } catch (error) {
-        console.error("Error fetching user profile:", error);
+        console.error("Error fetching posts:", error);
       }
     };
 
-    fetchUserProfile();
+    fetchPosts();
   }, []);
 
-  // Handle opening or closing the dots modal when dots are clicked
-  const handleModalToggle = (event) => {
+  const handleModalToggle = (event, post) => {
+    const dotsButton = event.currentTarget;
+    const rect = dotsButton.getBoundingClientRect();
+
     const position = {
-      left: event.clientX,
-      top: event.clientY,
+      left: rect.left + window.scrollX, // Adjust for horizontal scrolling
+      top: rect.bottom + window.scrollY + 5, // Adjust to position below the dots
     };
-    setModalPosition(position); // Set the position state
-    setShowModal((prevShowModal) => !prevShowModal); // Toggle the modal visibility
+
+    setSelectedPost(post);
+    setModalPosition(position); // Set modal position dynamically
+    setShowModal((prevShowModal) => !prevShowModal);
   };
 
-  // Handle opening the comment modal when the comment icon is clicked
-  const handleCommentModalToggle = () => {
-    setShowCommentModal((prevShowModal) => !prevShowModal); // Toggle the comment modal visibility
+  const handleCommentModalToggle = (post) => {
+    setSelectedPost(post);
+    setShowCommentModal(true); // Open the CommentModal
   };
 
-  // Handle closing the modal when clicking outside
-  const handleClickOutside = (event) => {
-    if (modalRef.current && !modalRef.current.contains(event.target)) {
-      setShowModal(false); // Close the modal if clicked outside
+  const closeCommentModal = () => {
+    setShowCommentModal(false); // Close the CommentModal
+  };
+
+  const handleVote = async (postId, action) => {
+    try {
+      const requestBody = { postId, action };
+
+      const response = await fetch("/api/post/vote", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const updatedPost = await response.json();
+
+        // Update vote state
+        setVotedPosts((prevVotes) => ({
+          ...prevVotes,
+          [postId]: prevVotes[postId] === action ? null : action,
+        }));
+
+        // Update posts
+        setPosts((prevPosts) =>
+          prevPosts.map((post) =>
+            post.id === updatedPost.id ? updatedPost : post
+          )
+        );
+      } else {
+        const errorData = await response.json();
+        console.error("Error in vote request:", errorData);
+      }
+    } catch (error) {
+      console.error("Error in vote request:", error);
     }
   };
 
-  useEffect(() => {
-    // Event listener to close the modal when clicking outside
-    if (showModal) {
-      document.addEventListener('mousedown', handleClickOutside);
-    } else {
-      document.removeEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside); // Clean up event listener
-    };
-  }, [showModal]);
-
-  if (!userData) {
-    return <div>Loading...</div>; // Show loading state if user data is not yet fetched
+  if (!posts.length) {
+    return <div>Loading...</div>;
   }
 
   return (
-    <div
-      className="bg-white rounded-[15px] shadow-lg p-5"
-      style={{
-        width: '656px',
-        boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-      }}
-    >
-      {/* Header Section */}
-      <div className="flex items-center mb-4">
-        <Image
-          src={userData.profileImg} // Use the user's profile image
-          alt="Profile"
-          width={40}
-          height={40}
-          className="rounded-full"
-        />
-        <div className="ml-4">
-          <h3 className="font-bold text-black">{userData.name || userData.username}</h3> {/* Use the name or username */}
-          <span className="text-black text-xs">14:30</span> {/* Smaller font size for time */}
-        </div>
-        <div className="ml-auto">
-          <button onClick={handleModalToggle}>
-            <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
-          </button>
-        </div>
-      </div>
+    <div>
+      {posts.map((post) => {
+        const voteState = votedPosts[post.id];
 
-      {/* Post Content */}
-      <p className="text-[#4A4A4A] mb-4">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-      </p>
-      <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
-        Modern House
-      </span>
-      <div className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4">
-        <span className="text-black text-lg">Image</span>
-      </div>
+        return (
+          <div
+            key={post.id}
+            className="bg-white rounded-[15px] shadow-lg p-5 mb-4"
+            style={{
+              width: "656px",
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            {/* Header Section */}
+            <div className="flex items-center mb-4">
+              <Image
+                src={post.user?.profile?.profile_img || "/images/default-profile.png"}
+                alt="Profile"
+                width={40}
+                height={40}
+                className="rounded-full"
+              />
+              <div className="ml-4">
+                <h3 className="font-bold text-black">
+                  {post.user?.profile?.name || post.user?.username}
+                </h3>
+                <span className="text-black text-xs">
+                  {new Date(post.created_at).toLocaleTimeString()}
+                </span>
+              </div>
+              <div className="ml-auto">
+                <button onClick={(e) => handleModalToggle(e, post)}>
+                  <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                </button>
+              </div>
+            </div>
 
-      {/* Reaction Section */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <button>
-            <Image src="/svg/downvote.svg" alt="Downvote" width={21} height={21} />
-          </button>
-          <span className="text-black">143</span>
-          <button>
-            <Image src="/svg/upvote.svg" alt="Upvote" width={21} height={21} />
-          </button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button onClick={handleCommentModalToggle}>
-            <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
-          </button>
-          <span className="text-black">143</span>
-        </div>
-      </div>
+            {/* Post Description */}
+            <p className="text-[#4A4A4A] mb-4">{post.description}</p>
+            <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
+              {post.category_id}
+            </span>
 
-      {/* Modal Component (only show when the modal is triggered) */}
-      {showModal && (
-        <div ref={modalRef}>
-          <ModalDots
-            isOpen={showModal}
-            onClose={() => setShowModal(false)} // Close the modal
-            position={modalPosition}
-          />
-        </div>
-      )}
+            {/* Post Image */}
+            <div
+              className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
+              onClick={() => handleCommentModalToggle(post)}
+            >
+              <Image
+                src={post.image_url}
+                alt="Post Image"
+                width={444}
+                height={300}
+                className="object-cover h-[250px] w-[656px] rounded-lg"
+              />
+            </div>
 
-      {/* Comment Modal Component */}
-      {showCommentModal && (
-        <CommentModal
-          isOpen={showCommentModal}
-          onClose={() => setShowCommentModal(false)} // Close the comment modal
-          comments={comments} // Pass the comments data
-          userData={userData} // Pass the user data
-        />
-      )}
+            {/* Reaction Section */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                {/* Downvote Button */}
+                <button
+                  onClick={() => handleVote(post.id, "DOWNVOTE")}
+                  className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
+                >
+                  <Image
+                    src="/svg/downvote.svg"
+                    alt="Downvote"
+                    width={21}
+                    height={21}
+                    style={{
+                      filter:
+                        voteState === "DOWNVOTE"
+                          ? "invert(28%) sepia(73%) saturate(2574%) hue-rotate(335deg) brightness(88%) contrast(89%)"
+                          : "none",
+                      transition: "filter 0.2s ease-in-out",
+                    }}
+                  />
+                </button>
+
+                {/* Counter */}
+                <span className="text-black">{post.counter}</span>
+
+                {/* Upvote Button */}
+                <button
+                  onClick={() => handleVote(post.id, "UPVOTE")}
+                  className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
+                >
+                  <Image
+                    src="/svg/upvote.svg"
+                    alt="Upvote"
+                    width={21}
+                    height={21}
+                    style={{
+                      filter:
+                        voteState === "UPVOTE"
+                          ? "invert(53%) sepia(81%) saturate(575%) hue-rotate(107deg) brightness(91%) contrast(92%)"
+                          : "none",
+                      transition: "filter 0.2s ease-in-out",
+                    }}
+                  />
+                </button>
+              </div>
+
+              {/* Comments Section */}
+              <div className="flex items-center space-x-2">
+                <button onClick={() => handleCommentModalToggle(post)}>
+                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+                </button>
+                <span className="text-black">{post.comments.length}</span>
+              </div>
+            </div>
+
+            {/* Comment Modal */}
+            {showCommentModal && selectedPost?.id === post.id && (
+              <CommentModal
+                isOpen={showCommentModal}
+                onClose={closeCommentModal}
+                comments={post.comments}
+                post={selectedPost}
+                userData={{
+                  profileImg: post.user?.profile?.profile_img || "/images/default-profile.png",
+                }}
+              />
+            )}
+
+            {/* Dots Modal */}
+            {showModal && selectedPost?.id === post.id && (
+              <ModalDots
+                isOpen={showModal}
+                onClose={() => setShowModal(false)}
+                position={modalPosition} // Pass the dynamically calculated position
+                post={post}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -32,9 +32,9 @@ const ModalFilterCategory = ({ isOpen, onClose }) => {
               <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
             </button>
           </div>
-          <hr className="border-t border-black mb-4" />
+          <hr className="border-t border-black mb-1" />
           <ul className="space-y-2">
-            {['Bungalow', 'Modern', 'Cottage', 'Minimalist'].map((category) => (
+            {['Modern', 'Contemporary', 'Victorian', 'Traditional', 'Bungalow '].map((category) => (
               <li
                 key={category}
                 className="cursor-pointer px-4 py-2 rounded hover:bg-[#F2F4F7] transition-colors duration-200 text-black"
