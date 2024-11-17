@@ -50,7 +50,7 @@ export default function Home() {
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
         <div
-          className="mt-14 left-[10rem] bg-white p-6 rounded-[15px] shadow-lg fixed top-8"
+          className="mt-14 left-[10rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-50 top-8"
           style={{
             width: '318px',
             height: '430px',
@@ -128,7 +128,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="z-50 flex flex-col space-y-4" style={{ width: '655px' }}>
+        <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
             className="fixed w-[41rem] z-50 flex bg-white p-4 rounded-[15px] shadow-lg cursor-pointer"
             onClick={openModal}
@@ -160,9 +160,9 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="pt-[9rem] z-50 flex items-center mt-5 mb-[43px] relative">
-            <hr className="fixed top-[220px] w-[30rem] z-50 flex-grow border-[.5] border-[#000000]" />
-            <hr className="fixed w-[30rem]  flex-grow border-[20rem] border-[#F0FDF4]"/>
+          <div className="pt-[9rem] flex items-center mt-5 mb-[43px] relative">
+            <hr className="fixed left-0 top-0 w-full z-10 flex-grow border-t-[15.5rem] border-[#F0FDF4]"/>
+            <hr className="fixed top-[220px] z-50 w-[30rem] flex-grow border-[.5] border-[#000000]" />
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }}
               whileTap={{ scale: 0.95 }}
@@ -189,7 +189,7 @@ export default function Home() {
           )}
         </div>
 
-        <div className="right-[2rem] flex flex-col space-y-5 fixed top-8">
+        <div className="right-[2rem] flex flex-col space-y-5 fixed z-50 top-8">
           <div
             className=" mt-14 bg-white p-4 rounded-[15px] shadow-lg"
             style={{

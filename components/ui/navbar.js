@@ -25,7 +25,7 @@ export default function Navbar() {
   };
 
   return (
-    <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-1 px-8 flex justify-between items-center z-50">
+    <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-1 px-8 flex justify-between items-center">
       {/* Logo and Search */}
       <div className="flex items-center space-x-6">
         <h1 className="text-xl font-bold text-green-600">Protecture</h1>
