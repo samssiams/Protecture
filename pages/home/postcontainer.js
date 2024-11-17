@@ -2,6 +2,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
+import { useRouter } from "next/router";
 
 function PostContainer() {
   const [posts, setPosts] = useState([]);
@@ -10,11 +11,20 @@ function PostContainer() {
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
   const [votedPosts, setVotedPosts] = useState({}); // Track upvote/downvote state
+  const router = useRouter();
 
+  
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("/api/post/getposts");
+        // Determine the current route
+        const currentPath = router.pathname;
+
+        // Build the query string based on the current path
+        const query = currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
+
+        // Fetch posts from the API
+        const response = await fetch(`/api/post/getposts${query}`);
         if (response.ok) {
           const data = await response.json();
           setPosts(data);
@@ -36,7 +46,7 @@ function PostContainer() {
     };
 
     fetchPosts();
-  }, []);
+  }, [router.pathname]);
 
   const handleModalToggle = (event, post) => {
     const dotsButton = event.currentTarget;

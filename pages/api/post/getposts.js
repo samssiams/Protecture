@@ -4,59 +4,111 @@ import { authOptions } from "../auth/[...nextauth]"; // Import auth options for 
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    console.log("Received GET request to fetch all posts...");
+    console.log("Received GET request to fetch posts...");
 
     try {
       // Get the session to identify the logged-in user
       const session = await getServerSession(req, res, authOptions);
 
-      let userId = null;
-      if (session && session.user) {
-        userId = session.user.id;
-        console.log(`Fetching posts for user ID: ${userId}`);
+      if (!session || !session.user) {
+        return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Fetch all posts with related user and comment data
-      const posts = await prisma.post.findMany({
-        include: {
-          comments: {
-            include: {
-              user: {
-                select: {
-                  username: true, // Fetch username from User
-                  profile: {
-                    select: {
-                      profile_img: true, // Fetch profile_img from UserProfile
+      const userId = session.user.id;
+      console.log(`Logged-in user ID: ${userId}`);
+
+      // Get the current route from the query parameters
+      const { currentPath } = req.query;
+      let posts;
+
+      if (currentPath === "/home/profile") {
+        console.log("Fetching posts only for the logged-in user...");
+        // Filter posts to only those created by the logged-in user
+        posts = await prisma.post.findMany({
+          where: { user_id: userId },
+          include: {
+            comments: {
+              include: {
+                user: {
+                  select: {
+                    username: true,
+                    profile: {
+                      select: {
+                        profile_img: true,
+                      },
                     },
                   },
                 },
               },
             },
-          }, // Include related comments
-          user: {
-            select: {
-              username: true, // Fetch username from User
-              profile: {
-                select: {
-                  profile_img: true, // Fetch profile_img from UserProfile
-                  name: true, // Fetch name from UserProfile
+            user: {
+              select: {
+                username: true,
+                profile: {
+                  select: {
+                    profile_img: true,
+                    name: true,
+                  },
                 },
               },
             },
+            upvotes: {
+              where: { user_id: userId },
+              select: { id: true },
+            },
+            downvotes: {
+              where: { user_id: userId },
+              select: { id: true },
+            },
           },
-          upvotes: {
-            where: { user_id: userId }, // Check if the user has upvoted
-            select: { id: true },
+          orderBy: {
+            created_at: "desc", // Sort posts by creation date, newest first
           },
-          downvotes: {
-            where: { user_id: userId }, // Check if the user has downvoted
-            select: { id: true },
+        });
+      } else {
+        console.log("Fetching all posts...");
+        // Fetch all posts without filtering
+        posts = await prisma.post.findMany({
+          include: {
+            comments: {
+              include: {
+                user: {
+                  select: {
+                    username: true,
+                    profile: {
+                      select: {
+                        profile_img: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            user: {
+              select: {
+                username: true,
+                profile: {
+                  select: {
+                    profile_img: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+            upvotes: {
+              where: { user_id: userId },
+              select: { id: true },
+            },
+            downvotes: {
+              where: { user_id: userId },
+              select: { id: true },
+            },
           },
-        },
-        orderBy: {
-          created_at: "desc", // Sort posts by creation date, newest first
-        },
-      });
+          orderBy: {
+            created_at: "desc", // Sort posts by creation date, newest first
+          },
+        });
+      }
 
       // Map the posts to include the voting state for the current user
       const postsWithVoteState = posts.map((post) => ({
@@ -76,7 +128,7 @@ export default async function handler(req, res) {
       }));
 
       console.log(`Fetched ${posts.length} posts.`); // Log the number of posts fetched
-      return res.status(200).json(postsWithVoteState); // Return all posts to the client
+      return res.status(200).json(postsWithVoteState); // Return posts to the client
     } catch (error) {
       console.error("Error fetching posts:", error);
       return res.status(500).json({ message: "Internal Server Error" });
