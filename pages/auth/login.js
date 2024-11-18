@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Chakra_Petch } from "next/font/google";
-import { useRouter } from 'next/router';  // Import useRouter from Next.js
-import routes from '../../routes';  // Import the centralized routes
+import { useRouter } from 'next/router';
+import routes from '../../routes';
 import Button from "../../components/ui/button";
 import Image from 'next/image';
-import { signIn } from "next-auth/react"; // Import signIn from next-auth for credentials provider
+import { signIn } from "next-auth/react";
 
 const chakraPetch = Chakra_Petch({
   subsets: ["latin"],
-  weight: ["300", "400", "700"],  // Light, Regular, Bold
+  weight: ["300", "400", "700"],
 });
 
 export default function Login() {
@@ -16,6 +16,7 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
@@ -31,23 +32,33 @@ export default function Login() {
 
   // Handle Login
   const handleLogin = async () => {
+    if (!username || !password) {
+      setErrorMessage('Username and password are required.');
+      setIsModalOpen(true);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await signIn("credentials", {
         redirect: false,
         username,
         password,
+        callbackUrl: `${window.location.origin}${routes.pages.home}`,
       });
 
       if (response?.error) {
         setErrorMessage('Invalid username or password. Please try again.');
         setIsModalOpen(true);
       } else {
-        router.push(routes.pages.home);
+        router.push(response.url || routes.pages.home);
       }
     } catch (error) {
       console.error('Login failed:', error);
       setErrorMessage('An error occurred while trying to log in. Please try again.');
       setIsModalOpen(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -57,11 +68,18 @@ export default function Login() {
   };
 
   return (
-    <div className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
-      style={{ backgroundImage: "url('/images/image.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
+    <div
+      className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
+      style={{
+        backgroundImage: "url('/images/image.jpg')",
+        position: "fixed",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+      }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
-        
+        {/* Left Section */}
         <div className="p-8 md:w-96">
           <h2 className="text-2xl font-bold text-green-600 mb-4 cursor-pointer">Protecture</h2>
 
@@ -81,7 +99,10 @@ export default function Login() {
             </div>
           </div>
 
-          <Button className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white" onClick={() => alert('Google login functionality to be implemented.')}>
+          <Button
+            className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white"
+            onClick={() => alert('Google login functionality to be implemented.')}
+          >
             <Image src="/svg/google_login.svg" alt="Google Icon" width={20} height={20} className="mr-2" />
             <span className="text-black text-[18px] font-bold">Continue with Google</span>
           </Button>
@@ -92,6 +113,7 @@ export default function Login() {
             <div className="w-full h-px bg-gray-300"></div>
           </div>
 
+          {/* Username Field */}
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Username</label>
             <input
@@ -103,6 +125,7 @@ export default function Login() {
             />
           </div>
 
+          {/* Password Field */}
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Password</label>
             <div className="relative">
@@ -128,9 +151,22 @@ export default function Login() {
             </div>
           </div>
 
-          <Button className="w-full" onClick={handleLogin}>Login</Button>
+          <Button
+            className={`w-full ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <span className="loader mr-2"></span>Logging in...
+              </div>
+            ) : (
+              'Login'
+            )}
+          </Button>
         </div>
 
+        {/* Right Section */}
         <div className="bg-gradient-to-r from-green-400 to-blue-500 p-8 text-white md:w-96 relative flex flex-col justify-center items-center min-h-[500px]">
           <h2 className="text-2xl font-bold mb-4 mt-[-30px] text-center">Join the Community</h2>
           <ul className="space-y-4">
