@@ -1,10 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import CommentView from "../home/commentview";
 import { useSession } from "next-auth/react";
 
-export default function CommentModal({ isOpen, onClose, comments, post }) {
+export default function CommentModal({ isOpen, onClose, comments = [], post }) {
   const [commentText, setCommentText] = useState("");
   const [isPostOwner, setIsPostOwner] = useState(false);
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
@@ -26,14 +26,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen) {
-      commentInputRef.current.focus();
-      checkPostOwnership();
-    }
-  }, [isOpen]);
-
-  const checkPostOwnership = async () => {
+  const checkPostOwnership = useCallback(async () => {
     try {
       const response = await fetch("/api/post/downloadimage", {
         method: "POST",
@@ -48,13 +41,23 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
     } catch (error) {
       console.error("Error checking post ownership:", error);
     }
-  };
+  }, [post?.id]);
 
-  const handleClickOutside = (event) => {
-    if (modalRef.current && !modalRef.current.contains(event.target)) {
-      onClose();
+  useEffect(() => {
+    if (isOpen) {
+      commentInputRef.current?.focus();
+      checkPostOwnership();
     }
-  };
+  }, [isOpen, checkPostOwnership]);
+
+  const handleClickOutside = useCallback(
+    (event) => {
+      if (modalRef.current && !modalRef.current.contains(event.target)) {
+        onClose();
+      }
+    },
+    [onClose]
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -66,7 +69,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, handleClickOutside]);
 
   const handleCommentChange = (e) => {
     setCommentText(e.target.value);
@@ -82,7 +85,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          postId: post.id,
+          postId: post?.id,
           commentText,
         }),
       });
@@ -105,7 +108,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
   };
 
   const handleImageDownload = () => {
-    window.open(post.image_url, "_blank");
+    window.open(post?.image_url, "_blank");
   };
 
   if (!isOpen) return null;
@@ -171,7 +174,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
             <button>
               <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
             </button>
-            <span className="text-black">{comments.length}</span>
+            <span className="text-black">{comments?.length || 0}</span>
           </div>
         </div>
 
@@ -184,7 +187,7 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
             scrollbarWidth: "thin", // Firefox support
           }}
         >
-          <CommentView comments={comments} />
+          <CommentView comments={comments || []} />
         </div>
 
         <div className="flex items-center space-x-3 mb-4 px-4">
