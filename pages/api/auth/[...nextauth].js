@@ -14,6 +14,12 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
+        // Validate credentials input
+        if (!credentials?.username || !credentials?.password) {
+          throw new Error("Missing username or password.");
+        }
+
+        // Fetch user from database
         const user = await prisma.user.findFirst({
           where: { username: credentials.username },
           include: {
@@ -25,6 +31,7 @@ export const authOptions = {
           throw new Error("User not found.");
         }
 
+        // Verify password
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
           user.password
@@ -33,29 +40,43 @@ export const authOptions = {
           throw new Error("Incorrect password.");
         }
 
-        const sessionUser = {
+        // Return user object to be encoded in the session and JWT
+        return {
           id: user.id,
           username: user.username,
           email: user.email,
           profileImg: user.profile?.profile_img || null, // Include profile image
         };
-
-        return sessionUser;
       },
     }),
   ],
-  session: { strategy: "jwt" },
-  jwt: { secret: process.env.NEXTAUTH_SECRET },
+
+  // Use JWT for sessions
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+
+  // JWT options
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET,
+  },
+
   callbacks: {
+    // Attach user data to the session object
     async session({ session, token }) {
-      session.user = {
-        id: token.id,
-        username: token.username,
-        email: token.email,
-        profileImg: token.profileImg, // Include profile image in session
-      };
+      if (token) {
+        session.user = {
+          id: token.id,
+          username: token.username,
+          email: token.email,
+          profileImg: token.profileImg, // Include profile image in session
+        };
+      }
       return session;
     },
+
+    // Attach user data to the JWT
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
@@ -66,11 +87,17 @@ export const authOptions = {
       return token;
     },
   },
+
   pages: {
-    signIn: "/auth/login",
+    signIn: "/auth/login", // Redirect here for login
+    error: "/auth/error", // Redirect here for errors
   },
+
+  // Use secure secret for signing and encryption
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Enable debug mode to check session-related logs
+
+  // Debugging for development; disable in production
+  debug: process.env.NODE_ENV === "development",
 };
 
 export default NextAuth(authOptions);
