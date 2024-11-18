@@ -216,7 +216,7 @@ export default function Profile() {
         {/* Main Content Area */}
         <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
-            className="z-[10] fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
+            className="z-20 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
             style={{
               width: '655px',
               height: '69px',
@@ -250,6 +250,7 @@ export default function Profile() {
           </div>
 
           {/* PostContainer with padding */}
+          <hr className="z-[60rem] fixed left-0 top-0 w-full flex-grow border-t-[10rem] border-[#F0FDF4]" />
           <div className="pt-[5rem]">
             <PostContainer />
           </div>
