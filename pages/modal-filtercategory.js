@@ -20,21 +20,30 @@ const ModalFilterCategory = ({ isOpen, onClose }) => {
         className="bg-white rounded-[5px] shadow-lg border border-black"
         style={{
           width: '431px',
-          height: '277px',
+          height: 'auto', // Allows the height to adjust dynamically
+          maxHeight: '80vh', // Prevents the modal from exceeding the viewport height
+          overflowY: 'auto', // Adds a scrollbar if the content exceeds the height
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
         }}
       >
-        <div className="p-4">
-          <div className="flex justify-between items-center mb-4">
+        <div className="p-0">
+          <div className="flex justify-between items-center px-4 pt-4">
             <h2 className="text-black font-bold text-[18px]">Select Category</h2>
             <button onClick={onClose} className="text-gray-500 hover:text-black">
               <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
             </button>
           </div>
-          <hr className="border-t border-black mb-1" />
-          <ul className="space-y-2">
-            {['Modern', 'Contemporary', 'Victorian', 'Traditional', 'Bungalow '].map((category) => (
+          {/* Updated to ensure full width */}
+          <hr className="w-full border-t border-black mx-0 mt-2" />
+          <ul className="space-y-2 px-4 py-3">
+            {[
+              'Modern',
+              'Contemporary',
+              'Victorian',
+              'Traditional',
+              'Bungalow',
+            ].map((category) => (
               <li
                 key={category}
                 className="cursor-pointer px-4 py-2 rounded hover:bg-[#F2F4F7] transition-colors duration-200 text-black"

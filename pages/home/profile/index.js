@@ -37,7 +37,7 @@ export default function Profile() {
 
   const handleProfileUpdate = (updatedData) => {
     // Directly update userData in state to reflect changes immediately
-    setUserData(prevData => ({
+    setUserData((prevData) => ({
       ...prevData,
       ...updatedData,
     }));
@@ -45,10 +45,13 @@ export default function Profile() {
 
   const handleImageUpdate = async (type, file) => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
 
     try {
-      const endpoint = type === 'profile' ? '/api/user/uploadProfileImage' : '/api/user/uploadHeaderImage';
+      const endpoint =
+        type === 'profile'
+          ? '/api/user/uploadProfileImage'
+          : '/api/user/uploadHeaderImage';
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -62,9 +65,9 @@ export default function Profile() {
 
       const data = await response.json();
       if (type === 'profile') {
-        setUserData(prevData => ({ ...prevData, profileImg: data.fileUrl }));
+        setUserData((prevData) => ({ ...prevData, profileImg: data.fileUrl }));
       } else {
-        setUserData(prevData => ({ ...prevData, headerImg: data.fileUrl }));
+        setUserData((prevData) => ({ ...prevData, headerImg: data.fileUrl }));
       }
 
       return data.fileUrl; // Return the uploaded image URL
@@ -86,19 +89,28 @@ export default function Profile() {
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
         {/* Profile Sidebar */}
         <div
-          className="bg-white p-6 rounded-[15px] shadow-lg sticky top-8"
+          className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-40 top-8"
           style={{
             width: '318px',
             height: '430px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+            boxShadow:
+              '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
             border: '1px solid #E0E0E0',
           }}
         >
           <div className="flex flex-col items-center">
             {loading ? (
               <>
-                <Skeleton width="100%" height="80px" className="rounded-t-[15px] mb-[-2rem]" />
-                <Skeleton width="96px" height="96px" className="rounded-full border-4 mb-4" />
+                <Skeleton
+                  width="100%"
+                  height="80px"
+                  className="rounded-t-[15px] mb-[-2rem]"
+                />
+                <Skeleton
+                  width="96px"
+                  height="96px"
+                  className="rounded-full border-4 mb-4"
+                />
                 <Skeleton width="150px" height="25px" className="mb-2" />
                 <Skeleton width="100px" height="20px" />
               </>
@@ -107,7 +119,9 @@ export default function Profile() {
                 <div
                   className="w-full bg-cover bg-center rounded-t-[15px] mb-[-2rem]"
                   style={{
-                    backgroundImage: `url(${userData?.headerImg || '/images/headers.png'})`,
+                    backgroundImage: `url(${
+                      userData?.headerImg || '/images/headers.png'
+                    })`,
                     height: '100px',
                     borderRadius: '8px',
                   }}
@@ -131,12 +145,21 @@ export default function Profile() {
                   onChange={(e) => handleImageUpdate('profile', e.target.files[0])}
                 />
 
-                <h2 className="text-[25px] font-bold text-black">{userData?.name}</h2>
-                <p className="text-[#787070] text-[15px]">@{userData?.username}</p>
+                <h2 className="text-[25px] font-bold text-black">
+                  {userData?.name}
+                </h2>
+                <p className="text-[#787070] text-[15px]">
+                  @{userData?.username}
+                </p>
 
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
-                  <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{userData?.posts || 0}</p>
+                  <div
+                    className="flex flex-col items-center"
+                    style={{ minWidth: '80px' }}
+                  >
+                    <p className="font-bold text-[18px] text-black">
+                      {userData?.posts || 0}
+                    </p>
                     <p className="text-[15px] text-[#787070]">Posts</p>
                   </div>
                   <div
@@ -144,7 +167,9 @@ export default function Profile() {
                     style={{ minWidth: '80px' }}
                     onClick={() => setIsFollowerModalOpen(true)}
                   >
-                    <p className="font-bold text-[18px] text-black">{userData?.followers || 0}</p>
+                    <p className="font-bold text-[18px] text-black">
+                      {userData?.followers || 0}
+                    </p>
                     <p className="text-[15px] text-[#787070]">Followers</p>
                   </div>
                   <div
@@ -152,7 +177,9 @@ export default function Profile() {
                     style={{ minWidth: '80px' }}
                     onClick={() => setIsFollowingModalOpen(true)}
                   >
-                    <p className="font-bold text-[18px] text-black">{userData?.following || 0}</p>
+                    <p className="font-bold text-[18px] text-black">
+                      {userData?.following || 0}
+                    </p>
                     <p className="text-[15px] text-[#787070]">Following</p>
                   </div>
                 </div>
@@ -175,19 +202,24 @@ export default function Profile() {
         {/* Main Content Area */}
         <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
-            className="flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
+            className="z-20 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
             style={{
               width: '655px',
               height: '69px',
-              boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
+              boxShadow:
+                '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
+
             <h2 className="text-[25px] font-bold text-black mr-4">My Posts</h2>
+            <hr className="fixed left-0 top-0 w-full flex-grow border-t-[6rem] border-[#00000]"/>
             <div className="flex">
               <button
                 onClick={() => setActiveTab('Posts')}
                 className={`px-4 py-2 font-semibold rounded-l-[5px] transform transition-transform duration-100 ${
-                  activeTab === 'Posts' ? 'bg-[#E4FCDE] text-[#22C55E] scale-105' : 'bg-[#D9D9D9] text-black'
+                  activeTab === 'Posts'
+                    ? 'bg-[#E4FCDE] text-[#22C55E] scale-105'
+                    : 'bg-[#D9D9D9] text-black'
                 }`}
               >
                 Posts
@@ -195,7 +227,9 @@ export default function Profile() {
               <button
                 onClick={() => setActiveTab('Archived')}
                 className={`px-4 py-2 font-semibold rounded-r-[5px] transform transition-transform duration-100 ${
-                  activeTab === 'Archived' ? 'bg-[#E4FCDE] text-[#22C55E] scale-105' : 'bg-[#D9D9D9] text-black'
+                  activeTab === 'Archived'
+                    ? 'bg-[#E4FCDE] text-[#22C55E] scale-105'
+                    : 'bg-[#D9D9D9] text-black'
                 }`}
               >
                 Archived
@@ -203,33 +237,52 @@ export default function Profile() {
             </div>
           </div>
 
-          <PostContainer />
+          {/* PostContainer with padding */}
+          <div className="pt-[5rem]">
+            <PostContainer />
+          </div>
         </div>
 
         {/* Right Sidebar */}
-        <div className="flex flex-col space-y-5 sticky top-8">
+        <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-21">
           <div
             className="bg-white p-4 rounded-[15px] shadow-lg"
             style={{
               width: '316px',
               height: '200px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+              boxShadow:
+                '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
             }}
           >
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-[18px] text-black">Activity</h2>
               <button className="text-[#28B446] text-[15px]">See all</button>
             </div>
-            <hr className="border-t border-black w-full mb-3" style={{ height: '1px' }} />
+            <hr
+              className="border-t border-black w-full mb-3"
+              style={{ height: '1px' }}
+            />
             <ul className="space-y-2 text-black">
               <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
+                <Image
+                  src="/images/user.png"
+                  alt="Notification"
+                  width={32}
+                  height={32}
+                  className="rounded-full mr-2"
+                />
                 <span className="text-[16px]">
                   <strong>Sam</strong> started following you.
                 </span>
               </li>
               <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
+                <Image
+                  src="/images/user.png"
+                  alt="Notification"
+                  width={32}
+                  height={32}
+                  className="rounded-full mr-2"
+                />
                 <span className="text-[16px]">
                   <strong>Alex</strong> liked your post.
                 </span>
@@ -242,14 +295,18 @@ export default function Profile() {
             style={{
               width: '316px',
               height: '288px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+              boxShadow:
+                '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
             }}
           >
             <div className="flex justify-between items-center">
               <h2 className="font-semibold text-[18px] text-black">Communities</h2>
               <button className="text-[#22C55E] text-[15px]">See all</button>
             </div>
-            <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
+            <hr
+              className="border-t border-black w-full mb-3 mt-2"
+              style={{ height: '1px' }}
+            />
             <ul className="space-y-2 text-black">
               <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
                 <span className="text-[16px] font-semibold">p/Cottage</span>
@@ -264,9 +321,7 @@ export default function Profile() {
               </li>
               <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
                 <span className="text-[16px] font-semibold">p/Bungalow</span>
-                <button
-                  className="border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200"
-                >
+                <button className="border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200">
                   Join
                 </button>
               </li>
@@ -276,13 +331,21 @@ export default function Profile() {
       </div>
 
       {/* Modals */}
-      <FollowerModal isOpen={isFollowerModalOpen} onClose={() => setIsFollowerModalOpen(false)} followers={userData?.followers || []} />
-      <FollowingModal isOpen={isFollowingModalOpen} onClose={() => setIsFollowingModalOpen(false)} following={userData?.following || []} />
-      <EditProfileModal 
-        isOpen={isEditProfileModalOpen} 
+      <FollowerModal
+        isOpen={isFollowerModalOpen}
+        onClose={() => setIsFollowerModalOpen(false)}
+        followers={userData?.followers || []}
+      />
+      <FollowingModal
+        isOpen={isFollowingModalOpen}
+        onClose={() => setIsFollowingModalOpen(false)}
+        following={userData?.following || []}
+      />
+      <EditProfileModal
+        isOpen={isEditProfileModalOpen}
         onClose={closeModalAndFetchData} // Automatically refresh data after closing
-        onProfileUpdate={handleProfileUpdate} 
-        currentProfileData={userData} 
+        onProfileUpdate={handleProfileUpdate}
+        currentProfileData={userData}
       />
     </div>
   );
