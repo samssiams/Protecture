@@ -18,6 +18,7 @@ export default function Home() {
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [userPostCount, setUserPostCount] = useState(0); // State for user post count
   const [selectedCategory, setSelectedCategory] = useState(null); // State for the selected category
   const router = useRouter(); // Initialize useRouter
 
@@ -34,9 +35,22 @@ export default function Home() {
     }
   };
 
-  // Fetch user data on component mount
+  // Function to fetch the user's post count
+  const fetchUserPostCount = async () => {
+    try {
+      const response = await axios.get('/api/post/getposts?countOnly=true');
+      if (response.status === 200) {
+        setUserPostCount(response.data.count); // Update the post count state
+      }
+    } catch (error) {
+      console.error('Failed to fetch user post count:', error);
+    }
+  };
+
+  // Fetch user data and post count on component mount
   useEffect(() => {
     fetchUserData();
+    fetchUserPostCount();
   }, []);
 
   // Handlers for opening and closing modals
@@ -118,8 +132,8 @@ export default function Home() {
 
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{userData?.posts || 0}</p>
-                    <p className="text-[15px] text-[#787070]">Post</p>
+                    <p className="font-bold text-[18px] text-black">{userPostCount}</p>
+                    <p className="text-[15px] text-[#787070]">Posts</p>
                   </div>
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
                     <p className="font-bold text-[18px] text-black">{userData?.followers || 0}</p>

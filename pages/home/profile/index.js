@@ -16,6 +16,7 @@ export default function Profile() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [userPostCount, setUserPostCount] = useState(0); // State for post count
 
   // Function to fetch user data from the API
   const fetchUserData = async () => {
@@ -30,13 +31,25 @@ export default function Profile() {
     }
   };
 
-  // Initial fetch of user data
+  // Function to fetch the post count for the logged-in user
+  const fetchUserPostCount = async () => {
+    try {
+      const response = await axios.get('/api/post/getposts?countOnly=true');
+      if (response.status === 200) {
+        setUserPostCount(response.data.count); // Update the post count state
+      }
+    } catch (error) {
+      console.error('Failed to fetch post count:', error);
+    }
+  };
+
+  // Initial fetch of user data and post count
   useEffect(() => {
     fetchUserData();
+    fetchUserPostCount();
   }, []);
 
   const handleProfileUpdate = (updatedData) => {
-    // Directly update userData in state to reflect changes immediately
     setUserData((prevData) => ({
       ...prevData,
       ...updatedData,
@@ -80,6 +93,7 @@ export default function Profile() {
   const closeModalAndFetchData = () => {
     setIsEditProfileModalOpen(false); // Close modal
     fetchUserData(); // Re-fetch user data to ensure the latest updates
+    fetchUserPostCount(); // Re-fetch post count to ensure accurate data
   };
 
   return (
@@ -89,7 +103,7 @@ export default function Profile() {
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
         {/* Profile Sidebar */}
         <div
-          className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-40 top-8"
+          className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-30 top-8"
           style={{
             width: '318px',
             height: '430px',
@@ -158,7 +172,7 @@ export default function Profile() {
                     style={{ minWidth: '80px' }}
                   >
                     <p className="font-bold text-[18px] text-black">
-                      {userData?.posts || 0}
+                      {userPostCount || 0}
                     </p>
                     <p className="text-[15px] text-[#787070]">Posts</p>
                   </div>
@@ -202,7 +216,7 @@ export default function Profile() {
         {/* Main Content Area */}
         <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
-            className="z-20 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
+            className="z-[10] fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
             style={{
               width: '655px',
               height: '69px',
@@ -210,9 +224,7 @@ export default function Profile() {
                 '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
             }}
           >
-
             <h2 className="text-[25px] font-bold text-black mr-4">My Posts</h2>
-            <hr className="fixed left-0 top-0 w-full flex-grow border-t-[6rem] border-[#00000]"/>
             <div className="flex">
               <button
                 onClick={() => setActiveTab('Posts')}
@@ -245,6 +257,7 @@ export default function Profile() {
 
         {/* Right Sidebar */}
         <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-21">
+          {/* Activity Section */}
           <div
             className="bg-white p-4 rounded-[15px] shadow-lg"
             style={{
@@ -258,10 +271,7 @@ export default function Profile() {
               <h2 className="font-semibold text-[18px] text-black">Activity</h2>
               <button className="text-[#28B446] text-[15px]">See all</button>
             </div>
-            <hr
-              className="border-t border-black w-full mb-3"
-              style={{ height: '1px' }}
-            />
+            <hr className="border-t border-black w-full mb-3" style={{ height: '1px' }} />
             <ul className="space-y-2 text-black">
               <li className="flex items-center">
                 <Image
@@ -290,6 +300,7 @@ export default function Profile() {
             </ul>
           </div>
 
+          {/* Community Section */}
           <div
             className="bg-white p-4 rounded-[15px] shadow-lg"
             style={{
@@ -303,10 +314,7 @@ export default function Profile() {
               <h2 className="font-semibold text-[18px] text-black">Communities</h2>
               <button className="text-[#22C55E] text-[15px]">See all</button>
             </div>
-            <hr
-              className="border-t border-black w-full mb-3 mt-2"
-              style={{ height: '1px' }}
-            />
+            <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
             <ul className="space-y-2 text-black">
               <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
                 <span className="text-[16px] font-semibold">p/Cottage</span>

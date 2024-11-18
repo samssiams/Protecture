@@ -17,6 +17,21 @@ export default async function handler(req, res) {
       const userId = session.user.id;
       console.log(`Logged-in user ID: ${userId}`);
 
+      // Check if this is a request for the post count only
+      const { countOnly } = req.query;
+
+      if (countOnly === "true") {
+        console.log("Fetching post count for the logged-in user...");
+
+        // Count the posts created by the logged-in user
+        const postCount = await prisma.post.count({
+          where: { user_id: userId },
+        });
+
+        console.log(`Post count for user ${userId}: ${postCount}`);
+        return res.status(200).json({ count: postCount });
+      }
+
       // Get the current route from the query parameters
       const { currentPath } = req.query;
       let posts;

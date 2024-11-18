@@ -144,8 +144,13 @@ function PostContainer({ selectedCategory }) {
                   {post.user?.profile?.name || post.user?.username}
                 </h3>
                 <span className="text-black text-xs">
-                  {new Date(post.created_at).toLocaleTimeString()}
+                  {new Date(post.created_at).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
                 </span>
+                
               </div>
               <div className="ml-auto">
                 <button onClick={(e) => handleModalToggle(e, post)}>
