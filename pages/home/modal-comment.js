@@ -7,11 +7,24 @@ import { useSession } from "next-auth/react";
 export default function CommentModal({ isOpen, onClose, comments, post }) {
   const [commentText, setCommentText] = useState("");
   const [isPostOwner, setIsPostOwner] = useState(false);
+  const [showSuccessPopover, setShowSuccessPopover] = useState(false);
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
 
   const { data: session } = useSession(); // Fetch session
   const currentUser = session?.user; // Get logged-in user's details
+
+  // Disable scrolling on the body when the modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,8 +89,12 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
 
       if (response.ok) {
         const newComment = await response.json();
-        comments.unshift(newComment);
+        comments.unshift(newComment); // Add new comment to the beginning of the list
         setCommentText("");
+        setShowSuccessPopover(true); // Show success popover
+
+        // Hide success popover after 2 seconds
+        setTimeout(() => setShowSuccessPopover(false), 2000);
       } else {
         const errorData = await response.json();
         console.error("Error submitting comment:", errorData.error);
@@ -120,7 +137,13 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
           )}
         </div>
 
-        <div className="text-center bg-[#2C2B2B] rounded-lg mb-8 relative" style={{ height: "400px" }}>
+        <div
+          className="relative mb-8 rounded-lg overflow-hidden"
+          style={{
+            width: "100%",
+            height: "400px", // Fixed height
+          }}
+        >
           {post?.image_url ? (
             <Image
               src={post.image_url}
@@ -154,7 +177,15 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
 
         <hr className="border-gray-300 w-full mb-8" />
 
-        <CommentView comments={comments} />
+        {/* Scrollable Comments with Custom Scrollbar */}
+        <div
+          className="overflow-y-auto max-h-[200px] px-4 custom-scrollbar"
+          style={{
+            scrollbarWidth: "thin", // Firefox support
+          }}
+        >
+          <CommentView comments={comments} />
+        </div>
 
         <div className="flex items-center space-x-3 mb-4 px-4">
           <Image
@@ -179,15 +210,42 @@ export default function CommentModal({ isOpen, onClose, comments, post }) {
                 outline: "none",
               }}
             />
-            <button
-              onClick={handleCommentSubmit}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 focus:outline-none"
-            >
-              <Image src="/svg/addcomment.svg" alt="Add Comment" width={22} height={22} />
-            </button>
+            <motion.div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
+              <motion.button
+                onClick={handleCommentSubmit}
+                whileHover={{ scale: 1.1 }}
+                className="focus:outline-none"
+              >
+                <Image src="/svg/addcomment.svg" alt="Add Comment" width={22} height={22} />
+              </motion.button>
+              {showSuccessPopover && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute bottom-[150%] right-0 bg-black text-white text-xs font-medium px-2 py-1 rounded shadow-md"
+                >
+                  Comment added!
+                </motion.div>
+              )}
+            </motion.div>
           </div>
         </div>
       </motion.div>
+
+      {/* Custom scrollbar styling */}
+      <style jsx>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px; /* Width of the scrollbar */
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #555; /* Scrollbar thumb color */
+          border-radius: 4px; /* Rounded corners */
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #333; /* Scrollbar track color */
+        }
+      `}</style>
     </div>
   );
 }

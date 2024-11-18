@@ -10,6 +10,7 @@ import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 import Chatbot from '../components/ui/chatbot'; // Import the Chatbot component
+import { useRouter } from 'next/router'; // Import useRouter
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
@@ -17,6 +18,8 @@ export default function Home() {
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null); // State for the selected category
+  const router = useRouter(); // Initialize useRouter
 
   // Function to fetch user data from the API
   const fetchUserData = async () => {
@@ -44,11 +47,27 @@ export default function Home() {
   const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
   const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
 
+  // Handler to set the selected category from the filter modal
+  const handleCategorySelect = (category) => {
+    setSelectedCategory(category);
+    closeFilterModal();
+  };
+
+  // Handler to refresh the page and reset selected category
+  const refreshHomePage = () => {
+    setSelectedCategory(null);
+    router.reload(); // Force the page to reload
+  };
+
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
-      {<Navbar/>}
+      <Navbar>
+        {/* Add Home link with refresh functionality */}
+        <button onClick={refreshHomePage} className="text-black font-bold text-lg">Home</button>
+      </Navbar>
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
+        {/* Left Sidebar */}
         <div
           className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-40 top-8"
           style={{
@@ -128,6 +147,7 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Main Content */}
         <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
             className="fixed w-[41rem] z-40 flex bg-white p-4 rounded-[15px] shadow-lg cursor-pointer"
@@ -161,7 +181,7 @@ export default function Home() {
           </div>
 
           <div className="pt-[9rem] flex items-center mt-5 mb-[43px] relative">
-            <hr className="fixed left-0 top-0 w-full z-10 flex-grow border-t-[15.5rem] border-[#F0FDF4]"/>
+            <hr className="fixed left-0 top-0 w-full z-10 flex-grow border-t-[15.5rem] border-[#F0FDF4]" />
             <hr className="fixed top-[220px] z-40 w-[30rem] flex-grow border-[.5] border-[#000000]" />
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }}
@@ -183,15 +203,18 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <Skeleton width="100%" height="300px" className="rounded-lg" />
+            <div className="text-center mt-10 text-[#22C55E] font-bold text-lg">
+              Loading posts...
+            </div>
           ) : (
-            <PostContainer />
+            <PostContainer selectedCategory={selectedCategory} />
           )}
         </div>
 
+        {/* Right Sidebar */}
         <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-8">
           <div
-            className=" mt-14 bg-white p-4 rounded-[15px] shadow-lg"
+            className="mt-14 bg-white p-4 rounded-[15px] shadow-lg"
             style={{
               width: '316px',
               height: '200px',
@@ -270,10 +293,12 @@ export default function Home() {
       </div>
 
       <CreatePostModal isOpen={isModalOpen} onClose={closeModal} userData={userData} />
-      <ModalFilterCategory isOpen={isFilterModalOpen} onClose={closeFilterModal} />
+      <ModalFilterCategory
+        isOpen={isFilterModalOpen}
+        onClose={closeFilterModal}
+        onCategorySelect={handleCategorySelect}
+      />
       <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
-      
-      {/* Add Chatbot Component */}
       <Chatbot />
     </div>
   );

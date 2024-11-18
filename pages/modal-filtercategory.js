@@ -1,10 +1,22 @@
-// modal-filtercategory.js
 import React from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 
-const ModalFilterCategory = ({ isOpen, onClose }) => {
+const ModalFilterCategory = ({ isOpen, onClose, onCategorySelect }) => {
   if (!isOpen) return null;
+
+  const categories = [
+    'Modern',
+    'Contemporary',
+    'Victorian',
+    'Traditional',
+    'Bungalow',
+  ];
+
+  const handleCategoryClick = (category) => {
+    onCategorySelect(category); // Notify parent of selected category
+    onClose(); // Close the modal
+  };
 
   return (
     <div
@@ -20,9 +32,9 @@ const ModalFilterCategory = ({ isOpen, onClose }) => {
         className="bg-white rounded-[5px] shadow-lg border border-black"
         style={{
           width: '431px',
-          height: 'auto', // Allows the height to adjust dynamically
-          maxHeight: '80vh', // Prevents the modal from exceeding the viewport height
-          overflowY: 'auto', // Adds a scrollbar if the content exceeds the height
+          height: 'auto',
+          maxHeight: '80vh',
+          overflowY: 'auto',
           boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
         }}
@@ -34,19 +46,13 @@ const ModalFilterCategory = ({ isOpen, onClose }) => {
               <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
             </button>
           </div>
-          {/* Updated to ensure full width */}
           <hr className="w-full border-t border-black mx-0 mt-2" />
           <ul className="space-y-2 px-4 py-3">
-            {[
-              'Modern',
-              'Contemporary',
-              'Victorian',
-              'Traditional',
-              'Bungalow',
-            ].map((category) => (
+            {categories.map((category) => (
               <li
                 key={category}
                 className="cursor-pointer px-4 py-2 rounded hover:bg-[#F2F4F7] transition-colors duration-200 text-black"
+                onClick={() => handleCategoryClick(category)}
               >
                 {category}
               </li>

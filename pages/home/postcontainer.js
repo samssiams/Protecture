@@ -4,7 +4,7 @@ import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import { useRouter } from "next/router";
 
-function PostContainer() {
+function PostContainer({ selectedCategory }) {
   const [posts, setPosts] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
@@ -13,7 +13,6 @@ function PostContainer() {
   const [votedPosts, setVotedPosts] = useState({}); // Track upvote/downvote state
   const router = useRouter();
 
-  
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -107,13 +106,18 @@ function PostContainer() {
     }
   };
 
-  if (!posts.length) {
-    return <div>Loading...</div>;
+  // Filter posts by selected category, if a category is selected
+  const filteredPosts = selectedCategory
+    ? posts.filter((post) => post.category_id === selectedCategory)
+    : posts;
+
+  if (!filteredPosts.length) {
+    return <div>No posts available</div>;
   }
 
   return (
     <div>
-      {posts.map((post) => {
+      {filteredPosts.map((post) => {
         const voteState = votedPosts[post.id];
 
         return (
@@ -233,9 +237,13 @@ function PostContainer() {
                 onClose={closeCommentModal}
                 comments={post.comments}
                 post={selectedPost}
-                userData={{
-                  profileImg: post.user?.profile?.profile_img || "/images/default-profile.png",
-                }}
+                updateComments={(newComments) =>
+                  setPosts((prevPosts) =>
+                    prevPosts.map((p) =>
+                      p.id === post.id ? { ...p, comments: newComments } : p
+                    )
+                  )
+                }
               />
             )}
 
