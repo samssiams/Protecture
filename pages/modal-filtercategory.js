@@ -6,6 +6,7 @@ const ModalFilterCategory = ({ isOpen, onClose, onCategorySelect }) => {
   if (!isOpen) return null;
 
   const categories = [
+    'View all',
     'Modern',
     'Contemporary',
     'Victorian',
@@ -14,7 +15,9 @@ const ModalFilterCategory = ({ isOpen, onClose, onCategorySelect }) => {
   ];
 
   const handleCategoryClick = (category) => {
-    onCategorySelect(category); // Notify parent of selected category
+    // Pass `null` to the parent if "View all" is clicked, otherwise pass the category name
+    const selectedCategory = category === 'View all' ? null : category;
+    onCategorySelect(selectedCategory); // Notify parent of the selected category
     onClose(); // Close the modal
   };
 

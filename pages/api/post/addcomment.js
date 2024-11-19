@@ -5,40 +5,39 @@ import { authOptions } from "../auth/[...nextauth]";
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  console.log("Handler invoked.");
+  console.log("[INFO] Handler invoked.");
 
   if (req.method !== "POST") {
-    console.log("Invalid method. Only POST allowed.");
+    console.error("[ERROR] Invalid method. Only POST allowed.");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { postId, commentText } = req.body;
-  console.log("Request body:", req.body);
+  console.log("[INFO] Request body:", req.body);
 
-  if (!postId || !commentText) {
-    console.log("Missing postId or commentText.");
+  if (!postId || !commentText.trim()) {
+    console.error("[ERROR] Missing postId or commentText.");
     return res.status(400).json({ error: "Post ID and comment text are required" });
   }
 
   try {
-    console.log("Attempting to fetch session...");
+    console.log("[INFO] Attempting to fetch session...");
     const session = await getServerSession(req, res, authOptions);
-    console.log("Session fetched:", session);
 
     if (!session || !session.user) {
-      console.log("Unauthorized access. No session or user found.");
+      console.error("[ERROR] Unauthorized access. No session or user found.");
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const userId = session.user.id;
-    console.log("User ID:", userId);
+    console.log("[INFO] User ID:", userId);
 
-    console.log("Attempting to create a new comment...");
+    console.log("[INFO] Attempting to create a new comment...");
     const newComment = await prisma.comment.create({
       data: {
-        post_id: postId,
+        post_id: parseInt(postId),
         user_id: userId,
-        comment_text: commentText,
+        comment_text: commentText.trim(),
       },
       include: {
         user: {
@@ -53,12 +52,37 @@ export default async function handler(req, res) {
         },
       },
     });
-    console.log("New comment created:", newComment);
 
-    console.log("Returning success response...");
-    return res.status(201).json(newComment);
+    console.log("[INFO] New comment created:", newComment);
+
+    // Construct full profile image URL if the user has one
+    const profileImageUrl = newComment.user?.profile?.profile_img
+      ? `/uploads/${newComment.user.profile.profile_img}` // Adjust to your upload path
+      : "/images/default-avatar.png"; // Default image
+
+    const responseComment = {
+      id: newComment.id,
+      text: newComment.comment_text,
+      user: {
+        username: newComment.user?.username || "Anonymous",
+        profile_img: profileImageUrl,
+      },
+      timestamp: new Date(),
+    };
+
+    console.log("[INFO] Returning response comment structure:", responseComment);
+    return res.status(201).json(responseComment);
   } catch (error) {
-    console.error("Error adding comment:", error);
+    console.error("[ERROR] Error adding comment:", error);
+
+    // Enhance error handling for Prisma errors
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
     return res.status(500).json({ error: "Internal server error" });
+  } finally {
+    console.log("[INFO] Disconnecting Prisma...");
+    await prisma.$disconnect();
   }
 }

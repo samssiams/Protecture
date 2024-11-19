@@ -2,7 +2,6 @@ import React from "react";
 import Image from "next/image";
 
 const CommentView = ({ comments = [] }) => {
-  // Format the time to local date and display it in "hh:mm AM/PM" format
   const formatTime = (timestamp) => {
     if (!timestamp) return "Unknown time";
     const date = new Date(timestamp);
@@ -15,7 +14,7 @@ const CommentView = ({ comments = [] }) => {
   };
 
   return (
-    <div className="overflow-y-auto max-h-[300px] px-4">
+    <div className="custom-scrollbar">
       {Array.isArray(comments) && comments.length > 0 ? (
         comments.map((comment, index) => (
           <div key={index} className="flex items-start mb-4">
@@ -27,9 +26,7 @@ const CommentView = ({ comments = [] }) => {
               className="rounded-full"
             />
             <div className="ml-3">
-              <div
-                className="w-fit flex flex-col gap-0 rounded-[5px] bg-[#F4F3F3] border border-[#787070] px-2 py-2"
-              >
+              <div className="w-fit flex flex-col gap-0 rounded-[5px] bg-[#F4F3F3] border border-[#787070] px-2 py-2">
                 <span className="text-black text-[14px] font-semibold block">
                   {comment?.username || "Anonymous"}
                 </span>

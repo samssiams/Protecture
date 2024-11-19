@@ -4,15 +4,44 @@ import { motion } from "framer-motion";
 import CommentView from "../home/commentview";
 import { useSession } from "next-auth/react";
 
-export default function CommentModal({ isOpen, onClose, comments = [], post }) {
+export default function CommentModal({
+  isOpen,
+  onClose,
+  comments = [],
+  post,
+  setCommentSubmitted, // Added prop to notify the parent when a comment is successfully submitted
+}) {
   const [commentText, setCommentText] = useState("");
   const [isPostOwner, setIsPostOwner] = useState(false);
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
+  const [updatedComments, setUpdatedComments] = useState(comments); // State to hold updated comments
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
 
   const { data: session } = useSession(); // Fetch session
   const currentUser = session?.user; // Get logged-in user's details
+
+  // Function to fetch comments from the API
+  const fetchComments = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/post/getcomments?postId=${post?.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUpdatedComments(data); // Update the comments state
+      } else {
+        console.error("Failed to fetch comments");
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  }, [post?.id]);
+
+  // Fetch comments when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchComments();
+    }
+  }, [isOpen, fetchComments]);
 
   // Disable scrolling on the body when the modal is open
   useEffect(() => {
@@ -33,7 +62,7 @@ export default function CommentModal({ isOpen, onClose, comments = [], post }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ postId: post.id }),
+        body: JSON.stringify({ postId: post?.id }),
       });
 
       const data = await response.json();
@@ -92,9 +121,15 @@ export default function CommentModal({ isOpen, onClose, comments = [], post }) {
 
       if (response.ok) {
         const newComment = await response.json();
-        comments.unshift(newComment); // Add new comment to the beginning of the list
-        setCommentText("");
+        setUpdatedComments((prevComments) => [newComment, ...prevComments]); // Add the new comment to the top
+        setCommentText(""); // Clear the input field
         setShowSuccessPopover(true); // Show success popover
+        fetchComments(); // Reload comments dynamically
+
+        // Notify the parent that a comment was successfully submitted
+        if (setCommentSubmitted) {
+          setCommentSubmitted(true);
+        }
 
         // Hide success popover after 2 seconds
         setTimeout(() => setShowSuccessPopover(false), 2000);
@@ -174,7 +209,7 @@ export default function CommentModal({ isOpen, onClose, comments = [], post }) {
             <button>
               <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
             </button>
-            <span className="text-black">{comments?.length || 0}</span>
+            <span className="text-black">{updatedComments?.length || 0}</span>
           </div>
         </div>
 
@@ -182,12 +217,13 @@ export default function CommentModal({ isOpen, onClose, comments = [], post }) {
 
         {/* Scrollable Comments with Custom Scrollbar */}
         <div
-          className="overflow-y-auto max-h-[200px] px-4 custom-scrollbar"
+          className="custom-scrollbar px-4"
           style={{
-            scrollbarWidth: "thin", // Firefox support
+            maxHeight: updatedComments.length >= 2 ? "200px" : "auto", // Add scroll if 2 or more comments
+            overflowY: updatedComments.length >= 2 ? "auto" : "visible",
           }}
         >
-          <CommentView comments={comments || []} />
+          <CommentView comments={updatedComments || []} />
         </div>
 
         <div className="flex items-center space-x-3 mb-4 px-4">
@@ -238,15 +274,18 @@ export default function CommentModal({ isOpen, onClose, comments = [], post }) {
 
       {/* Custom scrollbar styling */}
       <style jsx>{`
+        .custom-scrollbar {
+          scrollbar-width: thin; /* For Firefox */
+        }
         .custom-scrollbar::-webkit-scrollbar {
-          width: 8px; /* Width of the scrollbar */
+          width: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #555; /* Scrollbar thumb color */
-          border-radius: 4px; /* Rounded corners */
+          background: #555;
+          border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #333; /* Scrollbar track color */
+          background: #f0f0f0;
         }
       `}</style>
     </div>

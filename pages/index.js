@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import CreatePostModal from './modal-createpost';
 import ModalFilterCategory from './modal-filtercategory';
 import CreateCommunityModal from './modal-createcommunity';
+import CommentModal from './home/modal-comment'; // Correct import for CommentModal
 import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
@@ -16,10 +17,14 @@ export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
+  const [isCommentModalOpen, setCommentModalOpen] = useState(false); // Add state for Comment Modal
+  const [currentPost, setCurrentPost] = useState(null); // State to hold the current post for the modal
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [userPostCount, setUserPostCount] = useState(0); // State for user post count
   const [selectedCategory, setSelectedCategory] = useState(null); // State for the selected category
+  const [selectedCategoryName, setSelectedCategoryName] = useState('Filter Category');
+  const [commentSubmitted, setCommentSubmitted] = useState(false); // Track if a comment was successfully submitted
   const router = useRouter(); // Initialize useRouter
 
   // Function to fetch user data from the API
@@ -53,6 +58,27 @@ export default function Home() {
     fetchUserPostCount();
   }, []);
 
+  // Check for postId in the query to open modal-comment
+  useEffect(() => {
+    const { postId } = router.query;
+
+    if (postId) {
+      const fetchPostDetails = async () => {
+        try {
+          const response = await axios.get(`/api/post/getpost?postId=${postId}`);
+          if (response.status === 200) {
+            setCurrentPost(response.data); // Set the current post
+            setCommentModalOpen(true); // Open the modal-comment
+          }
+        } catch (error) {
+          console.error("Failed to fetch post details:", error);
+        }
+      };
+
+      fetchPostDetails();
+    }
+  }, [router.query]);
+
   // Handlers for opening and closing modals
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
@@ -61,16 +87,32 @@ export default function Home() {
   const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
   const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
 
+  // Close Comment Modal
+  const closeCommentModal = () => {
+    setCommentModalOpen(false);
+    setCurrentPost(null);
+
+    // Reload the page only if a comment was successfully submitted
+    if (commentSubmitted) {
+      fetchUserPostCount(); // Update post count
+      window.location.reload(); // Force reload to get new comments
+      setCommentSubmitted(false); // Reset the state
+    }
+
+    router.push('/', undefined, { shallow: true }); // Remove postId from the query
+  };
+
   // Handler to set the selected category from the filter modal
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
+    setSelectedCategoryName(category ? category : 'Filter Category');
     closeFilterModal();
   };
 
   // Handler to refresh the page and reset selected category
   const refreshHomePage = () => {
     setSelectedCategory(null);
-    router.reload(); // Force the page to reload
+    window.location.reload(); // Force the page to reload
   };
 
   return (
@@ -200,19 +242,32 @@ export default function Home() {
             <motion.button
               whileHover={{ scale: 1.05, backgroundColor: '#E0E7FF' }}
               whileTap={{ scale: 0.95 }}
-              className="fixed top-[207px] right-[609px] z-40 ml-3 flex items-center justify-center text-[#787070] text-[13px] font-medium rounded-[4px]"
+              className="fixed top-[207px] right-[609px] z-40 ml-3 flex items-center justify-between text-[#787070] text-[13px] font-medium rounded-[4px]"
               style={{
                 width: '170px',
                 height: '30px',
                 border: '1px solid #787070',
                 backgroundColor: '#F4F3F3',
                 borderRadius: '4px',
+                padding: '0 10px', // Padding for space between text and icons
               }}
               onClick={openFilterModal}
             >
-              <Image src="/svg/filter.svg" alt="Filter Icon" width={16} height={16} className="mr-2" />
-              Filter Category
-              <Image src="/svg/downfilter.svg" alt="Down Arrow Icon" width={12} height={12} className="ml-2" />
+              {/* Left Icon */}
+              <Image src="/svg/filter.svg" alt="Filter Icon" width={16} height={16} />
+
+              {/* Dynamic Text */}
+              <span
+                style={{
+                  flex: 1, // Make the text take up the remaining space
+                  textAlign: 'center', // Center text between the icons
+                }}
+              >
+                {selectedCategoryName} {/* Dynamically display the category */}
+              </span>
+
+              {/* Right Icon */}
+              <Image src="/svg/downfilter.svg" alt="Down Arrow Icon" width={12} height={12} />
             </motion.button>
           </div>
 
@@ -313,6 +368,12 @@ export default function Home() {
         onCategorySelect={handleCategorySelect}
       />
       <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
+      <CommentModal
+        isOpen={isCommentModalOpen}
+        onClose={closeCommentModal}
+        post={currentPost} // Pass the current post to the CommentModal
+        setCommentSubmitted={setCommentSubmitted} // Pass down state setter
+      />
       <Chatbot />
     </div>
   );
