@@ -6,33 +6,34 @@ import { useState, useEffect } from 'react';
 import CreatePostModal from './modal-createpost';
 import ModalFilterCategory from './modal-filtercategory';
 import CreateCommunityModal from './modal-createcommunity';
-import CommentModal from './home/modal-comment'; // Correct import for CommentModal
+import CommentModal from './home/modal-comment';
 import Skeleton from '../components/ui/skeleton';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import Chatbot from '../components/ui/chatbot'; // Import the Chatbot component
-import { useRouter } from 'next/router'; // Import useRouter
+import Chatbot from '../components/ui/chatbot';
+import { useRouter } from 'next/router';
+import NotificationSidebar from './notification'; // Import the Notification Sidebar
+import CommunitySidebar from './communities'; // Import the Communities Sidebar
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isFilterModalOpen, setFilterModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
-  const [isCommentModalOpen, setCommentModalOpen] = useState(false); // Add state for Comment Modal
-  const [currentPost, setCurrentPost] = useState(null); // State to hold the current post for the modal
+  const [isCommentModalOpen, setCommentModalOpen] = useState(false);
+  const [currentPost, setCurrentPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  const [userPostCount, setUserPostCount] = useState(0); // State for user post count
-  const [selectedCategory, setSelectedCategory] = useState(null); // State for the selected category
+  const [userPostCount, setUserPostCount] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedCategoryName, setSelectedCategoryName] = useState('Filter Category');
-  const [commentSubmitted, setCommentSubmitted] = useState(false); // Track if a comment was successfully submitted
-  const router = useRouter(); // Initialize useRouter
+  const [commentSubmitted, setCommentSubmitted] = useState(false);
+  const router = useRouter();
 
-  // Function to fetch user data from the API
   const fetchUserData = async () => {
     setLoading(true);
     try {
       const response = await axios.get('/api/user/profile');
-      setUserData(response.data); // Store user data
+      setUserData(response.data);
     } catch (error) {
       console.error('Failed to fetch user data:', error);
     } finally {
@@ -40,25 +41,22 @@ export default function Home() {
     }
   };
 
-  // Function to fetch the user's post count
   const fetchUserPostCount = async () => {
     try {
       const response = await axios.get('/api/post/getposts?countOnly=true');
       if (response.status === 200) {
-        setUserPostCount(response.data.count); // Update the post count state
+        setUserPostCount(response.data.count);
       }
     } catch (error) {
       console.error('Failed to fetch user post count:', error);
     }
   };
 
-  // Fetch user data and post count on component mount
   useEffect(() => {
     fetchUserData();
     fetchUserPostCount();
   }, []);
 
-  // Check for postId in the query to open modal-comment
   useEffect(() => {
     const { postId } = router.query;
 
@@ -67,8 +65,8 @@ export default function Home() {
         try {
           const response = await axios.get(`/api/post/getpost?postId=${postId}`);
           if (response.status === 200) {
-            setCurrentPost(response.data); // Set the current post
-            setCommentModalOpen(true); // Open the modal-comment
+            setCurrentPost(response.data);
+            setCommentModalOpen(true);
           }
         } catch (error) {
           console.error("Failed to fetch post details:", error);
@@ -79,7 +77,6 @@ export default function Home() {
     }
   }, [router.query]);
 
-  // Handlers for opening and closing modals
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
   const openFilterModal = () => setFilterModalOpen(true);
@@ -87,38 +84,33 @@ export default function Home() {
   const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
   const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
 
-  // Close Comment Modal
   const closeCommentModal = () => {
     setCommentModalOpen(false);
     setCurrentPost(null);
 
-    // Reload the page only if a comment was successfully submitted
     if (commentSubmitted) {
-      fetchUserPostCount(); // Update post count
-      window.location.reload(); // Force reload to get new comments
-      setCommentSubmitted(false); // Reset the state
+      fetchUserPostCount();
+      window.location.reload();
+      setCommentSubmitted(false);
     }
 
-    router.push('/', undefined, { shallow: true }); // Remove postId from the query
+    router.push('/', undefined, { shallow: true });
   };
 
-  // Handler to set the selected category from the filter modal
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setSelectedCategoryName(category ? category : 'Filter Category');
     closeFilterModal();
   };
 
-  // Handler to refresh the page and reset selected category
   const refreshHomePage = () => {
     setSelectedCategory(null);
-    window.location.reload(); // Force the page to reload
+    window.location.reload();
   };
 
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar>
-        {/* Add Home link with refresh functionality */}
         <button onClick={refreshHomePage} className="text-black font-bold text-lg">Home</button>
       </Navbar>
 
@@ -249,116 +241,33 @@ export default function Home() {
                 border: '1px solid #787070',
                 backgroundColor: '#F4F3F3',
                 borderRadius: '4px',
-                padding: '0 10px', // Padding for space between text and icons
+                padding: '0 10px',
               }}
               onClick={openFilterModal}
             >
-              {/* Left Icon */}
               <Image src="/svg/filter.svg" alt="Filter Icon" width={16} height={16} />
-
-              {/* Dynamic Text */}
               <span
                 style={{
-                  flex: 1, // Make the text take up the remaining space
-                  textAlign: 'center', // Center text between the icons
+                  flex: 1,
+                  textAlign: 'center',
                 }}
               >
-                {selectedCategoryName} {/* Dynamically display the category */}
+                {selectedCategoryName}
               </span>
-
-              {/* Right Icon */}
               <Image src="/svg/downfilter.svg" alt="Down Arrow Icon" width={12} height={12} />
             </motion.button>
           </div>
 
           {loading ? (
-            <div className="text-center mt-10 text-[#22C55E] font-bold text-lg">
-              Loading posts...
-            </div>
+            <div className="text-center mt-10 text-[#22C55E] font-bold text-lg">Loading posts...</div>
           ) : (
             <PostContainer selectedCategory={selectedCategory} />
           )}
         </div>
 
         {/* Right Sidebar */}
-        <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-8">
-          <div
-            className="mt-14 bg-white p-4 rounded-[15px] shadow-lg"
-            style={{
-              width: '316px',
-              height: '200px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-[18px] text-black">Activity</h2>
-              <button className="text-[#28B446] text-[15px]">See all</button>
-            </div>
-            <hr className="border-t border-black w-full mb-3" style={{ height: '1px' }} />
-            <ul className="space-y-2 text-black">
-              <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
-                <span className="text-[16px]">
-                  <strong>Sam</strong> started following you.
-                </span>
-              </li>
-              <li className="flex items-center">
-                <Image src="/images/user.png" alt="Notification" width={32} height={32} className="rounded-full mr-2" />
-                <span className="text-[16px]">
-                  <strong>Alex</strong> liked your post.
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          <div
-            className="bg-white p-4 rounded-[15px] shadow-lg"
-            style={{
-              width: '316px',
-              height: '288px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold text-[18px] text-black">Communities</h2>
-              <button className="text-[#22C55E] text-[15px]" onClick={openCreateCommunityModal}>
-                See all
-              </button>
-            </div>
-            <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
-            <div
-              className="flex items-center mb-3 hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200 cursor-pointer"
-              style={{ width: '100%' }}
-              onClick={openCreateCommunityModal}
-            >
-              <Image src="/svg/add.svg" alt="Add Community" width={14} height={14} className="mr-2" style={{ marginLeft: '-5px' }} />
-              <span className="text-black text-[17px] font-light">
-                Create a community
-              </span>
-            </div>
-            <ul className="space-y-2 text-black">
-              <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200" style={{ width: '100%' }}>
-                <span className="text-[16px] font-semibold">p/Cottage</span>
-                <button
-                  className="bg-[#22C55E] text-white font-semibold text-[13px] px-3 py-1 rounded-[6px]"
-                  style={{
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  Enter
-                </button>
-              </li>
-              <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-3 py-1 transition-colors duration-200" style={{ width: '100%' }}>
-                <span className="text-[16px] font-semibold">p/Bungalow</span>
-                <button
-                  className="border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200"
-                >
-                  Join
-                </button>
-              </li>
-            </ul>
-          </div>
-        </div>
+        <NotificationSidebar openCreateCommunityModal={openCreateCommunityModal} />
+        <CommunitySidebar openCreateCommunityModal={openCreateCommunityModal} />
       </div>
 
       <CreatePostModal isOpen={isModalOpen} onClose={closeModal} userData={userData} />
@@ -371,8 +280,8 @@ export default function Home() {
       <CommentModal
         isOpen={isCommentModalOpen}
         onClose={closeCommentModal}
-        post={currentPost} // Pass the current post to the CommentModal
-        setCommentSubmitted={setCommentSubmitted} // Pass down state setter
+        post={currentPost}
+        setCommentSubmitted={setCommentSubmitted}
       />
       <Chatbot />
     </div>

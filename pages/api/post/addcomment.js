@@ -17,7 +17,9 @@ export default async function handler(req, res) {
 
   if (!postId || !commentText.trim()) {
     console.error("[ERROR] Missing postId or commentText.");
-    return res.status(400).json({ error: "Post ID and comment text are required" });
+    return res
+      .status(400)
+      .json({ error: "Post ID and comment text are required" });
   }
 
   try {
@@ -38,6 +40,7 @@ export default async function handler(req, res) {
         post_id: parseInt(postId),
         user_id: userId,
         comment_text: commentText.trim(),
+        edited: false, // Newly created comments should have `edited` set to false
       },
       include: {
         user: {
@@ -67,7 +70,8 @@ export default async function handler(req, res) {
         username: newComment.user?.username || "Anonymous",
         profile_img: profileImageUrl,
       },
-      timestamp: new Date(),
+      timestamp: newComment.created_at,
+      edited: newComment.edited, // Include the edited field in the response
     };
 
     console.log("[INFO] Returning response comment structure:", responseComment);

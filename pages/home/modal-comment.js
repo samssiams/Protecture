@@ -9,25 +9,25 @@ export default function CommentModal({
   onClose,
   comments = [],
   post,
-  setCommentSubmitted, // Added prop to notify the parent when a comment is successfully submitted
+  setCommentSubmitted,
 }) {
   const [commentText, setCommentText] = useState("");
+  const [editingCommentId, setEditingCommentId] = useState(null); // Track the editing state
   const [isPostOwner, setIsPostOwner] = useState(false);
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
   const [updatedComments, setUpdatedComments] = useState(comments); // State to hold updated comments
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
 
-  const { data: session } = useSession(); // Fetch session
-  const currentUser = session?.user; // Get logged-in user's details
+  const { data: session } = useSession();
+  const currentUser = session?.user;
 
-  // Function to fetch comments from the API
   const fetchComments = useCallback(async () => {
     try {
       const response = await fetch(`/api/post/getcomments?postId=${post?.id}`);
       if (response.ok) {
         const data = await response.json();
-        setUpdatedComments(data); // Update the comments state
+        setUpdatedComments(data);
       } else {
         console.error("Failed to fetch comments");
       }
@@ -36,14 +36,12 @@ export default function CommentModal({
     }
   }, [post?.id]);
 
-  // Fetch comments when the modal opens
   useEffect(() => {
     if (isOpen) {
       fetchComments();
     }
   }, [isOpen, fetchComments]);
 
-  // Disable scrolling on the body when the modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -105,33 +103,50 @@ export default function CommentModal({
   };
 
   const handleCommentSubmit = async () => {
-    if (!commentText) return;
+    if (!commentText.trim()) return;
 
     try {
-      const response = await fetch("/api/post/addcomment", {
-        method: "POST",
+      const url = editingCommentId
+        ? "/api/post/editcomment"
+        : "/api/post/addcomment";
+      const method = editingCommentId ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           postId: post?.id,
-          commentText,
+          commentText: commentText.trim(),
+          commentId: editingCommentId, // Only for editing
         }),
       });
 
       if (response.ok) {
-        const newComment = await response.json();
-        setUpdatedComments((prevComments) => [newComment, ...prevComments]); // Add the new comment to the top
-        setCommentText(""); // Clear the input field
-        setShowSuccessPopover(true); // Show success popover
-        fetchComments(); // Reload comments dynamically
+        const updatedComment = await response.json();
+        if (editingCommentId) {
+          // Update the edited comment
+          setUpdatedComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.id === updatedComment.id ? updatedComment : comment
+            )
+          );
+        } else {
+          // Add a new comment
+          setUpdatedComments((prevComments) => [
+            updatedComment,
+            ...prevComments,
+          ]);
+        }
+        setCommentText("");
+        setEditingCommentId(null); // Reset editing state
+        setShowSuccessPopover(true);
 
-        // Notify the parent that a comment was successfully submitted
         if (setCommentSubmitted) {
           setCommentSubmitted(true);
         }
 
-        // Hide success popover after 2 seconds
         setTimeout(() => setShowSuccessPopover(false), 2000);
       } else {
         const errorData = await response.json();
@@ -140,6 +155,34 @@ export default function CommentModal({
     } catch (error) {
       console.error("Error submitting comment:", error);
     }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      const response = await fetch("/api/post/deletecomment", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ commentId }),
+      });
+
+      if (response.ok) {
+        setUpdatedComments((prevComments) =>
+          prevComments.filter((comment) => comment.id !== commentId)
+        );
+      } else {
+        console.error("Error deleting comment:", await response.json());
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
+  const handleEditComment = (comment) => {
+    setCommentText(comment.text); // Populate the input field with the comment text
+    setEditingCommentId(comment.id); // Track the comment being edited
+    commentInputRef.current?.focus(); // Focus the input field
   };
 
   const handleImageDownload = () => {
@@ -156,7 +199,8 @@ export default function CommentModal({
           borderRadius: "5px",
           overflow: "hidden",
           border: "2px solid black",
-          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+          boxShadow:
+            "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
         }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -179,7 +223,7 @@ export default function CommentModal({
           className="relative mb-8 rounded-lg overflow-hidden"
           style={{
             width: "100%",
-            height: "400px", // Fixed height
+            height: "400px",
           }}
         >
           {post?.image_url ? (
@@ -191,23 +235,40 @@ export default function CommentModal({
               className="rounded-lg"
             />
           ) : (
-            <span className="text-white text-xl font-bold italic">Uploaded Image</span>
+            <span className="text-white text-xl font-bold italic">
+              Uploaded Image
+            </span>
           )}
         </div>
 
         <div className="flex justify-between items-center mb-8 px-4">
           <div className="flex items-center space-x-2">
             <button>
-              <Image src="/svg/downvote.svg" alt="Downvote" width={21} height={21} />
+              <Image
+                src="/svg/downvote.svg"
+                alt="Downvote"
+                width={21}
+                height={21}
+              />
             </button>
             <span className="text-black">{post?.counter || 0}</span>
             <button>
-              <Image src="/svg/upvote.svg" alt="Upvote" width={21} height={21} />
+              <Image
+                src="/svg/upvote.svg"
+                alt="Upvote"
+                width={21}
+                height={21}
+              />
             </button>
           </div>
           <div className="flex items-center space-x-2">
             <button>
-              <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+              <Image
+                src="/svg/comments.svg"
+                alt="Comments"
+                width={21}
+                height={21}
+              />
             </button>
             <span className="text-black">{updatedComments?.length || 0}</span>
           </div>
@@ -215,15 +276,18 @@ export default function CommentModal({
 
         <hr className="border-gray-300 w-full mb-8" />
 
-        {/* Scrollable Comments with Custom Scrollbar */}
         <div
           className="custom-scrollbar px-4"
           style={{
-            maxHeight: updatedComments.length >= 2 ? "200px" : "auto", // Add scroll if 2 or more comments
+            maxHeight: updatedComments.length >= 2 ? "200px" : "auto",
             overflowY: updatedComments.length >= 2 ? "auto" : "visible",
           }}
         >
-          <CommentView comments={updatedComments || []} />
+          <CommentView
+            comments={updatedComments || []}
+            onEdit={handleEditComment}
+            onDelete={handleDeleteComment}
+          />
         </div>
 
         <div className="flex items-center space-x-3 mb-4 px-4">
@@ -255,7 +319,12 @@ export default function CommentModal({
                 whileHover={{ scale: 1.1 }}
                 className="focus:outline-none"
               >
-                <Image src="/svg/addcomment.svg" alt="Add Comment" width={22} height={22} />
+                <Image
+                  src="/svg/addcomment.svg"
+                  alt="Add Comment"
+                  width={22}
+                  height={22}
+                />
               </motion.button>
               {showSuccessPopover && (
                 <motion.div
@@ -272,10 +341,9 @@ export default function CommentModal({
         </div>
       </motion.div>
 
-      {/* Custom scrollbar styling */}
       <style jsx>{`
         .custom-scrollbar {
-          scrollbar-width: thin; /* For Firefox */
+          scrollbar-width: thin;
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
