@@ -8,6 +8,8 @@ import FollowingModal from './modal-following';
 import EditProfileModal from './modal-editprofile';
 import Skeleton from '../../../components/ui/skeleton';
 import axios from 'axios';
+import NotificationSidebar from '../../notification'; // Corrected path for NotificationSidebar
+import CommunitySidebar from '../../communities'; // Import the Communities Sidebar
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('Posts');
@@ -16,9 +18,8 @@ export default function Profile() {
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  const [userPostCount, setUserPostCount] = useState(0); // State for post count
+  const [userPostCount, setUserPostCount] = useState(0);
 
-  // Function to fetch user data from the API
   const fetchUserData = async () => {
     setLoading(true);
     try {
@@ -31,19 +32,17 @@ export default function Profile() {
     }
   };
 
-  // Function to fetch the post count for the logged-in user
   const fetchUserPostCount = async () => {
     try {
       const response = await axios.get('/api/post/getposts?countOnly=true');
       if (response.status === 200) {
-        setUserPostCount(response.data.count); // Update the post count state
+        setUserPostCount(response.data.count);
       }
     } catch (error) {
       console.error('Failed to fetch post count:', error);
     }
   };
 
-  // Initial fetch of user data and post count
   useEffect(() => {
     fetchUserData();
     fetchUserPostCount();
@@ -83,7 +82,7 @@ export default function Profile() {
         setUserData((prevData) => ({ ...prevData, headerImg: data.fileUrl }));
       }
 
-      return data.fileUrl; // Return the uploaded image URL
+      return data.fileUrl;
     } catch (error) {
       console.error('Image upload error:', error);
       throw error;
@@ -91,9 +90,9 @@ export default function Profile() {
   };
 
   const closeModalAndFetchData = () => {
-    setIsEditProfileModalOpen(false); // Close modal
-    fetchUserData(); // Re-fetch user data to ensure the latest updates
-    fetchUserPostCount(); // Re-fetch post count to ensure accurate data
+    setIsEditProfileModalOpen(false);
+    fetchUserData();
+    fetchUserPostCount();
   };
 
   return (
@@ -249,7 +248,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* PostContainer with padding */}
           <hr className="z-[60rem] fixed left-0 top-0 w-full flex-grow border-t-[10rem] border-[#F0FDF4]" />
           <div className="pt-[5rem]">
             <PostContainer />
@@ -258,84 +256,8 @@ export default function Profile() {
 
         {/* Right Sidebar */}
         <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-21">
-          {/* Activity Section */}
-          <div
-            className="bg-white p-4 rounded-[15px] shadow-lg"
-            style={{
-              width: '316px',
-              height: '200px',
-              boxShadow:
-                '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-semibold text-[18px] text-black">Activity</h2>
-              <button className="text-[#28B446] text-[15px]">See all</button>
-            </div>
-            <hr className="border-t border-black w-full mb-3" style={{ height: '1px' }} />
-            <ul className="space-y-2 text-black">
-              <li className="flex items-center">
-                <Image
-                  src="/images/user.png"
-                  alt="Notification"
-                  width={32}
-                  height={32}
-                  className="rounded-full mr-2"
-                />
-                <span className="text-[16px]">
-                  <strong>Sam</strong> started following you.
-                </span>
-              </li>
-              <li className="flex items-center">
-                <Image
-                  src="/images/user.png"
-                  alt="Notification"
-                  width={32}
-                  height={32}
-                  className="rounded-full mr-2"
-                />
-                <span className="text-[16px]">
-                  <strong>Alex</strong> liked your post.
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Community Section */}
-          <div
-            className="bg-white p-4 rounded-[15px] shadow-lg"
-            style={{
-              width: '316px',
-              height: '288px',
-              boxShadow:
-                '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            <div className="flex justify-between items-center">
-              <h2 className="font-semibold text-[18px] text-black">Communities</h2>
-              <button className="text-[#22C55E] text-[15px]">See all</button>
-            </div>
-            <hr className="border-t border-black w-full mb-3 mt-2" style={{ height: '1px' }} />
-            <ul className="space-y-2 text-black">
-              <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
-                <span className="text-[16px] font-semibold">p/Cottage</span>
-                <button
-                  className="bg-[#22C55E] text-white font-semibold text-[13px] px-3 py-1 rounded-[6px]"
-                  style={{
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                  }}
-                >
-                  Enter
-                </button>
-              </li>
-              <li className="flex items-center justify-between hover:bg-[#D9D9D9] rounded-md px-2 py-1 transition-colors duration-200">
-                <span className="text-[16px] font-semibold">p/Bungalow</span>
-                <button className="border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200">
-                  Join
-                </button>
-              </li>
-            </ul>
-          </div>
+          <NotificationSidebar />
+          <CommunitySidebar />
         </div>
       </div>
 
@@ -352,7 +274,7 @@ export default function Profile() {
       />
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
-        onClose={closeModalAndFetchData} // Automatically refresh data after closing
+        onClose={closeModalAndFetchData}
         onProfileUpdate={handleProfileUpdate}
         currentProfileData={userData}
       />
