@@ -119,11 +119,20 @@ export const authOptions = {
               data: {
                 username: profile.name || profile.email.split("@")[0], // Fallback to email username
                 email: profile.email,
+                role: 'user',
+                user_id: `user_${Date.now()}`,
                 profile: {
                   create: {
                     profile_img: profile.picture || null,
                   },
                 },
+              },
+            });
+            
+            await prisma.userProfile.create({
+              data: {
+                userId: newUser.id,
+                name: name,
               },
             });
           }
