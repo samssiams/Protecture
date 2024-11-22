@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { Chakra_Petch } from "next/font/google";
-import { useRouter } from 'next/router';
-import routes from '../../routes';
+import { useRouter } from "next/router";
+import routes from "../../routes";
 import Button from "../../components/ui/button";
-import Image from 'next/image';
-import axios from 'axios';
+import Image from "next/image";
+import { signIn } from "next-auth/react";
+import axios from "axios";
 
 const chakraPetch = Chakra_Petch({
   subsets: ["latin"],
@@ -13,11 +14,11 @@ const chakraPetch = Chakra_Petch({
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
-  const [username, setUsername] = useState('');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const router = useRouter();
@@ -30,22 +31,30 @@ export default function Signup() {
     router.push(routes.auth.login);
   };
 
+  // Handle Google Signup
   const handleGoogleSignup = async () => {
     try {
-      const response = await axios.post(routes.api.googleLogin);
-      if (response.status === 200) {
-        router.push(routes.auth.otp);
+      const response = await signIn("google", {
+        callbackUrl: `${window.location.origin}${routes.pages.home}`, // Ensure valid callback URL
+      });
+
+      if (response?.ok && response.url) {
+        router.push(response.url || routes.pages.home); // Redirect on success
+      } else {
+        setErrorMessage("Google signup failed. Please try again.");
+        setIsErrorModalOpen(true);
       }
     } catch (error) {
-      console.error('Google signup error:', error);
-      setErrorMessage('Error signing up with Google. Please try again.');
+      console.error("Google signup error:", error);
+      setErrorMessage("An error occurred during Google signup. Please try again.");
       setIsErrorModalOpen(true);
     }
   };
 
+  // Handle Regular Signup
   const handleRegularSignup = async () => {
     if (!username || !name || !email || !password) {
-      setErrorMessage('Please fill in all fields before signing up.');
+      setErrorMessage("Please fill in all fields before signing up.");
       setIsErrorModalOpen(true);
       return;
     }
@@ -57,6 +66,7 @@ export default function Signup() {
         email,
         password,
       });
+
       if (response.status === 201) {
         setIsSuccessModalOpen(true);
         setTimeout(() => {
@@ -64,8 +74,8 @@ export default function Signup() {
         }, 2000);
       }
     } catch (error) {
-      console.error('Error signing up:', error);
-      setErrorMessage('Error signing up. Please try again.');
+      console.error("Error signing up:", error);
+      setErrorMessage("Error signing up. Please try again.");
       setIsErrorModalOpen(true);
     }
   };
@@ -79,24 +89,35 @@ export default function Signup() {
   };
 
   return (
-    <div className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
-      style={{ backgroundImage: "url('/images/image.jpg')", position: "fixed", width: "100%", height: "100%", overflow: "hidden" }}
+    <div
+      className={`flex min-h-screen items-center justify-center bg-gray-100 bg-cover bg-center ${chakraPetch.className}`}
+      style={{
+        backgroundImage: "url('/images/image.jpg')",
+        position: "fixed",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+      }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
-        
         <div className="p-8 md:w-96">
-          <h2 className="text-2xl font-bold text-green-600 mb-4 cursor-pointer" onClick={navigateToLogin}>Protecture</h2>
+          <h2
+            className="text-2xl font-bold text-green-600 mb-4 cursor-pointer"
+            onClick={navigateToLogin}
+          >
+            Protecture
+          </h2>
 
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm font-light text-black">Already registered?</p>
             <div className="flex items-center space-x-2">
               <p className="text-sm font-bold text-black">Log In</p>
               <button type="button" onClick={navigateToLogin}>
-                <Image 
-                  src="/svg/login_switch.svg" 
-                  alt="Toggle Sign Up and Log In" 
-                  width={24} 
-                  height={24} 
+                <Image
+                  src="/svg/login_switch.svg"
+                  alt="Toggle Sign Up and Log In"
+                  width={24}
+                  height={24}
                 />
               </button>
               <p className="text-sm font-bold text-green-600">Sign Up</p>
@@ -104,9 +125,20 @@ export default function Signup() {
           </div>
 
           {/* Google Sign Up Button */}
-          <Button className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white" onClick={handleGoogleSignup}>
-            <Image src="/svg/google_login.svg" alt="Google Icon" width={20} height={20} className="mr-2" />
-            <span className="text-black text-[18px] font-bold">Continue with Google</span>
+          <Button
+            className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white"
+            onClick={handleGoogleSignup}
+          >
+            <Image
+              src="/svg/google_login.svg"
+              alt="Google Icon"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
+            <span className="text-black text-[18px] font-bold">
+              Continue with Google
+            </span>
           </Button>
 
           <div className="flex items-center justify-between my-4">
@@ -165,7 +197,9 @@ export default function Signup() {
                 onClick={togglePasswordVisibility}
               >
                 <Image
-                  src={showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"}
+                  src={
+                    showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
+                  }
                   alt="Toggle Password Visibility"
                   width={24}
                   height={24}
@@ -175,31 +209,60 @@ export default function Signup() {
           </div>
 
           {/* Regular Sign Up Button */}
-          <Button className="w-full" onClick={handleRegularSignup}>Sign Up</Button>
+          <Button className="w-full" onClick={handleRegularSignup}>
+            Sign Up
+          </Button>
         </div>
 
         {/* Right Section */}
         <div className="bg-gradient-to-r from-green-400 to-blue-500 p-8 text-white md:w-96 relative flex flex-col justify-center items-center min-h-[500px]">
-          <h2 className="text-2xl font-bold mb-4 mt-[-30px] text-center">Join the Community</h2>
+          <h2 className="text-2xl font-bold mb-4 mt-[-30px] text-center">
+            Join the Community
+          </h2>
           <ul className="space-y-4">
             <li className="flex items-center space-x-2">
-              <Image src="/svg/community_login.svg" alt="Community Icon" width={24} height={24} />
+              <Image
+                src="/svg/community_login.svg"
+                alt="Community Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Share it with other architects</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/post_login.svg" alt="Post Icon" width={24} height={24} />
+              <Image
+                src="/svg/post_login.svg"
+                alt="Post Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Feel free to post your work</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/handshake_login.svg" alt="Handshake Icon" width={24} height={24} />
+              <Image
+                src="/svg/handshake_login.svg"
+                alt="Handshake Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Find and build a healthy community</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/security_login.svg" alt="Security Icon" width={24} height={24} />
+              <Image
+                src="/svg/security_login.svg"
+                alt="Security Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Protection against AI exploitation</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/archi_login.svg" alt="Architecture Icon" width={24} height={24} />
+              <Image
+                src="/svg/archi_login.svg"
+                alt="Architecture Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">A web dedicated to Architecture</p>
             </li>
           </ul>
@@ -210,7 +273,9 @@ export default function Signup() {
       {isErrorModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 text-black bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg text-red-600 font-semibold text-center">Error</h2>
+            <h2 className="text-lg text-red-600 font-semibold text-center">
+              Error
+            </h2>
             <p className="mt-4 text-center">{errorMessage}</p>
             <div className="mt-6 flex justify-center">
               <Button onClick={closeErrorModal}>Close</Button>
@@ -223,8 +288,12 @@ export default function Signup() {
       {isSuccessModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 text-black bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg text-green-600 font-semibold text-center">Sign-up Complete!</h2>
-            <p className="mt-4 text-center">Your account has been created successfully. Redirecting to login...</p>
+            <h2 className="text-lg text-green-600 font-semibold text-center">
+              Sign-up Complete!
+            </h2>
+            <p className="mt-4 text-center">
+              Your account has been created successfully. Redirecting to login...
+            </p>
             <div className="mt-6 flex justify-center">
               <Button onClick={closeSuccessModal}>Close</Button>
             </div>
