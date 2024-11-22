@@ -18,14 +18,14 @@ export default async function handler(req, res) {
       console.log(`Logged-in user ID: ${userId}`);
 
       // Check if this is a request for the post count only
-      const { countOnly } = req.query;
+      const { countOnly, archived } = req.query;
 
       if (countOnly === "true") {
         console.log("Fetching post count for the logged-in user...");
 
         // Count the posts created by the logged-in user
         const postCount = await prisma.post.count({
-          where: { user_id: userId },
+          where: { user_id: userId, archived: false }, // Exclude archived posts
         });
 
         console.log(`Post count for user ${userId}: ${postCount}`);
@@ -38,9 +38,12 @@ export default async function handler(req, res) {
 
       if (currentPath === "/home/profile") {
         console.log("Fetching posts only for the logged-in user...");
-        // Filter posts to only those created by the logged-in user
+        // Fetch posts created by the logged-in user
         posts = await prisma.post.findMany({
-          where: { user_id: userId },
+          where: {
+            user_id: userId,
+            archived: archived === "true" ? true : false, // Fetch archived or non-archived posts
+          },
           include: {
             comments: {
               include: {
@@ -82,8 +85,11 @@ export default async function handler(req, res) {
         });
       } else {
         console.log("Fetching all posts...");
-        // Fetch all posts without filtering
+        // Fetch all non-archived posts
         posts = await prisma.post.findMany({
+          where: {
+            archived: false, // Exclude archived posts
+          },
           include: {
             comments: {
               include: {

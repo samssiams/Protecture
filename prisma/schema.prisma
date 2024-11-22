@@ -60,17 +60,17 @@ model UserProfile {
 
 model Post {
   id          Int       @id @default(autoincrement())
-  user_id     Int                    // Foreign key referencing User table
-  category_id String                 // Category for the post
+  user_id     Int
+  category_id String
   image_url   String
   description String
-  created_at  DateTime  @default(now()) // Automatically sets the creation time
-  counter     Int       @default(0)  // Counter for upvotes and downvotes
-  comments    Comment[]              // Relation to comments
-  upvotes     Upvote[]               // Relation to upvotes
-  downvotes   Downvote[]             // Relation to downvotes
-
-  user        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at  DateTime  @default(now())
+  counter     Int       @default(0)
+  archived    Boolean   @default(false) // New field for archiving posts
+  comments    Comment[]
+  upvotes     Upvote[]
+  downvotes   Downvote[]
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model Comment {

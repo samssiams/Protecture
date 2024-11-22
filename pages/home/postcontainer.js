@@ -106,6 +106,28 @@ function PostContainer({ selectedCategory }) {
     }
   };
 
+  const handleArchive = async (postId) => {
+    try {
+      const response = await fetch("/api/post/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId }),
+      });
+
+      if (response.ok) {
+        alert("Post archived successfully!");
+
+        // Remove the archived post from the state
+        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+      } else {
+        const errorData = await response.json();
+        console.error("Error archiving post:", errorData.message);
+      }
+    } catch (error) {
+      console.error("Error archiving post:", error);
+    }
+  };
+
   // Filter posts by selected category, if a category is selected
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
@@ -145,17 +167,25 @@ function PostContainer({ selectedCategory }) {
                 </h3>
                 <span className="text-black text-xs">
                   {new Date(post.created_at).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
+                    hour: "2-digit",
+                    minute: "2-digit",
                     hour12: true,
                   })}
                 </span>
-                
               </div>
               <div className="ml-auto">
-                <button onClick={(e) => handleModalToggle(e, post)}>
-                  <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
-                </button>
+                {router.pathname === "/home/profile" ? (
+                  <button
+                    className="bg-green-500 text-white px-3 py-1 rounded"
+                    onClick={() => handleArchive(post.id)}
+                  >
+                    Archive
+                  </button>
+                ) : (
+                  <button onClick={(e) => handleModalToggle(e, post)}>
+                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                  </button>
+                )}
               </div>
             </div>
 

@@ -1,45 +1,61 @@
-import Link from 'next/link';
-import Navbar from '../../../components/ui/navbar';
-import Image from 'next/image';
-import PostContainer from '../postcontainer';
-import { useState, useEffect } from 'react';
-import FollowerModal from './modal-follower';
-import FollowingModal from './modal-following';
-import EditProfileModal from './modal-editprofile';
-import Skeleton from '../../../components/ui/skeleton';
-import axios from 'axios';
-import NotificationSidebar from '../../notification'; // Corrected path for NotificationSidebar
-import CommunitySidebar from '../../communities'; // Import the Communities Sidebar
+import Link from "next/link";
+import Navbar from "../../../components/ui/navbar";
+import Image from "next/image";
+import PostContainer from "../postcontainer";
+import { useState, useEffect } from "react";
+import FollowerModal from "./modal-follower";
+import FollowingModal from "./modal-following";
+import EditProfileModal from "./modal-editprofile";
+import Skeleton from "../../../components/ui/skeleton";
+import axios from "axios";
+import NotificationSidebar from "../../notification";
+import CommunitySidebar from "../../communities";
 
 export default function Profile() {
-  const [activeTab, setActiveTab] = useState('Posts');
+  const [activeTab, setActiveTab] = useState("Posts");
   const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
   const [isFollowingModalOpen, setIsFollowingModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [userPostCount, setUserPostCount] = useState(0);
+  const [posts, setPosts] = useState([]);
 
   const fetchUserData = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/user/profile');
+      const response = await axios.get("/api/user/profile");
       setUserData(response.data);
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error("Failed to fetch user data:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchPosts = async () => {
+    try {
+      const query =
+        activeTab === "Archived"
+          ? "?currentPath=/home/profile&archived=true"
+          : "?currentPath=/home/profile&archived=false";
+      const response = await axios.get(`/api/post/getposts${query}`);
+      if (response.status === 200) {
+        setPosts(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+    }
+  };
+
   const fetchUserPostCount = async () => {
     try {
-      const response = await axios.get('/api/post/getposts?countOnly=true');
+      const response = await axios.get("/api/post/getposts?countOnly=true");
       if (response.status === 200) {
         setUserPostCount(response.data.count);
       }
     } catch (error) {
-      console.error('Failed to fetch post count:', error);
+      console.error("Failed to fetch post count:", error);
     }
   };
 
@@ -47,6 +63,10 @@ export default function Profile() {
     fetchUserData();
     fetchUserPostCount();
   }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [activeTab]);
 
   const handleProfileUpdate = (updatedData) => {
     setUserData((prevData) => ({
@@ -57,26 +77,26 @@ export default function Profile() {
 
   const handleImageUpdate = async (type, file) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
       const endpoint =
-        type === 'profile'
-          ? '/api/user/uploadProfileImage'
-          : '/api/user/uploadHeaderImage';
+        type === "profile"
+          ? "/api/user/uploadProfileImage"
+          : "/api/user/uploadHeaderImage";
 
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Image upload failed');
+        throw new Error(errorData.error || "Image upload failed");
       }
 
       const data = await response.json();
-      if (type === 'profile') {
+      if (type === "profile") {
         setUserData((prevData) => ({ ...prevData, profileImg: data.fileUrl }));
       } else {
         setUserData((prevData) => ({ ...prevData, headerImg: data.fileUrl }));
@@ -84,7 +104,7 @@ export default function Profile() {
 
       return data.fileUrl;
     } catch (error) {
-      console.error('Image upload error:', error);
+      console.error("Image upload error:", error);
       throw error;
     }
   };
@@ -104,11 +124,11 @@ export default function Profile() {
         <div
           className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-30 top-8"
           style={{
-            width: '318px',
-            height: '430px',
+            width: "318px",
+            height: "430px",
             boxShadow:
-              '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
-            border: '1px solid #E0E0E0',
+              "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            border: "1px solid #E0E0E0",
           }}
         >
           <div className="flex flex-col items-center">
@@ -133,29 +153,31 @@ export default function Profile() {
                   className="w-full bg-cover bg-center rounded-t-[15px] mb-[-2rem]"
                   style={{
                     backgroundImage: `url(${
-                      userData?.headerImg || '/images/headers.png'
+                      userData?.headerImg || "/images/headers.png"
                     })`,
-                    height: '100px',
-                    borderRadius: '8px',
+                    height: "100px",
+                    borderRadius: "8px",
                   }}
                 ></div>
 
                 <Image
-                  src={userData?.profileImg || '/images/user.png'}
+                  src={userData?.profileImg || "/images/user.png"}
                   alt="Profile"
                   width={100}
                   height={100}
                   className="rounded-full border-4 border-white mb-4"
                   onClick={() => {
-                    document.getElementById('profileFileInput').click();
+                    document.getElementById("profileFileInput").click();
                   }}
                 />
                 <input
                   type="file"
                   id="profileFileInput"
-                  style={{ display: 'none' }}
+                  style={{ display: "none" }}
                   accept="image/jpeg, image/png"
-                  onChange={(e) => handleImageUpdate('profile', e.target.files[0])}
+                  onChange={(e) =>
+                    handleImageUpdate("profile", e.target.files[0])
+                  }
                 />
 
                 <h2 className="text-[25px] font-bold text-black">
@@ -168,7 +190,7 @@ export default function Profile() {
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div
                     className="flex flex-col items-center"
-                    style={{ minWidth: '80px' }}
+                    style={{ minWidth: "80px" }}
                   >
                     <p className="font-bold text-[18px] text-black">
                       {userPostCount || 0}
@@ -177,7 +199,7 @@ export default function Profile() {
                   </div>
                   <div
                     className="flex flex-col items-center cursor-pointer"
-                    style={{ minWidth: '80px' }}
+                    style={{ minWidth: "80px" }}
                     onClick={() => setIsFollowerModalOpen(true)}
                   >
                     <p className="font-bold text-[18px] text-black">
@@ -187,7 +209,7 @@ export default function Profile() {
                   </div>
                   <div
                     className="flex flex-col items-center cursor-pointer"
-                    style={{ minWidth: '80px' }}
+                    style={{ minWidth: "80px" }}
                     onClick={() => setIsFollowingModalOpen(true)}
                   >
                     <p className="font-bold text-[18px] text-black">
@@ -201,8 +223,8 @@ export default function Profile() {
                   onClick={() => setIsEditProfileModalOpen(true)}
                   className="border border-[#28B446] text-[#28B446] font-semibold rounded-[6px] mt-5 transition duration-300 hover:bg-[#28B446] hover:text-white"
                   style={{
-                    width: '170px',
-                    height: '34px',
+                    width: "170px",
+                    height: "34px",
                   }}
                 >
                   Edit Profile
@@ -213,34 +235,34 @@ export default function Profile() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
+        <div className="flex flex-col space-y-4" style={{ width: "655px" }}>
           <div
             className="z-20 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
             style={{
-              width: '655px',
-              height: '69px',
+              width: "655px",
+              height: "69px",
               boxShadow:
-                '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
+                "0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)",
             }}
           >
             <h2 className="text-[25px] font-bold text-black mr-4">My Posts</h2>
             <div className="flex">
               <button
-                onClick={() => setActiveTab('Posts')}
+                onClick={() => setActiveTab("Posts")}
                 className={`px-4 py-2 font-semibold rounded-l-[5px] transform transition-transform duration-100 ${
-                  activeTab === 'Posts'
-                    ? 'bg-[#E4FCDE] text-[#22C55E] scale-105'
-                    : 'bg-[#D9D9D9] text-black'
+                  activeTab === "Posts"
+                    ? "bg-[#E4FCDE] text-[#22C55E] scale-105"
+                    : "bg-[#D9D9D9] text-black"
                 }`}
               >
                 Posts
               </button>
               <button
-                onClick={() => setActiveTab('Archived')}
+                onClick={() => setActiveTab("Archived")}
                 className={`px-4 py-2 font-semibold rounded-r-[5px] transform transition-transform duration-100 ${
-                  activeTab === 'Archived'
-                    ? 'bg-[#E4FCDE] text-[#22C55E] scale-105'
-                    : 'bg-[#D9D9D9] text-black'
+                  activeTab === "Archived"
+                    ? "bg-[#E4FCDE] text-[#22C55E] scale-105"
+                    : "bg-[#D9D9D9] text-black"
                 }`}
               >
                 Archived
@@ -250,7 +272,13 @@ export default function Profile() {
 
           <hr className="z-[60rem] fixed left-0 top-0 w-full flex-grow border-t-[10rem] border-[#F0FDF4]" />
           <div className="pt-[5rem]">
-            <PostContainer />
+            {posts.length === 0 && activeTab === "Archived" ? (
+              <div className="text-center text-[#787070] font-semibold text-lg mt-10">
+                No archived posts yet.
+              </div>
+            ) : (
+              <PostContainer posts={posts} />
+            )}
           </div>
         </div>
 
