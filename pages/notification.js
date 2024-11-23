@@ -9,7 +9,7 @@ export default function NotificationSidebar() {
     const fetchNotifications = async () => {
       try {
         const response = await axios.get('/api/sidebar/activity');
-        setNotifications(response.data);
+        setNotifications(response.data || []);
       } catch (error) {
         console.error('Error fetching notifications:', error);
       }
@@ -35,36 +35,40 @@ export default function NotificationSidebar() {
         </div>
         <hr className="border-t border-black w-full mb-3" />
         <ul className="space-y-2">
-          {notifications.map((notif) => {
-            // Determine the message dynamically
-            const message =
-              notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE'
-                ? notif.message.replace(/^You /, '') // Remove redundant "You" prefix
-                : notif.message.replace(`${notif.actionUser?.username || ''} `, ''); // Remove username prefix
+          {notifications.length > 0 ? (
+            notifications.map((notif) => {
+              // Determine the message dynamically
+              const message =
+                notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE'
+                  ? notif.message.replace(/^You /, '') // Remove redundant "You" prefix
+                  : notif.message.replace(`${notif.actionUser?.username || ''} `, ''); // Remove username prefix
 
-            return (
-              <li key={notif.id} className="flex items-center">
-                <Image
-                  src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
-                  alt="Notification Icon"
-                  width={32}
-                  height={32}
-                  className="rounded-full mr-2"
-                />
-                <span className="text-[16px] text-black">
-                  {notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE' ? (
-                    <>
-                      <strong>You</strong> {message}
-                    </>
-                  ) : (
-                    <>
-                      <strong>{notif.actionUser?.username || 'Unknown User'}</strong> {message}
-                    </>
-                  )}
-                </span>
-              </li>
-            );
-          })}
+              return (
+                <li key={notif.id} className="flex items-center">
+                  <Image
+                    src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
+                    alt="Notification Icon"
+                    width={32}
+                    height={32}
+                    className="rounded-full mr-2"
+                  />
+                  <span className="text-[16px] text-black">
+                    {notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE' ? (
+                      <>
+                        <strong>You</strong> {message}
+                      </>
+                    ) : (
+                      <>
+                        <strong>{notif.actionUser?.username || 'Unknown User'}</strong> {message}
+                      </>
+                    )}
+                  </span>
+                </li>
+              );
+            })
+          ) : (
+            <p className="text-center text-gray-500">No notifications available.</p>
+          )}
         </ul>
       </div>
       <style jsx>{`

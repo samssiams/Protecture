@@ -8,30 +8,30 @@ generator client {
 }
 
 model User {
-  id             Int              @id @default(autoincrement()) // Primary key as Int
+  id             Int              @id @default(autoincrement())
   role           String
-  user_id        String           @unique // User ID is still String
-  google_id      String?          @unique // Change from Int? to String?
+  user_id        String           @unique
+  google_id      String?          @unique
   username       String           @unique
   email          String?          @unique
   password       String?
-  otp            String?          // Field for OTP
+  otp            String?
 
-  accounts       Account[] 
+  accounts       Account[]
   profile        UserProfile?
-  comments       Comment[]        // User can have many comments
-  posts          Post[]           // User can create many posts
-  upvotes        Upvote[]         // User can upvote many posts
-  downvotes      Downvote[]       // User can downvote many posts
-  notifications  Notification[]   @relation("UserNotifications") // Notifications for the user
-  actions        Notification[]   @relation("ActionUserNotifications") // Actions performed by the user
+  comments       Comment[]
+  posts          Post[]
+  upvotes        Upvote[]
+  downvotes      Downvote[]
+  notifications  Notification[]   @relation("UserNotifications")
+  actions        Notification[]   @relation("ActionUserNotifications")
 }
 
 model Account {
   id                 Int       @id @default(autoincrement())
   userId             Int
   provider           String
-  providerAccountId  String    // Typically the Google ID or other provider's unique ID
+  providerAccountId  String
   refresh_token      String?   @map("refreshToken")
   access_token       String?   @map("accessToken")
   expires_at         Int?
@@ -46,10 +46,10 @@ model Account {
 
 model UserProfile {
   id           Int     @id @default(autoincrement())
-  userId       Int     @unique // Foreign key referencing User table
-  name         String?
-  profile_img  String? // URL or path for profile picture
-  header_img   String? // URL or path for header image (cover photo)
+  userId       Int     @unique
+  name         String? // Added support for Google user profiles
+  profile_img  String?
+  header_img   String?
   posts        Int     @default(0)
   followers    Int     @default(0)
   following    Int     @default(0)
@@ -66,7 +66,7 @@ model Post {
   description String
   created_at  DateTime  @default(now())
   counter     Int       @default(0)
-  archived    Boolean   @default(false) // New field for archiving posts
+  archived    Boolean   @default(false)
   comments    Comment[]
   upvotes     Upvote[]
   downvotes   Downvote[]
@@ -74,16 +74,15 @@ model Post {
 }
 
 model Comment {
-  id          Int      @id @default(autoincrement()) // Ensure id is auto-incremented
-  post_id     Int
-  user_id     Int
+  id           Int      @id @default(autoincrement())
+  post_id      Int
+  user_id      Int
   comment_text String
-  created_at  DateTime @default(now())
-  edited      Boolean  @default(false) // Field to track if the comment was edited
+  created_at   DateTime @default(now())
+  edited       Boolean  @default(false)
 
-  // Relations
-  user  User  @relation(fields: [user_id], references: [id])
-  post  Post  @relation(fields: [post_id], references: [id])
+  user         User     @relation(fields: [user_id], references: [id])
+  post         Post     @relation(fields: [post_id], references: [id])
 }
 
 model Upvote {
@@ -94,7 +93,7 @@ model Upvote {
   post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([post_id, user_id]) // Composite key
+  @@unique([post_id, user_id])
 }
 
 model Downvote {
@@ -105,14 +104,14 @@ model Downvote {
   post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
-  @@unique([post_id, user_id]) // Composite key
+  @@unique([post_id, user_id])
 }
 
 model Notification {
   id           Int      @id @default(autoincrement())
   userId       Int
-  actionUserId Int       // The user who performed the action
-  type         String    // e.g., 'PROFILE_UPDATE', 'UPVOTE', 'DOWNVOTE'
+  actionUserId Int
+  type         String
   message      String
   createdAt    DateTime  @default(now())
 

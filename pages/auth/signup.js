@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import routes from "../../routes";
 import Button from "../../components/ui/button";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
 import axios from "axios";
 
 const chakraPetch = Chakra_Petch({
@@ -29,26 +28,6 @@ export default function Signup() {
 
   const navigateToLogin = () => {
     router.push(routes.auth.login);
-  };
-
-  // Handle Google Signup
-  const handleGoogleSignup = async () => {
-    try {
-      const response = await signIn("google", {
-        callbackUrl: `${window.location.origin}${routes.pages.home}`, // Ensure valid callback URL
-      });
-
-      if (response?.ok && response.url) {
-        router.push(response.url || routes.pages.home); // Redirect on success
-      } else {
-        setErrorMessage("Google signup failed. Please try again.");
-        setIsErrorModalOpen(true);
-      }
-    } catch (error) {
-      console.error("Google signup error:", error);
-      setErrorMessage("An error occurred during Google signup. Please try again.");
-      setIsErrorModalOpen(true);
-    }
   };
 
   // Handle Regular Signup
@@ -109,7 +88,7 @@ export default function Signup() {
           </h2>
 
           <div className="flex justify-between items-center mb-4">
-            <p className="text-sm font-light text-black">Already registered?</p>
+            <p className="text-sm font-light text-black">New here?</p>
             <div className="flex items-center space-x-2">
               <p className="text-sm font-bold text-black">Log In</p>
               <button type="button" onClick={navigateToLogin}>
@@ -123,23 +102,6 @@ export default function Signup() {
               <p className="text-sm font-bold text-green-600">Sign Up</p>
             </div>
           </div>
-
-          {/* Google Sign Up Button */}
-          <Button
-            className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white"
-            onClick={handleGoogleSignup}
-          >
-            <Image
-              src="/svg/google_login.svg"
-              alt="Google Icon"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-black text-[18px] font-bold">
-              Continue with Google
-            </span>
-          </Button>
 
           <div className="flex items-center justify-between my-4">
             <div className="w-full h-px bg-gray-300"></div>

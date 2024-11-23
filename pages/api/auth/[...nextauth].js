@@ -8,7 +8,6 @@ const prisma = new PrismaClient();
 
 export const authOptions = {
   providers: [
-    // Credentials Provider for username and password authentication
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -16,150 +15,180 @@ export const authOptions = {
         password: { label: "Password", type: "password" },
       },
       authorize: async (credentials) => {
-        // Validate credentials input
         if (!credentials?.username || !credentials?.password) {
           throw new Error("Missing username or password.");
         }
 
-        // Fetch user from the database
         const user = await prisma.user.findFirst({
           where: { username: credentials.username },
-          include: {
-            profile: true, // Fetch related profile information
-          },
+          include: { profile: true },
         });
 
         if (!user) {
           throw new Error("User not found.");
         }
 
-        // Verify password
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
           user.password
         );
+
         if (!isPasswordCorrect) {
           throw new Error("Incorrect password.");
         }
 
-        // Return user object to be encoded in the session and JWT
         return {
           id: user.id,
           username: user.username,
           email: user.email,
-          profileImg: user.profile?.profile_img || null, // Include profile image
+          profileImg: user.profile?.profile_img || null,
         };
       },
     }),
 
-    // Google Provider for OAuth authentication
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
   ],
 
-  // Use JWT for sessions
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  // JWT options
   jwt: {
     secret: process.env.NEXTAUTH_SECRET,
   },
 
   callbacks: {
-    // Attach user data to the session object
     async session({ session, token }) {
       if (token) {
         session.user = {
           id: token.id,
-          username: token.username || token.email?.split("@")[0], // Use email username if username is unavailable
+          username: token.username || token.email?.split("@")[0],
           email: token.email,
-          profileImg: token.profileImg, // Include profile image in session
+          profileImg: token.profileImg,
         };
       }
       return session;
     },
 
-    // Attach user data to the JWT
     async jwt({ token, user, account, profile }) {
       if (user) {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
-        token.profileImg = user.profileImg; // Include profile image in JWT
+        token.profileImg = user.profileImg;
       }
 
-      // Add data for Google account
-      if (account?.provider === "google") {
-        token.id = profile.sub || profile.id; // Use `sub` if available for Google profiles
-        token.username = profile.name || profile.email.split("@")[0]; // Fallback to email username
-        token.email = profile.email;
-        token.profileImg = profile.picture || null; // Use Google profile picture
+      if (account?.provider === "google" && profile) {
+        let userRecord = await prisma.user.findFirst({
+          where: { email: profile.email },
+        });
+
+        if (!userRecord) {
+          let username = profile.name || profile.email.split("@")[0];
+
+          // Ensure username uniqueness
+          let isUnique = false;
+          while (!isUnique) {
+            try {
+              userRecord = await prisma.user.create({
+                data: {
+                  username,
+                  email: profile.email,
+                  role: "user",
+                  user_id: `user_${Date.now()}`,
+                  profile: {
+                    create: {
+                      profile_img: profile.picture || null,
+                      name: profile.name || null,
+                    },
+                  },
+                },
+              });
+              isUnique = true; // Break loop if creation succeeds
+            } catch (error) {
+              if (error.code === "P2002" && error.meta?.target?.includes("username")) {
+                // Handle unique constraint error by modifying username
+                username = `${username}_${Math.floor(Math.random() * 1000)}`;
+              } else {
+                throw error; // Re-throw if not a unique constraint error
+              }
+            }
+          }
+        }
+
+        token.id = userRecord.id;
+        token.username = userRecord.username;
+        token.email = userRecord.email;
+        token.profileImg =
+          userRecord.profile?.profile_img || profile.picture || null;
       }
 
       return token;
     },
 
-    // Callback to handle custom logic for signing in
     async signIn({ account, profile }) {
-      if (account.provider === "google") {
+      if (account.provider === "google" && profile) {
         try {
-          // Ensure the user exists in your database
           const userExists = await prisma.user.findFirst({
             where: { email: profile.email },
           });
 
           if (!userExists) {
-            // If the user doesn't exist, create one
-            await prisma.user.create({
-              data: {
-                username: profile.name || profile.email.split("@")[0], // Fallback to email username
-                email: profile.email,
-                role: 'user',
-                user_id: `user_${Date.now()}`,
-                profile: {
-                  create: {
-                    profile_img: profile.picture || null,
+            let username = profile.name || profile.email.split("@")[0];
+
+            // Ensure username uniqueness
+            let isUnique = false;
+            while (!isUnique) {
+              try {
+                await prisma.user.create({
+                  data: {
+                    username,
+                    email: profile.email,
+                    role: "user",
+                    user_id: `user_${Date.now()}`,
+                    profile: {
+                      create: {
+                        profile_img: profile.picture || null,
+                        name: profile.name || null,
+                      },
+                    },
                   },
-                },
-              },
-            });
-            
-            await prisma.userProfile.create({
-              data: {
-                userId: newUser.id,
-                name: name,
-              },
-            });
+                });
+                isUnique = true; // Break loop if creation succeeds
+              } catch (error) {
+                if (error.code === "P2002" && error.meta?.target?.includes("username")) {
+                  // Handle unique constraint error by modifying username
+                  username = `${username}_${Math.floor(Math.random() * 1000)}`;
+                } else {
+                  throw error; // Re-throw if not a unique constraint error
+                }
+              }
+            }
           }
         } catch (error) {
           console.error("Error during Google sign-in:", error);
-          return false; // Deny sign-in if there's an error
+          return false; // Deny sign-in on error
         }
       }
       return true; // Allow sign-in
     },
 
-    // Handle redirects to ensure valid URLs
     async redirect({ url, baseUrl }) {
-      // Only allow redirects to the same origin
       return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
 
   pages: {
-    signIn: "/auth/login", // Redirect here for login
-    error: "/auth/error", // Redirect here for errors
+    signIn: "/auth/login",
+    error: "/auth/error",
   },
 
-  // Use secure secret for signing and encryption
   secret: process.env.NEXTAUTH_SECRET,
 
-  // Debugging for development; disable in production
   debug: process.env.NODE_ENV === "development",
 };
 

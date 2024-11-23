@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from "next/router";
 import routes from "../../routes";
@@ -18,7 +18,12 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoginActive, setIsLoginActive] = useState(true); // Dynamic color toggle
   const router = useRouter();
+
+  useEffect(() => {
+    setIsLoginActive(true); // Ensure "Log In" is active when on login page
+  }, []);
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
@@ -27,6 +32,7 @@ export default function Login() {
 
   // Navigate to SignUp page
   const navigateToSignUp = () => {
+    setIsLoginActive(false); // Set "Sign Up" active
     router.push(routes.auth.signup);
   };
 
@@ -62,8 +68,8 @@ export default function Login() {
     }
   };
 
-  // Handle Google Login
-  const handleGoogleLogin = async () => {
+  // Handle Google Signup/Login
+  const handleGoogleAuth = async () => {
     try {
       const response = await signIn("google", {
         callbackUrl: `${window.location.origin}${routes.pages.home}`,
@@ -72,12 +78,12 @@ export default function Login() {
       if (response?.ok && response.url) {
         router.push(response.url);
       } else {
-        setErrorMessage("Google login failed. Please try again.");
+        setErrorMessage("Google authentication failed. Please try again.");
         setIsModalOpen(true);
       }
     } catch (error) {
-      console.error("Google login failed:", error);
-      setErrorMessage("An error occurred during Google login. Please try again.");
+      console.error("Google authentication failed:", error);
+      setErrorMessage("An error occurred during Google authentication. Please try again.");
       setIsModalOpen(true);
     }
   };
@@ -106,7 +112,13 @@ export default function Login() {
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm font-light text-black">Already registered?</p>
             <div className="flex items-center space-x-2">
-              <p className={`text-sm font-bold text-green-600`}>Log In</p>
+              <p
+                className={`text-sm font-bold ${
+                  isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
+                Log In
+              </p>
               <button type="button" onClick={navigateToSignUp}>
                 <Image
                   src="/svg/signup_switch.svg"
@@ -115,13 +127,20 @@ export default function Login() {
                   height={24}
                 />
               </button>
-              <p className="text-sm font-bold text-black">Sign Up</p>
+              <p
+                className={`text-sm font-bold ${
+                  !isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
+                Sign Up
+              </p>
             </div>
           </div>
 
+          {/* Google Authentication Button */}
           <Button
             className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white"
-            onClick={handleGoogleLogin}
+            onClick={handleGoogleAuth}
           >
             <Image
               src="/svg/google_login.svg"
@@ -141,6 +160,7 @@ export default function Login() {
             <div className="w-full h-px bg-gray-300"></div>
           </div>
 
+          {/* Regular Login Form */}
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Username</label>
             <input

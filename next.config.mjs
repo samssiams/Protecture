@@ -2,7 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['nyukdheirsaftknfpcxo.supabase.co'], // Add your Supabase storage domain here
+    domains: [
+      'nyukdheirsaftknfpcxo.supabase.co', // Your Supabase storage domain
+      'lh3.googleusercontent.com', // Google profile image domain
+    ],
   },
 };
 
