@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from "next/router";
-import routes from "../../routes";
 import Button from "../../components/ui/button";
 import Image from "next/image";
 import axios from "axios";
@@ -17,9 +16,11 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const router = useRouter();
 
   const togglePasswordVisibility = () => {
@@ -27,34 +28,72 @@ export default function Signup() {
   };
 
   const navigateToLogin = () => {
-    router.push(routes.auth.login);
+    router.push("/auth/login");
   };
 
-  // Handle Regular Signup
+  // Handle Regular Signup - Generate OTP
   const handleRegularSignup = async () => {
-    if (!username || !name || !email || !password) {
-      setErrorMessage("Please fill in all fields before signing up.");
+    if (!username.trim() || !name.trim() || !email.trim() || !password.trim()) {
+      setErrorMessage("All fields are required.");
       setIsErrorModalOpen(true);
       return;
     }
 
+    console.log("Sending signup data for OTP generation:", { username, name, email, password });
+
     try {
-      const response = await axios.post(routes.api.authSignup, {
+      const response = await axios.post("/api/auth/register", {
         username,
         name,
         email,
         password,
       });
 
+      if (response.status === 200) {
+        console.log("OTP generated successfully:", response.data);
+        setIsOtpModalOpen(true); // Show OTP modal
+      }
+    } catch (error) {
+      console.error("Error during signup:", error.response?.data || error.message);
+      setErrorMessage(
+        error.response?.data?.error || "Error during signup. Please try again."
+      );
+      setIsErrorModalOpen(true);
+    }
+  };
+
+  // Verify OTP and Complete Signup
+  const verifyOtp = async () => {
+    if (!otp.trim()) {
+      setErrorMessage("OTP is required.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    console.log("Sending OTP verification request:", { email, otp, username, name, password });
+
+    try {
+      const response = await axios.post("/api/auth/verify", {
+        email,
+        otp,
+        username,
+        name,
+        password,
+      });
+
       if (response.status === 201) {
+        console.log("OTP verified successfully. User created:", response.data);
         setIsSuccessModalOpen(true);
         setTimeout(() => {
           navigateToLogin();
         }, 2000);
+      } else {
+        setErrorMessage("Invalid OTP. Please try again.");
+        setIsErrorModalOpen(true);
       }
     } catch (error) {
-      console.error("Error signing up:", error);
-      setErrorMessage("Error signing up. Please try again.");
+      console.error("Error verifying OTP:", error.response?.data || error.message);
+      setErrorMessage("Error verifying OTP. Please try again.");
       setIsErrorModalOpen(true);
     }
   };
@@ -86,30 +125,6 @@ export default function Signup() {
           >
             Protecture
           </h2>
-
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-sm font-light text-black">New here?</p>
-            <div className="flex items-center space-x-2">
-              <p className="text-sm font-bold text-black">Log In</p>
-              <button type="button" onClick={navigateToLogin}>
-                <Image
-                  src="/svg/login_switch.svg"
-                  alt="Toggle Sign Up and Log In"
-                  width={24}
-                  height={24}
-                />
-              </button>
-              <p className="text-sm font-bold text-green-600">Sign Up</p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between my-4">
-            <div className="w-full h-px bg-gray-300"></div>
-            <span className="text-gray-500 px-4">or</span>
-            <div className="w-full h-px bg-gray-300"></div>
-          </div>
-
-          {/* Regular Sign Up Form */}
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Username</label>
             <input
@@ -120,7 +135,6 @@ export default function Signup() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Name</label>
             <input
@@ -131,7 +145,6 @@ export default function Signup() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Email</label>
             <input
@@ -142,7 +155,6 @@ export default function Signup() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
             />
           </div>
-
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Password</label>
             <div className="relative">
@@ -169,8 +181,6 @@ export default function Signup() {
               </button>
             </div>
           </div>
-
-          {/* Regular Sign Up Button */}
           <Button className="w-full" onClick={handleRegularSignup}>
             Sign Up
           </Button>
@@ -230,6 +240,27 @@ export default function Signup() {
           </ul>
         </div>
       </div>
+
+      {/* OTP Modal */}
+      {isOtpModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 text-black bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg text-green-600 font-semibold text-center">
+              Enter OTP
+            </h2>
+            <input
+              type="text"
+              placeholder="Enter 6-digit OTP"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none text-black placeholder-black mt-4"
+            />
+            <div className="mt-6 flex justify-center">
+              <Button onClick={verifyOtp}>Verify</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Error Modal */}
       {isErrorModalOpen && (

@@ -10,12 +10,12 @@ generator client {
 model User {
   id             Int              @id @default(autoincrement())
   role           String
-  user_id        String           @unique
+  user_id        String           @unique @default(uuid())
   google_id      String?          @unique
   username       String           @unique
   email          String?          @unique
   password       String?
-  otp            String?
+  name           String?          // Add the missing `name` field
 
   accounts       Account[]
   profile        UserProfile?
@@ -25,6 +25,16 @@ model User {
   downvotes      Downvote[]
   notifications  Notification[]   @relation("UserNotifications")
   actions        Notification[]   @relation("ActionUserNotifications")
+}
+
+model Otp {
+  id           Int       @id @default(autoincrement())
+  email        String
+  otp          String
+  createdAt    DateTime  @default(now())
+  expiresAt    DateTime
+
+  @@index([email]) // Optimize lookups by email
 }
 
 model Account {
