@@ -21,6 +21,8 @@ export default function Signup() {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Loading state for signup
+  const [isVerifying, setIsVerifying] = useState(false); // Loading state for OTP verification
   const router = useRouter();
 
   const togglePasswordVisibility = () => {
@@ -41,6 +43,7 @@ export default function Signup() {
 
     console.log("Sending signup data for OTP generation:", { username, name, email, password });
 
+    setIsLoading(true); // Set loading state
     try {
       const response = await axios.post("/api/auth/register", {
         username,
@@ -59,6 +62,8 @@ export default function Signup() {
         error.response?.data?.error || "Error during signup. Please try again."
       );
       setIsErrorModalOpen(true);
+    } finally {
+      setIsLoading(false); // Reset loading state
     }
   };
 
@@ -72,6 +77,7 @@ export default function Signup() {
 
     console.log("Sending OTP verification request:", { email, otp, username, name, password });
 
+    setIsVerifying(true); // Set verifying state
     try {
       const response = await axios.post("/api/auth/verify", {
         email,
@@ -95,6 +101,8 @@ export default function Signup() {
       console.error("Error verifying OTP:", error.response?.data || error.message);
       setErrorMessage("Error verifying OTP. Please try again.");
       setIsErrorModalOpen(true);
+    } finally {
+      setIsVerifying(false); // Reset verifying state
     }
   };
 
@@ -118,6 +126,7 @@ export default function Signup() {
       }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
+        {/* Left Section */}
         <div className="p-8 md:w-96">
           <h2
             className="text-2xl font-bold text-green-600 mb-4 cursor-pointer"
@@ -181,8 +190,8 @@ export default function Signup() {
               </button>
             </div>
           </div>
-          <Button className="w-full" onClick={handleRegularSignup}>
-            Sign Up
+          <Button className="w-full" onClick={handleRegularSignup} disabled={isLoading}>
+            {isLoading ? "Signing up..." : "Sign Up"} {/* Conditional button text */}
           </Button>
         </div>
 
@@ -256,7 +265,9 @@ export default function Signup() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none text-black placeholder-black mt-4"
             />
             <div className="mt-6 flex justify-center">
-              <Button onClick={verifyOtp}>Verify</Button>
+              <Button onClick={verifyOtp} disabled={isVerifying}>
+                {isVerifying ? "Verifying..." : "Verify"} {/* Conditional button text */}
+              </Button>
             </div>
           </div>
         </div>

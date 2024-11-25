@@ -259,7 +259,7 @@ export default function Home() {
           </div>
 
           {loading ? (
-            <div className="text-center mt-10 text-[#22C55E] font-bold text-lg">Loading posts...</div>
+            <div className="text-center mt-10 text-black font-bold text-lg">Loading posts...</div>
           ) : (
             <PostContainer selectedCategory={selectedCategory} />
           )}

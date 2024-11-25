@@ -134,7 +134,7 @@ function PostContainer({ selectedCategory }) {
     : posts;
 
   if (!filteredPosts.length) {
-    return <div>No posts available</div>;
+    return <div>Fetching all posts...</div>;
   }
 
   return (
