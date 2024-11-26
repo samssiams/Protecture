@@ -24,13 +24,7 @@ export default function Navbar() {
   };
 
   const handleHomeClick = () => {
-    if (isActive(routes.pages.home)) {
-      // Reload the page if already on the Home page
-      router.replace(router.asPath); // This reloads the current page
-    } else {
-      // Navigate to Home
-      router.push(routes.pages.home);
-    }
+    window.location.href = routes.pages.home; // Force a full reload of the Home page
   };
 
   return (
@@ -68,7 +62,7 @@ export default function Navbar() {
                             : "text-[#787070] hover:bg-[#f0fdf4] hover:text-[#22C55E]"
                         }`}
           style={{ minWidth: "80px", cursor: "pointer" }}
-          onClick={handleHomeClick} // Added onClick event for reloading Home
+          onClick={handleHomeClick} // Reload Home on every click
         >
           <div
             className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105"

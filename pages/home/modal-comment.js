@@ -342,7 +342,7 @@ export default function CommentModal({
               }}
             />
             {warning && (
-              <p className="text-red-500 text-bold absolute bottom-[-20px] left-2">
+              <p className="text-red-500 text-bold absolute -[-20px] left-2 mt-1">
                 {warning}
               </p>
             )}
