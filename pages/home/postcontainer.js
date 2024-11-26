@@ -162,9 +162,25 @@ function PostContainer({ selectedCategory }) {
                 className="rounded-full"
               />
               <div className="ml-4">
-                <h3 className="font-bold text-black">
-                  {post.user?.profile?.name || post.user?.username}
-                </h3>
+              <h3
+  className="font-bold text-black cursor-pointer"
+  onClick={async () => {
+    const userId = post.user?.id;
+    try {
+      const response = await fetch(`/api/user/getUser?userId=${userId}`);
+      if (response.ok) {
+        const userData = await response.json();
+        console.log("Fetched user data:", userData);
+      } else {
+        console.error("Failed to fetch user data");
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }}
+>
+  {post.user?.profile?.name || post.user?.username}
+</h3>
                 <span className="text-black text-xs">
                   {new Date(post.created_at).toLocaleTimeString([], {
                     hour: "2-digit",

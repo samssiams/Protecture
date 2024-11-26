@@ -13,6 +13,24 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
     return formattedTime;
   };
 
+  const sanitizeText = (text) => {
+    if (!text) return "No content available";
+    const bannedWords = [
+      "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
+      "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
+      "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
+      "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+      "fvck", "fck", "fcking", "mf", "bobo", "tanga",
+      "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
+      "hayop", "siraulo", "tarantado", "bwisit", "pakyu",
+      "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
+      "gunggong", "salot", "walanghiya", "ampota", "syet", "putcha",
+      "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina"
+    ];
+    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
+    return text.replace(regex, (match) => "*".repeat(match.length));
+  };
+
   return (
     <div className="custom-scrollbar">
       {Array.isArray(comments) && comments.length > 0 ? (
@@ -31,7 +49,7 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
                   {comment?.username || "Anonymous"}
                 </span>
                 <span className="text-black text-base font-normal">
-                  {comment?.text || "No content available"}
+                  {sanitizeText(comment?.text)}
                   {comment?.edited && (
                     <span className="text-xs text-gray-500 ml-2">(Edited)</span>
                   )}

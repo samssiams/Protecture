@@ -21,8 +21,9 @@ export default function Signup() {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // Loading state for signup
-  const [isVerifying, setIsVerifying] = useState(false); // Loading state for OTP verification
+  const [isLoginActive, setIsLoginActive] = useState(false); // Dynamic color toggle
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const router = useRouter();
 
   const togglePasswordVisibility = () => {
@@ -31,6 +32,10 @@ export default function Signup() {
 
   const navigateToLogin = () => {
     router.push("/auth/login");
+  };
+
+  const navigateToSignUp = () => {
+    setIsLoginActive(false);
   };
 
   // Handle Regular Signup - Generate OTP
@@ -43,7 +48,7 @@ export default function Signup() {
 
     console.log("Sending signup data for OTP generation:", { username, name, email, password });
 
-    setIsLoading(true); // Set loading state
+    setIsSigningUp(true);
     try {
       const response = await axios.post("/api/auth/register", {
         username,
@@ -63,7 +68,7 @@ export default function Signup() {
       );
       setIsErrorModalOpen(true);
     } finally {
-      setIsLoading(false); // Reset loading state
+      setIsSigningUp(false);
     }
   };
 
@@ -77,7 +82,7 @@ export default function Signup() {
 
     console.log("Sending OTP verification request:", { email, otp, username, name, password });
 
-    setIsVerifying(true); // Set verifying state
+    setIsVerifying(true);
     try {
       const response = await axios.post("/api/auth/verify", {
         email,
@@ -102,7 +107,7 @@ export default function Signup() {
       setErrorMessage("Error verifying OTP. Please try again.");
       setIsErrorModalOpen(true);
     } finally {
-      setIsVerifying(false); // Reset verifying state
+      setIsVerifying(false);
     }
   };
 
@@ -126,7 +131,6 @@ export default function Signup() {
       }}
     >
       <div className="flex flex-col md:flex-row bg-white rounded-lg shadow-lg overflow-hidden max-w-3xl">
-        {/* Left Section */}
         <div className="p-8 md:w-96">
           <h2
             className="text-2xl font-bold text-green-600 mb-4 cursor-pointer"
@@ -134,6 +138,33 @@ export default function Signup() {
           >
             Protecture
           </h2>
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm font-light text-black">Create an account</p>
+            <div className="flex items-center space-x-2">
+              <p
+                className={`text-sm font-bold ${
+                  isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
+                Log In
+              </p>
+              <button type="button" onClick={navigateToLogin}>
+                <Image
+                  src="/svg/login_switch.svg"
+                  alt="Toggle Sign Up and Log In"
+                  width={24}
+                  height={24}
+                />
+              </button>
+              <p
+                className={`text-sm font-bold ${
+                  !isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
+                Sign Up
+              </p>
+            </div>
+          </div>
           <div className="mb-4">
             <label className="block text-black text-sm mb-2">Username</label>
             <input
@@ -190,8 +221,8 @@ export default function Signup() {
               </button>
             </div>
           </div>
-          <Button className="w-full" onClick={handleRegularSignup} disabled={isLoading}>
-            {isLoading ? "Signing up..." : "Sign Up"} {/* Conditional button text */}
+          <Button className="w-full" onClick={handleRegularSignup} disabled={isSigningUp}>
+            {isSigningUp ? "Signing up..." : "Sign Up"}
           </Button>
         </div>
 
@@ -266,7 +297,7 @@ export default function Signup() {
             />
             <div className="mt-6 flex justify-center">
               <Button onClick={verifyOtp} disabled={isVerifying}>
-                {isVerifying ? "Verifying..." : "Verify"} {/* Conditional button text */}
+                {isVerifying ? "Verifying..." : "Verify"}
               </Button>
             </div>
           </div>

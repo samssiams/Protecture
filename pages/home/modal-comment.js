@@ -16,11 +16,35 @@ export default function CommentModal({
   const [isPostOwner, setIsPostOwner] = useState(false);
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
   const [updatedComments, setUpdatedComments] = useState(comments); // State to hold updated comments
+  const [warning, setWarning] = useState(null); // Warning state for profanity
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
 
   const { data: session } = useSession();
   const currentUser = session?.user;
+
+  const bannedWords = [
+    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
+    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
+    "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
+    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+    "fvck", "fck", "fcking", "mf", "bobo", "tanga",
+    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
+    "hayop", "siraulo", "tarantado", "bwisit", "pakyu",
+    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
+    "gunggong", "salot", "walanghiya", "ampota", "syet", "putcha",
+    "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina"
+  ];
+
+  const containsProfanity = (text) => {
+    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
+    return regex.test(text);
+  };
+
+  const sanitizeText = (text) => {
+    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
+    return text.replace(regex, (match) => '*'.repeat(match.length));
+  };
 
   const fetchComments = useCallback(async () => {
     try {
@@ -99,7 +123,13 @@ export default function CommentModal({
   }, [isOpen, handleClickOutside]);
 
   const handleCommentChange = (e) => {
-    setCommentText(e.target.value);
+    const inputText = e.target.value;
+    if (containsProfanity(inputText)) {
+      setWarning("Your comment contains inappropriate language. It will be filtered.");
+    } else {
+      setWarning(null);
+    }
+    setCommentText(sanitizeText(inputText));
   };
 
   const handleCommentSubmit = async () => {
@@ -119,28 +149,26 @@ export default function CommentModal({
         body: JSON.stringify({
           postId: post?.id,
           commentText: commentText.trim(),
-          commentId: editingCommentId, // Only for editing
+          commentId: editingCommentId,
         }),
       });
 
       if (response.ok) {
         const updatedComment = await response.json();
         if (editingCommentId) {
-          // Update the edited comment
           setUpdatedComments((prevComments) =>
             prevComments.map((comment) =>
               comment.id === updatedComment.id ? updatedComment : comment
             )
           );
         } else {
-          // Add a new comment
           setUpdatedComments((prevComments) => [
             updatedComment,
             ...prevComments,
           ]);
         }
         setCommentText("");
-        setEditingCommentId(null); // Reset editing state
+        setEditingCommentId(null);
         setShowSuccessPopover(true);
 
         if (setCommentSubmitted) {
@@ -180,9 +208,9 @@ export default function CommentModal({
   };
 
   const handleEditComment = (comment) => {
-    setCommentText(comment.text); // Populate the input field with the comment text
-    setEditingCommentId(comment.id); // Track the comment being edited
-    commentInputRef.current?.focus(); // Focus the input field
+    setCommentText(comment.text);
+    setEditingCommentId(comment.id);
+    commentInputRef.current?.focus();
   };
 
   const handleImageDownload = () => {
@@ -313,6 +341,11 @@ export default function CommentModal({
                 outline: "none",
               }}
             />
+            {warning && (
+              <p className="text-red-500 text-bold absolute bottom-[-20px] left-2">
+                {warning}
+              </p>
+            )}
             <motion.div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
               <motion.button
                 onClick={handleCommentSubmit}

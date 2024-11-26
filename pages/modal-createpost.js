@@ -10,6 +10,7 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
   const [category, setCategory] = useState('');
   const [loading, setLoading] = useState(false); // Loading state to track post creation
   const [error, setError] = useState(null); // Error state
+  const [warning, setWarning] = useState(null); // Warning state for profanity
   const router = useRouter(); // Initialize router for reloading the page
 
   const handleImageUpload = (event) => {
@@ -21,6 +22,44 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
 
   const triggerFileInput = () => {
     document.getElementById('fileInput').click();
+  };
+
+  // List of banned words
+  const bannedWords = [
+    // English Profanity
+    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
+    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
+    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
+    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+    "fvck", "fck", "fcking", "mf", "bobo", "tanga",
+  
+    // Tagalog Profanity
+    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
+    "hayop", "siraulo", "tarantado", "bwisit", "ulol", "pakyu", 
+    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
+    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
+    "putcha", "punyemas", "hudas", "diyablo" , "g@go" , "8080" , "kingina"
+  ];
+  
+
+  const containsProfanity = (text) => {
+    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
+    return regex.test(text);
+  };
+
+  const sanitizeText = (text) => {
+    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
+    return text.replace(regex, (match) => '*'.repeat(match.length));
+  };
+
+  const handleDescriptionChange = (e) => {
+    const inputText = e.target.value;
+    if (containsProfanity(inputText)) {
+      setWarning('Your text contains inappropriate language. It will be filtered.');
+    } else {
+      setWarning(null);
+    }
+    setDescription(sanitizeText(inputText)); // Automatically sanitize text
   };
 
   const handlePost = async () => {
@@ -60,14 +99,14 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <motion.div
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.8 }}
-        transition={{ duration: 0.2 }}
-        className="bg-white rounded-[5px] shadow-lg p-5 relative"
+      initial={{ scale: 0.8 }}
+      animate={{ scale: 1 }}
+      exit={{ scale: 0.8 }}
+      transition={{ duration: 0.2 }}
+      className="bg-white rounded-[5px] shadow-lg p-5 relative modal-container"
         style={{
           width: '500px',
-          height: '500px',
+          minheight: '200px',
           border: '1px solid black',
         }}
       >
@@ -104,9 +143,10 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
             placeholder="What will you post?"
             style={{ backgroundColor: 'transparent', border: 'none' }}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={handleDescriptionChange}
           />
         </div>
+        {warning && <p className="text-red-500 font-bold text-center mt-2">{warning}</p>}
 
         {/* Dropdown for Category Selection */}
         <div className="relative mb-4">
