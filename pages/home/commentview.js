@@ -16,16 +16,21 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
   const sanitizeText = (text) => {
     if (!text) return "No content available";
     const bannedWords = [
-      "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
-      "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
-      "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
-      "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-      "fvck", "fck", "fcking", "mf", "bobo", "tanga",
-      "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
-      "hayop", "siraulo", "tarantado", "bwisit", "pakyu",
-      "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
-      "gunggong", "salot", "walanghiya", "ampota", "syet", "putcha",
-      "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina"
+    // English Profanity
+    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
+    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
+    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
+    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , 
+  
+    // Tagalog Profanity
+    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
+    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
+    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
+    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
+    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
+    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
+    "kinangina" 
     ];
     const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
     return text.replace(regex, (match) => "*".repeat(match.length));

@@ -31,14 +31,16 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
     "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
     "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
     "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf", "bobo", "tanga",
+    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , 
   
     // Tagalog Profanity
     "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
-    "hayop", "siraulo", "tarantado", "bwisit", "ulol", "pakyu", 
+    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
     "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
     "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
-    "putcha", "punyemas", "hudas", "diyablo" , "g@go" , "8080" , "kingina"
+    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
+    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
+    "kinangina" 
   ];
   
 
@@ -146,7 +148,7 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
             onChange={handleDescriptionChange}
           />
         </div>
-        {warning && <p className="text-red-500 font-bold text-center mt-2">{warning}</p>}
+        {warning && <p className="text-red-500 font-regular text-center mt-2 mb-2">{warning}</p>}
 
         {/* Dropdown for Category Selection */}
         <div className="relative mb-4">
