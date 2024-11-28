@@ -40,7 +40,7 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
     "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
     "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
     "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina" , "tangina" , "hayuf" , "hayf" 
+    "kinangina" , "tangina" , "hayuf" , "hayf" ,"inamo" , "namo"
   ];
   
 

@@ -21,7 +21,7 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
     "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
     "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
     "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , 
+    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , "MotherFucker" ,
   
     // Tagalog Profanity
     "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
@@ -30,7 +30,7 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
     "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
     "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
     "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina" 
+    "kinangina" , "tangina" , "hayuf" , "hayf" ,"inamo" , "namo"
     ];
     const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
     return text.replace(regex, (match) => "*".repeat(match.length));
