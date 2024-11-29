@@ -23,9 +23,16 @@ export default async function handler(req, res) {
   if (req.method === "POST") {
     const { username, email, password, name } = req.body;
 
+    // Check for required fields
     if (!username || !email || !password || !name) {
       console.error("Validation failed: Missing required fields.");
       return res.status(400).json({ error: "All fields are required for OTP generation." });
+    }
+
+    // Check if the password meets the minimum length requirement
+    if (password.length < 8) {
+      console.error("Validation failed: Password is too short.");
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
     }
 
     try {

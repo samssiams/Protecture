@@ -12,22 +12,28 @@ const chakraPetch = Chakra_Petch({
 
 export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Separate toggle for Confirm Password
   const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [isLoginActive, setIsLoginActive] = useState(false); // Dynamic color toggle
+  const [isLoginActive, setIsLoginActive] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const router = useRouter();
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const navigateToLogin = () => {
@@ -40,8 +46,20 @@ export default function Signup() {
 
   // Handle Regular Signup - Generate OTP
   const handleRegularSignup = async () => {
-    if (!username.trim() || !name.trim() || !email.trim() || !password.trim()) {
+    if (!username.trim() || !name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       setErrorMessage("All fields are required.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      setIsErrorModalOpen(true);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage("Passwords do not match.");
       setIsErrorModalOpen(true);
       return;
     }
@@ -59,7 +77,7 @@ export default function Signup() {
 
       if (response.status === 200) {
         console.log("OTP generated successfully:", response.data);
-        setIsOtpModalOpen(true); // Show OTP modal
+        setIsOtpModalOpen(true);
       }
     } catch (error) {
       console.error("Error during signup:", error.response?.data || error.message);
@@ -215,6 +233,32 @@ export default function Signup() {
                     showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
                   }
                   alt="Toggle Password Visibility"
+                  width={24}
+                  height={24}
+                />
+              </button>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className="block text-black text-sm mb-2">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-3 flex items-center"
+                onClick={toggleConfirmPasswordVisibility}
+              >
+                <Image
+                  src={
+                    showConfirmPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
+                  }
+                  alt="Toggle Confirm Password Visibility"
                   width={24}
                   height={24}
                 />

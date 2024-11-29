@@ -1,4 +1,3 @@
-// modal-editprofile.js
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -8,7 +7,6 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
   const headerInputRef = useRef(null);
 
   const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const [headerImage, setHeaderImage] = useState('');
 
@@ -29,7 +27,6 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
   useEffect(() => {
     if (isOpen && currentProfileData) {
       setName(currentProfileData.name || '');
-      setUsername(currentProfileData.username || '');
       setProfileImage(currentProfileData.profile_img || '');
       setHeaderImage(currentProfileData.header_img || '');
       setTempProfileImage(currentProfileData.profile_img || '');
@@ -94,7 +91,6 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
 
     const updatedData = {
       name,
-      username,
       profile_img: tempProfileImage || profileImage || currentProfileData?.profile_img || '',
       header_img: tempHeaderImage || headerImage || currentProfileData?.header_img || '',
     };
@@ -207,8 +203,8 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
 
         <hr className="border-t border-gray-400 mb-8" style={{ height: '0.1px', margin: '0' }} />
 
-        {/* Name and Username Fields */}
-        <div className="mb-6">
+        {/* Name Field */}
+        <div className="mb-10">
           <label className="text-[18px] text-black font-bold mb-1 mt-5 block">Name</label>
           <input
             type="text"
@@ -216,16 +212,6 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             className="border border-gray-400 rounded-[5px] focus:outline-none w-full h-[38px] px-3 text-gray-700"
             value={name}
             onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        <div className="mb-10">
-          <label className="text-[18px] text-black font-bold mb-2 block">Username</label>
-          <input
-            type="text"
-            placeholder="Enter your new username"
-            className="border border-gray-400 rounded-[5px] focus:outline-none w-full h-[38px] px-3 text-gray-700"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
 
