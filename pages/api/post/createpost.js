@@ -1,4 +1,3 @@
-// api/createpost.js
 import fs from "fs";
 import path from "path";
 import prisma from "../../../lib/prisma";
@@ -37,6 +36,27 @@ export default async function handler(req, res) {
 
       if (!session || !session.user) {
         return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userId = session.user.id;
+
+      // Rate limiting: Check the user's recent posts
+      const postLimitTimeWindow = 5 * 60 * 1000; // 2 minutes in milliseconds
+      const now = new Date();
+
+      const recentPostsCount = await prisma.post.count({
+        where: {
+          user_id: userId,
+          created_at: {
+            gte: new Date(now - postLimitTimeWindow), // Posts created within the last 2 minutes
+          },
+        },
+      });
+
+      if (recentPostsCount >= 3) {
+        return res
+          .status(429)
+          .json({ message: "You can only post up to 3 times within 2 minutes. Please wait and try again." });
       }
 
       // Parse the form data
@@ -87,7 +107,7 @@ export default async function handler(req, res) {
           userId: session.user.id,
           actionUserId: session.user.id,
           type: "POST_CREATE",
-          message: "successfully created a new post.", // Message without "You"
+          message: "successfully created a new post.",
         },
       });
 

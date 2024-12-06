@@ -36,10 +36,18 @@ export default async function handler(req, res) {
     }
 
     try {
-      console.log("Checking if user already exists with email:", email);
-      const existingUser = await prisma.user.findUnique({ where: { email } });
+      console.log("Checking if username already exists:", username);
+      // Check if the username already exists
+      const existingUserByUsername = await prisma.user.findUnique({ where: { username } });
+      if (existingUserByUsername) {
+        console.error("Username already exists:", username);
+        return res.status(400).json({ error: "Username already taken. Please choose another one." });
+      }
 
-      if (existingUser) {
+      console.log("Checking if user already exists with email:", email);
+      const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
+
+      if (existingUserByEmail) {
         console.error("User already exists with email:", email);
         return res.status(400).json({ error: "User with this email already exists." });
       }
