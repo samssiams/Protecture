@@ -9,6 +9,12 @@ const routes = {
     profile: '/home/profile',
     about: '/about',
   },
+  admin: {
+    users: '/admin/users-admin',
+    flagged: '/admin/flagged-admin',
+    topics: '/admin/topics-admin',
+    appeal: '/admin/appeal-admin',
+  },
   api: {
     authLogin: '/api/auth/login',
     authSignup: '/api/auth/register',

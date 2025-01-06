@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import routes from "@/routes";
+import routes from "@/routes"; // Adjust the path to your routes.js
 
 export default function Navbar() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function Navbar() {
   return (
     <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-1 px-8 flex justify-between items-center">
       {/* Protecture Text */}
-      <span className="text-xl font-bold text-green-600">Protecture Admin</span>
+      <span className="text-xl font-bold text-green-600">Protecture</span>
 
       {/* Logout */}
       <a
