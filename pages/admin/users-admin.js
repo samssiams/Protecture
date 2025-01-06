@@ -1,13 +1,11 @@
-// components/ui/users-admin.js
+import Navbar from "../../components/ui/navbar-admin"; // Importing Navbar Admin
 import { useState } from "react";
-import { useRouter } from "next/router";
 import FlaggedAdmin from "./flagged-admin";
 import TopicAdmin from "./topic-admin";
 import AppealAdmin from "./appeal-admin";
 
 export default function UsersAdmin() {
   const [currentView, setCurrentView] = useState("users"); // Track the current view
-  const router = useRouter();
 
   const handleNavigation = (view) => {
     setCurrentView(view); // Change the current view when a tab is clicked
@@ -17,21 +15,8 @@ export default function UsersAdmin() {
 
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
-      {/* Fixed Navbar */}
-      <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-4 px-8 flex justify-between items-center">
-        <h1
-          className="text-xl font-bold text-green-600 cursor-pointer"
-          onClick={() => router.push("/")}
-        >
-          Protecture Admin
-        </h1>
-        <button
-          onClick={() => router.push("/logout")}
-          className="text-[#787070] hover:text-[#22C55E] transition-transform duration-300 ease-out transform hover:scale-105"
-        >
-          Log out
-        </button>
-      </div>
+      {/* Navbar */}
+      <Navbar />
 
       {/* Page Content */}
       <div className="pt-24 px-8 flex justify-center">

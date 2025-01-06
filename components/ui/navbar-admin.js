@@ -1,17 +1,15 @@
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import routes from "@/routes";
 
 export default function Navbar() {
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
 
-  const handleHomeClick = () => {
-    window.location.href = "/"; // Redirect to Home page
-  };
-
   const handleLogout = () => {
-    router.push("/auth/login"); // Redirect to login page
+    console.log("Logout button clicked, redirecting to login page.");
+    router.push(routes.auth.login); // Redirect to login page
   };
 
   const handleConfirmLogout = () => {
@@ -24,13 +22,8 @@ export default function Navbar() {
 
   return (
     <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-1 px-8 flex justify-between items-center">
-      {/* Protecture Button */}
-      <button
-        onClick={handleHomeClick}
-        className="text-xl font-bold text-green-600 cursor-pointer"
-      >
-        Protecture Admin
-      </button>
+      {/* Protecture Text */}
+      <span className="text-xl font-bold text-green-600">Protecture Admin</span>
 
       {/* Logout */}
       <a
