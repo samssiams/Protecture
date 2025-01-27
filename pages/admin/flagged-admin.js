@@ -1,77 +1,91 @@
-import { useState } from "react";
-import ModalFlagged from "../../pages/admin/modal-admin/modal-flagged";
+import Navbar from "../../components/ui/navbar-admin";
+import Tabs from "./tabs";
+import { useEffect, useState } from "react";
 
 export default function FlaggedAdmin() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [reports, setReports] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const handleOpenModal = (user) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
-  };
+  // Fetch flagged reports from the backend
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const response = await fetch("/api/admin/admin-flagged");
+        if (!response.ok) {
+          throw new Error("Failed to fetch reports");
+        }
+        const data = await response.json();
+        setReports(data.reports);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+        setLoading(false);
+      }
+    };
 
-  const handleCloseModal = () => {
-    setSelectedUser(null);
-    setIsModalOpen(false);
-  };
+    fetchReports();
+  }, []);
 
-  const handleSuspend = () => {
-    console.log(`User ${selectedUser} suspended.`);
-    // Add any API call or logic for suspending the user here
-    handleCloseModal();
-  };
-
-  const handleDismiss = () => {
-    console.log(`Report for ${selectedUser} dismissed.`);
-    // Add any API call or logic for dismissing the report here
-    handleCloseModal();
-  };
+  const filteredReports = reports.filter(
+    (report) =>
+      report.reportedBy.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reportedUser.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
-    <div
-      className="bg-white p-6 rounded-lg"
-      style={{
-        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
-      }}
-    >
-      <h2 className="text-lg font-bold text-black mb-6">Flagged Users Module</h2>
-      <div className="space-y-4">
-        {["@joexsu", "@johndoe", "@janedoe"].map((user, index) => (
-          <div
-            key={index}
-            className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
-          >
-            <div className="flex items-center space-x-4">
-              <img
-                src="/placeholder-avatar.png"
-                alt="User Avatar"
-                className="w-10 h-10 rounded-full"
-              />
-              <span className="text-gray-700">{user}</span>
-            </div>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => handleOpenModal(user)}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
-              >
-                Review
-              </button>
-            </div>
+    <div className="min-h-screen bg-[#F5FDF4]">
+      <Navbar />
+      <div className="pt-24 px-8 flex justify-center">
+        <div className="w-full max-w-4xl">
+          <Tabs />
+          {/* Search Bar */}
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search reports by reporter, reported user, or reason..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-gray-500"
+            />
           </div>
-        ))}
+          {/* Flagged Reports */}
+          <div
+            className="bg-white p-6 rounded-lg"
+            style={{
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <h2 className="text-lg font-bold text-black mb-6">Flagged Reports</h2>
+            {loading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : filteredReports.length > 0 ? (
+              <div className="space-y-4">
+                {filteredReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                  >
+                    <div>
+                      <p className="text-gray-700 font-bold">
+                        Reporter: {report.reportedBy.username}
+                      </p>
+                      <p className="text-gray-500">
+                        Reported User: {report.reportedUser.username}
+                      </p>
+                      <p className="text-gray-500">Reason: {report.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No flagged reports found.</p>
+            )}
+          </div>
+        </div>
       </div>
-      <button className="mt-6 w-full bg-[#22C55E] text-white py-2 rounded-lg font-bold hover:bg-green-600 transition">
-        View All Report
-      </button>
-      {isModalOpen && (
-        <ModalFlagged
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onSuspend={handleSuspend}
-          onDismiss={handleDismiss}
-          user={selectedUser}
-        />
-      )}
     </div>
   );
 }

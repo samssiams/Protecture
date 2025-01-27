@@ -12,7 +12,7 @@ const routes = {
   admin: {
     users: '/admin/users-admin',
     flagged: '/admin/flagged-admin',
-    topics: '/admin/topics-admin',
+    topics: '/admin/topic-admin',
     appeal: '/admin/appeal-admin',
   },
   api: {

@@ -26,6 +26,7 @@ model User {
   downvotes      Downvote[]
   notifications  Notification[]   @relation("UserNotifications")
   actions        Notification[]   @relation("ActionUserNotifications")
+  reports        Report[]         @relation("ReportedUsers")
 }
 
 model Otp {
@@ -82,6 +83,7 @@ model Post {
   upvotes     Upvote[]
   downvotes   Downvote[]
   user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reports     Report[]  @relation("ReportedPosts")
 }
 
 model Comment {
@@ -130,4 +132,17 @@ model Notification {
   actionUser   User      @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
 
   @@index([userId])
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  postId      Int
+  reportedBy  Int
+  reason      String
+  createdAt   DateTime @default(now())
+
+  post        Post     @relation("ReportedPosts", fields: [postId], references: [id], onDelete: Cascade)
+  reporter    User     @relation("ReportedUsers", fields: [reportedBy], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }

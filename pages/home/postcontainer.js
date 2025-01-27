@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react"; // Import useSession hook
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import { useRouter } from "next/router";
@@ -10,25 +11,22 @@ function PostContainer({ selectedCategory }) {
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [votedPosts, setVotedPosts] = useState({}); // Track upvote/downvote state
+  const [votedPosts, setVotedPosts] = useState({});
+  const { data: session } = useSession(); // Get the session using useSession
   const router = useRouter();
 
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        // Determine the current route
         const currentPath = router.pathname;
+        const query =
+          currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
 
-        // Build the query string based on the current path
-        const query = currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
-
-        // Fetch posts from the API
         const response = await fetch(`/api/post/getposts${query}`);
         if (response.ok) {
           const data = await response.json();
           setPosts(data);
 
-          // Initialize vote state
           const initialVotes = data.reduce((acc, post) => {
             if (post.userVote) {
               acc[post.id] = post.userVote;
@@ -52,22 +50,22 @@ function PostContainer({ selectedCategory }) {
     const rect = dotsButton.getBoundingClientRect();
 
     const position = {
-      left: rect.left + window.scrollX, // Adjust for horizontal scrolling
-      top: rect.bottom + window.scrollY + 5, // Adjust to position below the dots
+      left: rect.left + window.scrollX,
+      top: rect.bottom + window.scrollY + 5,
     };
 
     setSelectedPost(post);
-    setModalPosition(position); // Set modal position dynamically
+    setModalPosition(position);
     setShowModal((prevShowModal) => !prevShowModal);
   };
 
   const handleCommentModalToggle = (post) => {
     setSelectedPost(post);
-    setShowCommentModal(true); // Open the CommentModal
+    setShowCommentModal(true);
   };
 
   const closeCommentModal = () => {
-    setShowCommentModal(false); // Close the CommentModal
+    setShowCommentModal(false);
   };
 
   const handleVote = async (postId, action) => {
@@ -85,13 +83,11 @@ function PostContainer({ selectedCategory }) {
       if (response.ok) {
         const updatedPost = await response.json();
 
-        // Update vote state
         setVotedPosts((prevVotes) => ({
           ...prevVotes,
           [postId]: prevVotes[postId] === action ? null : action,
         }));
 
-        // Update posts
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
             post.id === updatedPost.id ? updatedPost : post
@@ -117,7 +113,6 @@ function PostContainer({ selectedCategory }) {
       if (response.ok) {
         alert("Post archived successfully!");
 
-        // Remove the archived post from the state
         setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
       } else {
         const errorData = await response.json();
@@ -128,7 +123,6 @@ function PostContainer({ selectedCategory }) {
     }
   };
 
-  // Filter posts by selected category, if a category is selected
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
@@ -152,7 +146,6 @@ function PostContainer({ selectedCategory }) {
                 "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
-            {/* Header Section */}
             <div className="flex items-center mb-4">
               <Image
                 src={post.user?.profile?.profile_img || "/images/default-profile.png"}
@@ -162,25 +155,27 @@ function PostContainer({ selectedCategory }) {
                 className="rounded-full"
               />
               <div className="ml-4">
-              <h3
-  className="font-bold text-black cursor-pointer"
-  onClick={async () => {
-    const userId = post.user?.id;
-    try {
-      const response = await fetch(`/api/user/getUser?userId=${userId}`);
-      if (response.ok) {
-        const userData = await response.json();
-        console.log("Fetched user data:", userData);
-      } else {
-        console.error("Failed to fetch user data");
-      }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  }}
->
-  {post.user?.profile?.name || post.user?.username}
-</h3>
+                <h3
+                  className="font-bold text-black cursor-pointer"
+                  onClick={async () => {
+                    const userId = post.user?.id;
+                    try {
+                      const response = await fetch(
+                        `/api/user/getUser?userId=${userId}`
+                      );
+                      if (response.ok) {
+                        const userData = await response.json();
+                        console.log("Fetched user data:", userData);
+                      } else {
+                        console.error("Failed to fetch user data");
+                      }
+                    } catch (error) {
+                      console.error("Error fetching user data:", error);
+                    }
+                  }}
+                >
+                  {post.user?.profile?.name || post.user?.username}
+                </h3>
                 <span className="text-black text-xs">
                   {new Date(post.created_at).toLocaleTimeString([], {
                     hour: "2-digit",
@@ -205,13 +200,11 @@ function PostContainer({ selectedCategory }) {
               </div>
             </div>
 
-            {/* Post Description */}
             <p className="text-[#4A4A4A] mb-4">{post.description}</p>
             <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
               {post.category_id}
             </span>
 
-            {/* Post Image */}
             <div
               className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
               onClick={() => handleCommentModalToggle(post)}
@@ -225,10 +218,8 @@ function PostContainer({ selectedCategory }) {
               />
             </div>
 
-            {/* Reaction Section */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
-                {/* Downvote Button */}
                 <button
                   onClick={() => handleVote(post.id, "DOWNVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
@@ -248,10 +239,8 @@ function PostContainer({ selectedCategory }) {
                   />
                 </button>
 
-                {/* Counter */}
                 <span className="text-black">{post.counter}</span>
 
-                {/* Upvote Button */}
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
@@ -272,7 +261,6 @@ function PostContainer({ selectedCategory }) {
                 </button>
               </div>
 
-              {/* Comments Section */}
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
                   <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
@@ -281,7 +269,6 @@ function PostContainer({ selectedCategory }) {
               </div>
             </div>
 
-            {/* Comment Modal */}
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
                 isOpen={showCommentModal}
@@ -298,13 +285,13 @@ function PostContainer({ selectedCategory }) {
               />
             )}
 
-            {/* Dots Modal */}
             {showModal && selectedPost?.id === post.id && (
               <ModalDots
                 isOpen={showModal}
                 onClose={() => setShowModal(false)}
-                position={modalPosition} // Pass the dynamically calculated position
-                post={post}
+                position={modalPosition}
+                postId={selectedPost?.id}
+                reporterId={session?.user?.id} // Use session user ID here
               />
             )}
           </div>

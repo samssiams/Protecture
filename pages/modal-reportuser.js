@@ -1,45 +1,53 @@
-// modal-reportusers.js
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-export default function ReportUserModal({ isOpen, onClose, postId }) {
+export default function ReportUserModal({ isOpen, onClose, postId, reporterId }) {
   const [description, setDescription] = useState('');
-  const [reportSuccess, setReportSuccess] = useState(false); // Track if the report was successful
+  const [reportStatus, setReportStatus] = useState(''); // Tracks the status of the report (success or error)
 
-  console.log('Modal isOpen:', isOpen); // Debugging: Check if the modal is open
+  if (!isOpen) return null;
 
-  if (!isOpen) {
-    console.log('Modal is closed, returning null');
-    return null;
-  }
+  // Debugging: Log props to check if they're passed correctly
+  console.log('ReportUserModal props:', { postId, reporterId });
 
   const handleReport = async () => {
+    console.log('Report button clicked'); // Log when the report button is clicked
+    console.log('Submitting report with data:', { postId, reason: description, reportedBy: reporterId });
+
+    if (!postId || !reporterId) {
+      console.error('postId or reporterId is missing!');
+      setReportStatus('error');
+      return;
+    }
+
     try {
       const response = await fetch('/api/post/reportuser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, reason: description }), // Add postId and reason for the report
+        body: JSON.stringify({ postId, reason: description, reportedBy: reporterId }),
       });
 
+      console.log('Response status:', response.status); // Log the response status
+
       if (response.ok) {
-        console.log('Reported successfully:', description); // Debugging: Check the report content
-        setReportSuccess(true); // Set report success state to true to display the success message
+        console.log('Report submitted successfully');
+        setReportStatus('success'); // Report was successful
       } else {
-        console.error('Failed to report:', await response.text());
+        const errorMessage = await response.text();
+        console.error('Failed to report:', errorMessage);
+        setReportStatus('error'); // Failed to report
       }
     } catch (error) {
       console.error('Error reporting post:', error);
+      setReportStatus('error'); // Failed to report
     }
   };
 
   const handleClose = () => {
-    console.log('Closing modal');
-    // Close the modal after success message is shown
-    if (reportSuccess) {
-      setReportSuccess(false); // Reset the success state for the next use
-      onClose(); // Close the modal
-    }
+    setReportStatus(''); // Reset the status for the next use
+    setDescription(''); // Clear the description field
+    onClose();
   };
 
   return (
@@ -51,10 +59,10 @@ export default function ReportUserModal({ isOpen, onClose, postId }) {
         transition={{ duration: 0.2 }}
         className="bg-white rounded-[5px] shadow-lg p-5 relative"
         style={{
-          width: '400px', // Reduced width from 544px to 400px
+          width: '400px',
           height: '300px',
           border: '1px solid black',
-          zIndex: 1000, // Ensure modal has a higher z-index to be above other content
+          zIndex: 1000,
         }}
       >
         {/* Modal Header */}
@@ -72,8 +80,8 @@ export default function ReportUserModal({ isOpen, onClose, postId }) {
 
         {/* Modal Content */}
         <div className="mt-4">
-          {reportSuccess ? (
-            // If report is successful, show success message
+          {reportStatus === 'success' ? (
+            // Success message
             <div className="text-center mt-20">
               <p className="text-green-500 font-semibold text-[16px] mb-4">Report Successful!</p>
               <button
@@ -84,29 +92,36 @@ export default function ReportUserModal({ isOpen, onClose, postId }) {
                   color: '#22C55E',
                   backgroundColor: 'white',
                 }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#22C55E';
-                  e.target.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = '#22C55E';
-                }}
               >
                 Close
               </button>
             </div>
+          ) : reportStatus === 'error' ? (
+            // Error message
+            <div className="text-center mt-20">
+              <p className="text-red-500 font-semibold text-[16px] mb-4">Error: Failed to submit the report.</p>
+              <button
+                onClick={() => setReportStatus('')} // Allow retry by clearing the status
+                className="w-full h-[40px] font-semibold rounded transition duration-300 mt-10"
+                style={{
+                  border: '1px solid #DC2626',
+                  color: '#DC2626',
+                  backgroundColor: 'white',
+                }}
+              >
+                Retry
+              </button>
+            </div>
           ) : (
-            // Otherwise show the textarea for entering report details
+            // Default form to submit a report
             <>
               <p className="text-black text-[16px] mb-2">Why are you reporting this user/post?</p>
               <textarea
                 className="mt-1 w-full h-[80px] px-3 text-black text-[14px] resize-none focus:outline-none placeholder-gray-500"
                 placeholder="Write your reason..."
-                style={{ backgroundColor: 'transparent', border: 'none' }}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                autoFocus // Ensure the textarea gets focused automatically when modal is opened
+                autoFocus
               />
 
               {/* Report Button */}
@@ -117,14 +132,6 @@ export default function ReportUserModal({ isOpen, onClose, postId }) {
                   border: '1px solid #22C55E',
                   color: '#22C55E',
                   backgroundColor: 'white',
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#22C55E';
-                  e.target.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.color = '#22C55E';
                 }}
               >
                 Report
