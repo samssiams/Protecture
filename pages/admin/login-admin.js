@@ -1,26 +1,30 @@
-// components/LoginAdmin.js
-
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 const LoginAdmin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // New state for loading
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevState) => !prevState);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setIsModalVisible(false);
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
     try {
       const result = await signIn('credentials', {
-        redirect: false, // Prevent automatic redirection
+        redirect: false,
         username,
         password,
       });
@@ -32,21 +36,20 @@ const LoginAdmin = () => {
           setError(result.error || 'Login failed');
         }
       } else {
-        // After successful sign-in, fetch the session to get user role
         const sessionRes = await fetch('/api/auth/session');
         const session = await sessionRes.json();
 
         if (session?.user?.role === 'admin') {
           router.push('/admin/users-admin');
         } else {
-          router.push('/'); // Fallback to home if not admin
+          router.push('/');
         }
       }
     } catch (err) {
       console.error('Error during login request:', err);
       setError('An error occurred. Please try again.');
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
@@ -58,37 +61,56 @@ const LoginAdmin = () => {
       <div className="bg-white shadow-md rounded-lg p-8 max-w-sm w-full">
         <h2 className="text-2xl font-semibold text-center text-green-600 mb-6">Admin Login</h2>
         <form onSubmit={handleLogin}>
+          {/* Username Field */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700" htmlFor="username">Username</label>
             <input
               type="text"
               id="username"
-              className="w-full px-3 py-2 mt-1 border rounded-md text-black focus:ring-green-500 focus:border-green-500 border-gray-300"
+              className="w-full px-3 py-2 mt-1 border rounded-md text-black placeholder-gray-500 focus:ring-green-500 focus:border-green-500 border-gray-300"
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700" htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              className="w-full px-3 py-2 mt-1 border rounded-md text-black focus:ring-green-500 focus:border-green-500 border-gray-300"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+
+          {/* Password Field with Toggle */}
+          <div className="mb-4">
+            <label className="block text-black text-sm mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border rounded-md text-black placeholder-gray-500 focus:ring-green-500 focus:border-green-500 border-gray-300"
+                required
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-3 flex items-center"
+                onClick={togglePasswordVisibility}
+              >
+                <Image
+                  src={
+                    showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
+                  }
+                  alt="Toggle Password Visibility"
+                  width={24}
+                  height={24}
+                />
+              </button>
+            </div>
           </div>
+
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             type="submit"
             className={`w-full py-2 text-white bg-green-600 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none flex items-center justify-center ${
               isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
-            disabled={isLoading} // Disable button when loading
+            disabled={isLoading}
           >
             {isLoading && (
               <svg
@@ -117,7 +139,6 @@ const LoginAdmin = () => {
         </form>
       </div>
 
-      {/* Modal for Non-Admin Users */}
       {isModalVisible && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
