@@ -1,4 +1,7 @@
+// components/LoginAdmin.js
+
 import React, { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/router';
 
 const LoginAdmin = () => {
@@ -6,40 +9,44 @@ const LoginAdmin = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // New state for loading
   const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setIsModalVisible(false);
+    setIsLoading(true); // Start loading
 
     try {
-      // Attempt to log in
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+      const result = await signIn('credentials', {
+        redirect: false, // Prevent automatic redirection
+        username,
+        password,
       });
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-
-        if (response.ok) {
-          router.push(data.redirectTo); // Navigate to the admin page
-        } else if (response.status === 403) {
-          setIsModalVisible(true); // Show modal for non-admin users
+      if (result.error) {
+        if (result.error === 'You are not an admin') {
+          setIsModalVisible(true);
         } else {
-          setError(data.message || 'Login failed');
+          setError(result.error || 'Login failed');
         }
       } else {
-        // Handle unexpected non-JSON responses
-        const text = await response.text();
-        setError(text || 'An unexpected error occurred');
+        // After successful sign-in, fetch the session to get user role
+        const sessionRes = await fetch('/api/auth/session');
+        const session = await sessionRes.json();
+
+        if (session?.user?.role === 'admin') {
+          router.push('/admin/users-admin');
+        } else {
+          router.push('/'); // Fallback to home if not admin
+        }
       }
-    } catch (error) {
-      console.error('Error during login request:', error);
+    } catch (err) {
+      console.error('Error during login request:', err);
       setError('An error occurred. Please try again.');
+    } finally {
+      setIsLoading(false); // End loading
     }
   };
 
@@ -60,6 +67,7 @@ const LoginAdmin = () => {
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
           <div className="mb-6">
@@ -71,14 +79,40 @@ const LoginAdmin = () => {
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </div>
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
           <button
             type="submit"
-            className="w-full py-2 text-white bg-green-600 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none"
+            className={`w-full py-2 text-white bg-green-600 rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none flex items-center justify-center ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isLoading} // Disable button when loading
           >
-            Login
+            {isLoading && (
+              <svg
+                className="animate-spin h-5 w-5 mr-3 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v8H4z"
+                ></path>
+              </svg>
+            )}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
