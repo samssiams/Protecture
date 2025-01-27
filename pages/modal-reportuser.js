@@ -1,9 +1,9 @@
-// modal-reportuser.js
+// modal-reportusers.js
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
-export default function ReportUserModal({ isOpen, onClose }) {
+export default function ReportUserModal({ isOpen, onClose, postId }) {
   const [description, setDescription] = useState('');
   const [reportSuccess, setReportSuccess] = useState(false); // Track if the report was successful
 
@@ -14,12 +14,23 @@ export default function ReportUserModal({ isOpen, onClose }) {
     return null;
   }
 
-  const handleReport = () => {
-    // Simulate the report being sent successfully
-    console.log('Reported:', description); // Debugging: Check the report content
+  const handleReport = async () => {
+    try {
+      const response = await fetch('/api/post/reportuser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, reason: description }), // Add postId and reason for the report
+      });
 
-    // Set report success state to true to display the success message
-    setReportSuccess(true);
+      if (response.ok) {
+        console.log('Reported successfully:', description); // Debugging: Check the report content
+        setReportSuccess(true); // Set report success state to true to display the success message
+      } else {
+        console.error('Failed to report:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error reporting post:', error);
+    }
   };
 
   const handleClose = () => {
@@ -27,7 +38,7 @@ export default function ReportUserModal({ isOpen, onClose }) {
     // Close the modal after success message is shown
     if (reportSuccess) {
       setReportSuccess(false); // Reset the success state for the next use
-      onClose();  // Close the modal after success message is shown
+      onClose(); // Close the modal
     }
   };
 
@@ -43,7 +54,7 @@ export default function ReportUserModal({ isOpen, onClose }) {
           width: '400px', // Reduced width from 544px to 400px
           height: '300px',
           border: '1px solid black',
-          zIndex: 1000,  // Ensure modal has a higher z-index to be above other content
+          zIndex: 1000, // Ensure modal has a higher z-index to be above other content
         }}
       >
         {/* Modal Header */}
