@@ -140,6 +140,7 @@ model Report {
   postId      Int
   reportedBy  Int
   reason      String
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
 
   post        Post     @relation("ReportedPosts", fields: [postId], references: [id], onDelete: Cascade)

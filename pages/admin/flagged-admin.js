@@ -6,6 +6,7 @@ export default function FlaggedAdmin() {
   const [reports, setReports] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [modalData, setModalData] = useState(null); // For modal confirmation
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -15,7 +16,12 @@ export default function FlaggedAdmin() {
           throw new Error("Failed to fetch reports");
         }
         const data = await response.json();
-        console.log("Fetched reports:", data.reports); // Log fetched reports
+
+        // Log the postId for each report
+        data.reports.forEach((report, index) => {
+          console.log(`Report ${index + 1} - Post ID:`, report.postId);
+        });
+
         setReports(data.reports);
         setLoading(false);
       } catch (error) {
@@ -27,41 +33,41 @@ export default function FlaggedAdmin() {
     fetchReports();
   }, []);
 
-  const handleSuspendPost = async (postId) => {
-    console.log("Attempting to suspend post with ID:", postId); // Debugging log
+  const handleSuspendPost = async (postId, reportId) => {
+    // Log both postId and reportId for debugging
+    console.log(`postId: ${postId}, reportId: ${reportId}`);
 
-    if (!postId) {
-      console.error("Post ID is undefined or invalid."); // Log undefined ID error
+    if (!postId || !reportId) {
+      console.error("Post ID or Report ID is undefined or invalid."); // Log undefined ID error
       return;
     }
 
     try {
-      const response = await fetch("/api/admin/suspend-post", {
+      const response = await fetch("/api/admin/suspend-post", { // Updated endpoint
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ postId }),
+        body: JSON.stringify({ postId, reportId }), // Send both postId and reportId
       });
 
-      console.log("API response status:", response.status); // Debugging log
-
       if (!response.ok) {
-        throw new Error("Failed to suspend post");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to suspend user");
       }
 
-      const result = await response.json();
-      console.log("API response data:", result); // Debugging log
+      const data = await response.json();
 
-      const updatedReports = reports.map((report) =>
-        report.id === postId
-          ? { ...report, status: result.post.status }
-          : report
+      console.log("Suspension successful:", data); // Log success
+
+      // Remove the report from the list after successful suspension
+      setReports((prevReports) =>
+        prevReports.filter((report) => report.reportId !== reportId)
       );
-      setReports(updatedReports);
-      console.log("Updated reports:", updatedReports); // Debugging log
+
+      setModalData(null); // Close modal
     } catch (error) {
-      console.error("Error suspending post:", error); // Debugging log
+      console.error("Error suspending post:", error); // Log any errors
     }
   };
 
@@ -99,35 +105,30 @@ export default function FlaggedAdmin() {
               <p className="text-gray-500">Loading...</p>
             ) : filteredReports.length > 0 ? (
               <div className="space-y-4">
-                {filteredReports.map((report) => {
-                  console.log("Current report object:", report); // Log report object
-
-                  return (
-                    <div
-                      key={report.id}
-                      className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
-                    >
-                      <div>
-                        <p className="text-gray-700 font-bold">
-                          Reporter: {report.reportedBy?.username || "Unknown"}
-                        </p>
-                        <p className="text-gray-500">
-                          Reported User: {report.reportedUser?.username || "Unknown"}
-                        </p>
-                        <p className="text-gray-500">Reason: {report.reason}</p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          console.log("Suspend button clicked for:", report.id); // Log post ID
-                          handleSuspendPost(report.id); // Pass the correct post ID
-                        }}
-                        className="bg-red-500 text-white font-bold px-4 py-2 rounded-md hover:bg-red-600"
-                      >
-                        Suspend Post
-                      </button>
+                {filteredReports.map((report, index) => (
+                  <div
+                    key={report.reportId} // Use reportId as key
+                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                  >
+                    <div>
+                      <p className="text-gray-700 font-bold">
+                        Reporter: {report.reportedBy?.username || "Unknown"}
+                      </p>
+                      <p className="text-gray-500">
+                        Reported User: {report.reportedUser?.username || "Unknown"}
+                      </p>
+                      <p className="text-gray-500">Reason: {report.reason}</p>
                     </div>
-                  );
-                })}
+                    <button
+                      onClick={() => {
+                        setModalData(report);
+                      }} // Open modal with report data
+                      className="bg-red-500 text-white font-bold px-4 py-2 rounded-md hover:bg-red-600"
+                    >
+                      Suspend User
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="text-gray-500">No flagged reports found.</p>
@@ -135,6 +136,34 @@ export default function FlaggedAdmin() {
           </div>
         </div>
       </div>
+      {modalData && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg">
+            <h3 className="text-lg font-medium mb-4 text-black">Are you sure?</h3>
+            <p className="text-black font-medium">
+              Do you want to suspend the user "{modalData.reportedUser?.username || "Unknown"}"?
+            </p>
+            <div className="mt-4 flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setModalData(null);
+                }} // Close modal
+                className="px-4 py-2 bg-gray-300 rounded-md text-black font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleSuspendPost(modalData.postId, modalData.reportId); // Pass both postId and reportId
+                }} // Suspend user
+                className="px-4 py-2 bg-red-500 text-white rounded-md font-bold"
+              >
+                Yes, Suspend
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

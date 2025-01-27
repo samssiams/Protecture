@@ -1,9 +1,14 @@
+// File: /pages/api/admin/admin-flagged.js
+
 import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
       const reports = await prisma.report.findMany({
+        where: {
+          status: "PENDING", // Fetch only pending reports
+        },
         include: {
           post: {
             include: {
@@ -26,7 +31,8 @@ export default async function handler(req, res) {
 
       // Format the response for the frontend
       const formattedReports = reports.map((report) => ({
-        id: report.id,
+        reportId: report.id, // Renamed for clarity
+        postId: report.post.id, // Included Post ID
         reason: report.reason,
         reportedBy: {
           id: report.reporter.id,
@@ -36,6 +42,7 @@ export default async function handler(req, res) {
           id: report.post.user.id,
           username: report.post.user.username,
         },
+        status: report.status, // Include status in the response
         createdAt: report.createdAt,
       }));
 
@@ -53,8 +60,10 @@ export default async function handler(req, res) {
 
     try {
       if (action === "dismiss") {
-        await prisma.report.delete({
+        // Update report status to DISMISSED instead of deleting
+        await prisma.report.update({
           where: { id: reportId },
+          data: { status: "DISMISSED" },
         });
         res.status(200).json({ message: "Report dismissed successfully." });
       } else if (action === "suspend") {
@@ -62,7 +71,7 @@ export default async function handler(req, res) {
           where: { id: reportId },
           include: {
             post: {
-              select: { userId: true },
+              select: { id: true, userId: true },
             },
           },
         });
@@ -77,9 +86,16 @@ export default async function handler(req, res) {
           data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }, // Suspend for 7 days
         });
 
-        // Delete the report after the action is taken
-        await prisma.report.delete({
+        // Update the report status to FULFILLED
+        await prisma.report.update({
           where: { id: reportId },
+          data: { status: "FULFILLED" },
+        });
+
+        // Optionally, update the post's status to "SUSPENDED" to prevent future reports
+        await prisma.post.update({
+          where: { id: report.post.id },
+          data: { status: "SUSPENDED" }, // Changed to "SUSPENDED" as per your requirement
         });
 
         res.status(200).json({ message: "User suspended successfully." });
