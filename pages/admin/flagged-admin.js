@@ -7,7 +7,6 @@ export default function FlaggedAdmin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Fetch flagged reports from the backend
   useEffect(() => {
     const fetchReports = async () => {
       try {
@@ -16,6 +15,7 @@ export default function FlaggedAdmin() {
           throw new Error("Failed to fetch reports");
         }
         const data = await response.json();
+        console.log("Fetched reports:", data.reports); // Log fetched reports
         setReports(data.reports);
         setLoading(false);
       } catch (error) {
@@ -27,11 +27,49 @@ export default function FlaggedAdmin() {
     fetchReports();
   }, []);
 
+  const handleSuspendPost = async (postId) => {
+    console.log("Attempting to suspend post with ID:", postId); // Debugging log
+
+    if (!postId) {
+      console.error("Post ID is undefined or invalid."); // Log undefined ID error
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/suspend-post", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ postId }),
+      });
+
+      console.log("API response status:", response.status); // Debugging log
+
+      if (!response.ok) {
+        throw new Error("Failed to suspend post");
+      }
+
+      const result = await response.json();
+      console.log("API response data:", result); // Debugging log
+
+      const updatedReports = reports.map((report) =>
+        report.id === postId
+          ? { ...report, status: result.post.status }
+          : report
+      );
+      setReports(updatedReports);
+      console.log("Updated reports:", updatedReports); // Debugging log
+    } catch (error) {
+      console.error("Error suspending post:", error); // Debugging log
+    }
+  };
+
   const filteredReports = reports.filter(
     (report) =>
-      report.reportedBy.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportedUser.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reason.toLowerCase().includes(searchQuery.toLowerCase())
+      report.reportedBy?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reportedUser?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      report.reason?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -40,7 +78,6 @@ export default function FlaggedAdmin() {
       <div className="pt-24 px-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Tabs />
-          {/* Search Bar */}
           <div className="mb-6">
             <input
               type="text"
@@ -50,7 +87,6 @@ export default function FlaggedAdmin() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-gray-500"
             />
           </div>
-          {/* Flagged Reports */}
           <div
             className="bg-white p-6 rounded-lg"
             style={{
@@ -63,22 +99,35 @@ export default function FlaggedAdmin() {
               <p className="text-gray-500">Loading...</p>
             ) : filteredReports.length > 0 ? (
               <div className="space-y-4">
-                {filteredReports.map((report) => (
-                  <div
-                    key={report.id}
-                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
-                  >
-                    <div>
-                      <p className="text-gray-700 font-bold">
-                        Reporter: {report.reportedBy.username}
-                      </p>
-                      <p className="text-gray-500">
-                        Reported User: {report.reportedUser.username}
-                      </p>
-                      <p className="text-gray-500">Reason: {report.reason}</p>
+                {filteredReports.map((report) => {
+                  console.log("Current report object:", report); // Log report object
+
+                  return (
+                    <div
+                      key={report.id}
+                      className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                    >
+                      <div>
+                        <p className="text-gray-700 font-bold">
+                          Reporter: {report.reportedBy?.username || "Unknown"}
+                        </p>
+                        <p className="text-gray-500">
+                          Reported User: {report.reportedUser?.username || "Unknown"}
+                        </p>
+                        <p className="text-gray-500">Reason: {report.reason}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          console.log("Suspend button clicked for:", report.id); // Log post ID
+                          handleSuspendPost(report.id); // Pass the correct post ID
+                        }}
+                        className="bg-red-500 text-white font-bold px-4 py-2 rounded-md hover:bg-red-600"
+                      >
+                        Suspend Post
+                      </button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-gray-500">No flagged reports found.</p>

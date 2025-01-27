@@ -96,10 +96,89 @@ export default function UsersAdmin() {
       .catch((err) => console.error("Error unsuspending user:", err));
   };
 
+  // Timer countdown for suspended users
+  const calculateRemainingTime = (endTime) => {
+    const now = new Date();
+    const remainingTime = new Date(endTime) - now;
+
+    if (remainingTime <= 0) {
+      return null; // Suspension expired
+    }
+
+    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
+
+    return `${minutes}m ${seconds}s`;
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSuspendedUsers((prev) => {
+        const updatedSuspensions = {};
+
+        Object.entries(prev).forEach(([userId, endTime]) => {
+          if (new Date(endTime) > new Date()) {
+            updatedSuspensions[userId] = endTime;
+          }
+        });
+
+        return updatedSuspensions;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
       {/* Navbar */}
       <Navbar />
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-bold text-red-500 mb-4">
+              Confirm Suspension
+            </h2>
+            <p className="text-black">
+              Are you sure you want to suspend this user for 1 hour?
+            </p>
+            <div className="flex justify-end space-x-4 mt-4">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
+                No
+              </button>
+              <button
+                onClick={suspendUser}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-bold text-green-500 mb-4">Success</h2>
+            <p className="text-black">
+              The user has been successfully suspended for 1 hour.
+            </p>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Page Content */}
       <div className="pt-24 px-8 flex justify-center">
@@ -138,7 +217,8 @@ export default function UsersAdmin() {
                     {suspendedUsers[user.id] ? (
                       <>
                         <span className="text-red-500 font-bold">
-                          Suspension active
+                          {calculateRemainingTime(suspendedUsers[user.id]) ||
+                            "Suspension expired"}
                         </span>
                         <button
                           className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition"
@@ -158,7 +238,7 @@ export default function UsersAdmin() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-700">No users available.</p>
+                <p className="text-gray-700">Loading...</p>
               )}
             </div>
             {offset < filteredUsers.length && (

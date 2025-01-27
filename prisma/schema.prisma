@@ -79,6 +79,7 @@ model Post {
   created_at  DateTime  @default(now())
   counter     Int       @default(0)
   archived    Boolean   @default(false)
+  status      String?   // Nullable status column added
   comments    Comment[]
   upvotes     Upvote[]
   downvotes   Downvote[]
