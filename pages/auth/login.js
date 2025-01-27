@@ -1,10 +1,12 @@
+// components/Login.js
+
 import { useState, useEffect } from "react";
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from "next/router";
 import routes from "../../routes";
 import Button from "../../components/ui/button";
 import Image from "next/image";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 
 const chakraPetch = Chakra_Petch({
   subsets: ["latin"],
@@ -37,13 +39,10 @@ export default function Login() {
   };
 
   // Handle Login
-  const handleLogin = async () => {
-    if (!username || !password) {
-      setErrorMessage("Username and password are required.");
-      setIsModalOpen(true);
-      return;
-    }
-
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setErrorMessage("");
+    setIsModalOpen(false);
     setIsLoading(true);
     try {
       const response = await signIn("credentials", {
@@ -53,16 +52,12 @@ export default function Login() {
       });
 
       if (response?.ok) {
-        const { url } = response;
-        console.log("Login role check");
-        if (url) {
-          if (url.includes("/admin/users-admin")) {
-            console.log("Redirecting to admin route");
-            router.push(routes.admin.users); // Admin redirection
-          } else {
-            console.log("Redirecting to user route");
-            router.push(routes.pages.home); // User redirection
-          }
+        // Fetch the session to get user role
+        const session = await getSession();
+        if (session?.user?.role === "admin") {
+          router.push(routes.admin.users); // Admin redirection
+        } else {
+          router.push(routes.pages.home); // User redirection
         }
       } else {
         let errorData;
@@ -95,7 +90,7 @@ export default function Login() {
         callbackUrl: `${window.location.origin}${routes.pages.home}`,
       });
 
-      if (response?.ok && response.url) {
+      if (response?.url) {
         router.push(response.url);
       } else {
         setErrorMessage("Google authentication failed. Please try again.");
@@ -161,7 +156,7 @@ export default function Login() {
 
           {/* Google Authentication Button */}
           <Button
-            className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white"
+            className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white mb-4"
             onClick={handleGoogleAuth}
           >
             <Image
@@ -183,59 +178,83 @@ export default function Login() {
           </div>
 
           {/* Regular Login Form */}
-          <div className="mb-4">
-            <label className="block text-black text-sm mb-2">Username</label>
-            <input
-              type="text"
-              placeholder="Enter your username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-black text-sm mb-2">Password</label>
-            <div className="relative">
+          <form onSubmit={handleLogin}>
+            <div className="mb-4">
+              <label className="block text-black text-sm mb-2">Username</label>
               <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="text"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
+                required
               />
-              <button
-                type="button"
-                className="absolute inset-y-0 right-3 flex items-center"
-                onClick={togglePasswordVisibility}
-              >
-                <Image
-                  src={
-                    showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
-                  }
-                  alt="Toggle Password Visibility"
-                  width={24}
-                  height={24}
-                />
-              </button>
             </div>
-          </div>
 
-          <Button
-            className={`w-full ${
-              isLoading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            onClick={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <span className="loader mr-2"></span>Logging in...
+            <div className="mb-4">
+              <label className="block text-black text-sm mb-2">Password</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-black"
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-3 flex items-center"
+                  onClick={togglePasswordVisibility}
+                >
+                  <Image
+                    src={
+                      showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
+                    }
+                    alt="Toggle Password Visibility"
+                    width={24}
+                    height={24}
+                  />
+                </button>
               </div>
-            ) : (
-              "Login"
-            )}
-          </Button>
+            </div>
+
+            <Button
+              type="submit"
+              className={`w-full flex items-center justify-center ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-3 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
+            </Button>
+          </form>
         </div>
 
         {/* Right Section */}
