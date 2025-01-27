@@ -50,18 +50,38 @@ export default function Login() {
         redirect: false,
         username,
         password,
-        callbackUrl: `${window.location.origin}${routes.pages.home}`,
       });
 
       if (response?.ok) {
-        router.push(response.url || routes.pages.home);
+        const { url } = response;
+        console.log("Login role check");
+        if (url) {
+          if (url.includes("/admin/users-admin")) {
+            console.log("Redirecting to admin route");
+            router.push(routes.admin.users); // Admin redirection
+          } else {
+            console.log("Redirecting to user route");
+            router.push(routes.pages.home); // User redirection
+          }
+        }
       } else {
-        setErrorMessage("Invalid username or password. Please try again.");
+        let errorData;
+        try {
+          errorData = JSON.parse(response.error); // Attempt to parse as JSON
+        } catch {
+          errorData = { message: response.error }; // Fallback to plain string
+        }
+
+        setErrorMessage(
+          errorData.message || "Invalid username or password. Please try again."
+        );
         setIsModalOpen(true);
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setErrorMessage("An error occurred while trying to log in. Please try again.");
+      setErrorMessage(
+        "An error occurred while trying to log in. Please try again."
+      );
       setIsModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -83,7 +103,9 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Google authentication failed:", error);
-      setErrorMessage("An error occurred during Google authentication. Please try again.");
+      setErrorMessage(
+        "An error occurred during Google authentication. Please try again."
+      );
       setIsModalOpen(true);
     }
   };
@@ -188,7 +210,9 @@ export default function Login() {
                 onClick={togglePasswordVisibility}
               >
                 <Image
-                  src={showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"}
+                  src={
+                    showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
+                  }
                   alt="Toggle Password Visibility"
                   width={24}
                   height={24}
@@ -198,7 +222,9 @@ export default function Login() {
           </div>
 
           <Button
-            className={`w-full ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`w-full ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
             onClick={handleLogin}
             disabled={isLoading}
           >

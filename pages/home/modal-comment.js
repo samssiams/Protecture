@@ -33,7 +33,7 @@ export default function CommentModal({
   
     // Tagalog Profanity
     "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
-    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
+    "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu", 
     "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
     "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
     "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",

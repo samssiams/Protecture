@@ -16,6 +16,7 @@ model User {
   email          String?          @unique
   password       String?
   name           String?          // Add the missing `name` field
+  suspendedUntil DateTime?        // Field to track suspension until a specific time
 
   accounts       Account[]
   profile        UserProfile?

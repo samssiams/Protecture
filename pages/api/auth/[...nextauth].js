@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import routes from "@/routes"; // Ensure this matches your project structure
 
 const prisma = new PrismaClient();
 
@@ -28,6 +29,16 @@ export const authOptions = {
           throw new Error("User not found.");
         }
 
+        // Check if user is suspended
+        const currentTime = new Date();
+        if (user.suspendedUntil && user.suspendedUntil > currentTime) {
+          throw new Error(
+            `Your account is suspended until ${new Date(
+              user.suspendedUntil
+            ).toLocaleString()}.`
+          );
+        }
+
         const isPasswordCorrect = await bcrypt.compare(
           credentials.password,
           user.password
@@ -37,10 +48,12 @@ export const authOptions = {
           throw new Error("Incorrect password.");
         }
 
+        console.log("Role during authorization:", user.role); // Log role
         return {
           id: user.id,
           username: user.username,
           email: user.email,
+          role: user.role, // Include role
           profileImg: user.profile?.profile_img || null,
         };
       },
@@ -64,12 +77,27 @@ export const authOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token) {
+        const user = await prisma.user.findUnique({
+          where: { id: token.id },
+        });
+
+        if (user?.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
+          throw new Error(
+            `Your account is suspended until ${new Date(
+              user.suspendedUntil
+            ).toLocaleString()}.`
+          );
+        }
+
         session.user = {
           id: token.id,
           username: token.username || token.email?.split("@")[0],
           email: token.email,
+          role: token.role, // Include role in session
           profileImg: token.profileImg,
         };
+
+        console.log("Role in session:", session.user.role); // Log role
       }
       return session;
     },
@@ -79,7 +107,10 @@ export const authOptions = {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
+        token.role = user.role; // Include role in token
         token.profileImg = user.profileImg;
+
+        console.log("Role in JWT callback:", token.role); // Log role
       }
 
       if (account?.provider === "google" && profile) {
@@ -110,75 +141,48 @@ export const authOptions = {
               });
               isUnique = true; // Break loop if creation succeeds
             } catch (error) {
-              if (error.code === "P2002" && error.meta?.target?.includes("username")) {
-                // Handle unique constraint error by modifying username
+              if (
+                error.code === "P2002" &&
+                error.meta?.target?.includes("username")
+              ) {
                 username = `${username}_${Math.floor(Math.random() * 1000)}`;
               } else {
-                throw error; // Re-throw if not a unique constraint error
+                throw error;
               }
             }
           }
+        }
+
+        const currentTime = new Date();
+        if (userRecord.suspendedUntil && userRecord.suspendedUntil > currentTime) {
+          throw new Error(
+            `Your account is suspended until ${new Date(
+              userRecord.suspendedUntil
+            ).toLocaleString()}.`
+          );
         }
 
         token.id = userRecord.id;
         token.username = userRecord.username;
         token.email = userRecord.email;
+        token.role = userRecord.role; // Include role from database
         token.profileImg =
           userRecord.profile?.profile_img || profile.picture || null;
+
+        console.log("Role in Google JWT:", token.role); // Log role
       }
 
       return token;
     },
 
-    async signIn({ account, profile }) {
-      if (account.provider === "google" && profile) {
-        try {
-          const userExists = await prisma.user.findFirst({
-            where: { email: profile.email },
-          });
-
-          if (!userExists) {
-            let username = profile.name || profile.email.split("@")[0];
-
-            // Ensure username uniqueness
-            let isUnique = false;
-            while (!isUnique) {
-              try {
-                await prisma.user.create({
-                  data: {
-                    username,
-                    email: profile.email,
-                    role: "user",
-                    user_id: `user_${Date.now()}`,
-                    profile: {
-                      create: {
-                        profile_img: profile.picture || null,
-                        name: profile.name || null,
-                      },
-                    },
-                  },
-                });
-                isUnique = true; // Break loop if creation succeeds
-              } catch (error) {
-                if (error.code === "P2002" && error.meta?.target?.includes("username")) {
-                  // Handle unique constraint error by modifying username
-                  username = `${username}_${Math.floor(Math.random() * 1000)}`;
-                } else {
-                  throw error; // Re-throw if not a unique constraint error
-                }
-              }
-            }
-          }
-        } catch (error) {
-          console.error("Error during Google sign-in:", error);
-          return false; // Deny sign-in on error
-        }
+    async redirect({ url, baseUrl, token }) {
+      console.log("Role from token:", token?.role);
+      if (token?.role === "admin") {
+        return routes.admin.users; // Ensure this uses your routes correctly
+      } else if (token?.role === "user") {
+        return routes.pages.home; // User is redirected here
       }
-      return true; // Allow sign-in
-    },
-
-    async redirect({ url, baseUrl }) {
-      return url.startsWith(baseUrl) ? url : baseUrl;
+      return baseUrl; // Fallback
     },
   },
 
