@@ -238,7 +238,7 @@ export default function UsersAdmin() {
                   </div>
                 ))
               ) : (
-                <p className="text-gray-700">Loading...</p>
+                <p className="text-gray-700">No user found.</p>
               )}
             </div>
             {offset < filteredUsers.length && (

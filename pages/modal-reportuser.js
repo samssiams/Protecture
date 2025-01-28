@@ -92,6 +92,14 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
                   color: '#22C55E',
                   backgroundColor: 'white',
                 }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = 'white';
+                  e.target.style.backgroundColor = '#22C55E';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#22C55E';
+                  e.target.style.backgroundColor = 'white';
+                }}
               >
                 Close
               </button>
@@ -99,7 +107,7 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
           ) : reportStatus === 'error' ? (
             // Error message
             <div className="text-center mt-20">
-              <p className="text-red-500 font-semibold text-[16px] mb-4">Error: Failed to submit the report.</p>
+              <p className="text-red-500 font-semibold text-[16px] mb-4">Write your reasons first.</p>
               <button
                 onClick={() => setReportStatus('')} // Allow retry by clearing the status
                 className="w-full h-[40px] font-semibold rounded transition duration-300 mt-10"
@@ -132,10 +140,18 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
                   border: '1px solid #22C55E',
                   color: '#22C55E',
                   backgroundColor: 'white',
-                }}
-              >
-                Report
-              </button>
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.color = 'white';
+                      e.target.style.backgroundColor = '#22C55E';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.color = '#22C55E';
+                      e.target.style.backgroundColor = 'white';
+                    }}
+                  >
+                    Report
+                  </button>
             </>
           )}
         </div>
