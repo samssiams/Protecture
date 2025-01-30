@@ -13,11 +13,6 @@ export default async function handler(req, res) {
     // Retrieve the session using getServerSession
     const session = await getServerSession(req, res, authOptions);
 
-    // Ensure the user is logged in
-    if (!session || !session.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
     // Find the user in the database
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },

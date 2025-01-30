@@ -20,22 +20,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Retrieve session
-    const session = await getServerSession(req, res, authOptions);
-
-    if (!session || !session.user) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    // Check if the user is an admin
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
     // Update the community status
     const updatedCommunity = await prisma.community.update({
       where: { id: communityId },
