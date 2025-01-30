@@ -1,22 +1,41 @@
+// components/modal-createcommunity.js
+
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import ApprovalCommunityModal from './modal-communityapproval'; // Import ApprovalCommunityModal
+import axios from 'axios';
 
 export default function CreateCommunityModal({ isOpen, onClose }) {
   const [communityName, setCommunityName] = useState('');
   const [communityPurpose, setCommunityPurpose] = useState('');
   const [isApprovalOpen, setIsApprovalOpen] = useState(false); // State for approval modal
+  const [error, setError] = useState(null);
 
   if (!isOpen) return null;
 
   // Function to handle community creation
-  const handleCreateCommunity = () => {
-    // Add your community creation logic here
-    console.log('Community Created');  // Replace with actual creation logic
+  const handleCreateCommunity = async () => {
+    setError(null);
+    try {
+      const response = await axios.post('/api/community/create-community', {
+        name: communityName,
+        description: communityPurpose,
+      });
 
-    // Show the approval modal
-    setIsApprovalOpen(true);
+      if (response.status === 201) {
+        // Show the approval modal
+        setIsApprovalOpen(true);
+        setCommunityName('');
+        setCommunityPurpose('');
+      }
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    }
   };
 
   const handleAccept = () => {
@@ -84,6 +103,10 @@ export default function CreateCommunityModal({ isOpen, onClose }) {
               rows={3}  // Initial number of rows
             />
           </div>
+
+          {error && (
+            <p className="text-red-500 text-center mb-4">{error}</p>
+          )}
 
           {/* Create Community Button */}
           <button

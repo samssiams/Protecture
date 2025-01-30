@@ -9,6 +9,9 @@ const routes = {
     profile: '/home/profile',
     about: '/about',
   },
+  community: {
+    home: '/community/[id]',
+  },
   admin: {
     users: '/admin/users-admin',
     flagged: '/admin/flagged-admin',

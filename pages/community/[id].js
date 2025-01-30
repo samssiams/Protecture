@@ -1,27 +1,24 @@
+// pages/home/index.js
+
 import Link from 'next/link';
 import Navbar from '@/components/ui/navbar';
 import Image from 'next/image';
-import PostContainer from '../home/postcontainer';
 import { useState, useEffect } from 'react';
 import CreatePostModal from '../modal-createpost';
 import CreateCommunityModal from '../modal-createcommunity';
-import CommentModal from '../home/modal-comment';
 import Skeleton from '@/components/ui/skeleton';
 import axios from 'axios';
 import Chatbot from '@/components/ui/chatbot';
 import { useRouter } from 'next/router';
-import NotificationSidebar from '../notification'; // Import the Notification Sidebar
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
-  const [isCommentModalOpen, setCommentModalOpen] = useState(false);
-  const [currentPost, setCurrentPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  const [userPostCount, setUserPostCount] = useState(0);
-  const [commentSubmitted, setCommentSubmitted] = useState(false);
+  const [communityData, setCommunityData] = useState(null);
   const router = useRouter();
+  const { id } = router.query;
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -35,59 +32,29 @@ export default function Home() {
     }
   };
 
-  const fetchUserPostCount = async () => {
+  const fetchCommunityDetails = async () => {
+    if (!id) return;
     try {
-      const response = await axios.get('/api/post/getposts?countOnly=true');
+      const response = await axios.get('/api/community/get-community-details', {
+        params: { communityId: id },
+      });
       if (response.status === 200) {
-        setUserPostCount(response.data.count);
+        setCommunityData(response.data);
       }
     } catch (error) {
-      console.error('Failed to fetch user post count:', error);
+      console.error('Failed to fetch community details:', error);
     }
   };
 
   useEffect(() => {
     fetchUserData();
-    fetchUserPostCount();
-  }, []);
-
-  useEffect(() => {
-    const { postId } = router.query;
-
-    if (postId) {
-      const fetchPostDetails = async () => {
-        try {
-          const response = await axios.get(`/api/post/getpost?postId=${postId}`);
-          if (response.status === 200) {
-            setCurrentPost(response.data);
-            setCommentModalOpen(true);
-          }
-        } catch (error) {
-          console.error("Failed to fetch post details:", error);
-        }
-      };
-
-      fetchPostDetails();
-    }
-  }, [router.query]);
+    fetchCommunityDetails();
+  }, [id]);
 
   const openModal = () => setModalOpen(true);
   const closeModal = () => setModalOpen(false);
   const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
   const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
-
-  const closeCommentModal = () => {
-    setCommentModalOpen(false);
-    setCurrentPost(null);
-
-    if (commentSubmitted) {
-      fetchUserPostCount();
-      window.location.reload();
-      setCommentSubmitted(false);
-    }
-
-    router.push('/', undefined, { shallow: true });
-  };
 
   const refreshHomePage = () => {
     window.location.reload();
@@ -151,10 +118,6 @@ export default function Home() {
 
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{userPostCount}</p>
-                    <p className="text-[15px] text-[#787070]">Posts</p>
-                  </div>
-                  <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
                     <p className="font-bold text-[18px] text-black">{userData?.followers || 0}</p>
                     <p className="text-[15px] text-[#787070]">Followers</p>
                   </div>
@@ -216,23 +179,59 @@ export default function Home() {
           <hr className="fixed left-0 top-0 w-full z-10 flex-grow border-t-[15.5rem] border-[#F0FDF4]" />
           <hr className="fixed top-[220px] z-40 w-[41rem] flex-grow border-[.5] border-[#000000]" />
           
-          {/* Removed Filter Category */}
+          {/* CommunityPost */}
           <div className="pt-[11rem] flex items-center mt-5 mb-[43px] relative">
-            {loading ? (
-              <div className="text-center mt-60 text-black font-bold text-lg">Loading posts...</div>
-            ) : (
-              <PostContainer selectedCategory={null} />
-            )}
+            
           </div>
         </div>
 
-        <NotificationSidebar />
+        {/* Right Sidebar */}
+        <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-8">
+          <div
+            className="mt-14 bg-white p-4 rounded-[15px] shadow-lg custom-scrollbar"
+            style={{
+              width: '316px',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #E0E0E0',
+            }}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="font-semibold text-[18px] text-black">
+                {communityData ? `p/${communityData.name}` : <Skeleton width="150px" height="25px" />}
+              </h2>
+            </div>
+            <hr className="border-t border-black w-full mb-3" />
+            <ul className="space-y-2">
+              {communityData ? (
+                <p className='text-black/80'>{communityData.description}</p>
+              ) : (
+                <Skeleton width="100%" height="20px" />
+              )}
+            </ul>
+          </div>
+          <style jsx>{`
+            .custom-scrollbar {
+              scrollbar-width: thin;
+            }
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #555;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: #f0f0f0;
+            }
+          `}</style>
+        </div>
         <Chatbot />
       </div>
 
       <CreatePostModal open={isModalOpen} closeModal={closeModal} />
       <CreateCommunityModal open={isCreateCommunityModalOpen} closeModal={closeCreateCommunityModal} />
-      <CommentModal open={isCommentModalOpen} closeModal={closeCommentModal} currentPost={currentPost} />
     </div>
   );
 }

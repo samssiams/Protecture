@@ -27,14 +27,18 @@ model User {
   notifications  Notification[]   @relation("UserNotifications")
   actions        Notification[]   @relation("ActionUserNotifications")
   reports        Report[]         @relation("ReportedUsers")
+
+  // New Relations
+  ownedCommunities  Community[]        @relation("OwnedCommunities")
+  communityMemberships CommunityMember[]
 }
 
 model Otp {
-  id           Int       @id @default(autoincrement())
-  email        String
-  otp          String
-  createdAt    DateTime  @default(now())
-  expiresAt    DateTime
+  id        Int      @id @default(autoincrement())
+  email     String
+  otp       String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 
   @@index([email]) // Optimize lookups by email
 }
@@ -57,15 +61,15 @@ model Account {
 }
 
 model UserProfile {
-  id           Int     @id @default(autoincrement())
-  userId       Int     @unique
-  name         String? // Added support for Google user profiles
-  profile_img  String?
-  header_img   String?
-  posts        Int     @default(0)
-  followers    Int     @default(0)
-  following    Int     @default(0)
-  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          Int     @id @default(autoincrement())
+  userId      Int     @unique
+  name        String? // Added support for Google user profiles
+  profile_img String?
+  header_img  String?
+  posts       Int     @default(0)
+  followers   Int     @default(0)
+  following   Int     @default(0)
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -85,6 +89,9 @@ model Post {
   downvotes   Downvote[]
   user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   reports     Report[]  @relation("ReportedPosts")
+
+  // New Relations
+  communityPosts CommunityPost[]
 }
 
 model Comment {
@@ -127,7 +134,7 @@ model Notification {
   actionUserId Int
   type         String
   message      String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime @default(now())
 
   user         User      @relation("UserNotifications", fields: [userId], references: [id])
   actionUser   User      @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
@@ -146,5 +153,48 @@ model Report {
   post        Post     @relation("ReportedPosts", fields: [postId], references: [id], onDelete: Cascade)
   reporter    User     @relation("ReportedUsers", fields: [reportedBy], references: [id], onDelete: Cascade)
 
+  @@index([postId])
+}
+
+model Community {
+  id             Int              @id @default(autoincrement())
+  name           String           @unique
+  description    String
+  ownerId        Int
+  status         String           @default("PENDING")
+
+  owner          User             @relation("OwnedCommunities", fields: [ownerId], references: [id])
+  members        CommunityMember[]
+  communityPosts  CommunityPost[]
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([name])
+}
+
+model CommunityMember {
+  id          Int        @id @default(autoincrement())
+  communityId Int
+  userId      Int
+
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([communityId])
+  @@index([userId])
+}
+
+model CommunityPost {
+  id           Int        @id @default(autoincrement())
+  postId       Int
+  communityId  Int
+
+  post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  community     Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, communityId])
+  @@index([communityId])
   @@index([postId])
 }
