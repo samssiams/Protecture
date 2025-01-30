@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 
 export default function FlaggedAdmin() {
   const [reports, setReports] = useState([]);
+  const [visibleReports, setVisibleReports] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [offset, setOffset] = useState(0); // Offset for pagination
+  const limit = 5; // Number of reports to display per page
   const [loading, setLoading] = useState(true);
   const [modalData, setModalData] = useState(null); // For modal confirmation
   const [successModalVisible, setSuccessModalVisible] = useState(false); // State for success modal
@@ -18,6 +21,8 @@ export default function FlaggedAdmin() {
         }
         const data = await response.json();
         setReports(data.reports);
+        setVisibleReports(data.reports.slice(0, limit)); // Display first 5 reports
+        setOffset(limit);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching reports:", error);
@@ -27,6 +32,27 @@ export default function FlaggedAdmin() {
 
     fetchReports();
   }, []);
+
+  const handleLoadMore = () => {
+    const newVisibleReports = reports.slice(0, offset + limit);
+    setVisibleReports(newVisibleReports);
+    setOffset(offset + limit);
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+
+    const filtered = reports.filter(
+      (report) =>
+        report.reportedBy?.username?.toLowerCase().includes(query) ||
+        report.reportedUser?.username?.toLowerCase().includes(query) ||
+        report.reason?.toLowerCase().includes(query)
+    );
+
+    setVisibleReports(filtered.slice(0, limit)); // Reset visible reports
+    setOffset(limit); // Reset offset
+  };
 
   const handleSuspendPost = async (postId, reportId) => {
     if (!postId || !reportId) {
@@ -51,9 +77,12 @@ export default function FlaggedAdmin() {
       const data = await response.json();
       console.log("Suspension successful:", data);
 
-      // Remove the report from the list after successful suspension
       setReports((prevReports) =>
         prevReports.filter((report) => report.reportId !== reportId)
+      );
+
+      setVisibleReports((prevVisibleReports) =>
+        prevVisibleReports.filter((report) => report.reportId !== reportId)
       );
 
       setModalData(null); // Close confirmation modal
@@ -62,13 +91,6 @@ export default function FlaggedAdmin() {
       console.error("Error suspending post:", error);
     }
   };
-
-  const filteredReports = reports.filter(
-    (report) =>
-      report.reportedBy?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reportedUser?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.reason?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
@@ -81,7 +103,7 @@ export default function FlaggedAdmin() {
               type="text"
               placeholder="Search reports by reporter, reported post, or reason..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-gray-500"
             />
           </div>
@@ -95,9 +117,9 @@ export default function FlaggedAdmin() {
             <h2 className="text-lg font-bold text-black mb-6">Flagged Reports</h2>
             {loading ? (
               <p className="text-gray-500">Loading...</p>
-            ) : filteredReports.length > 0 ? (
+            ) : visibleReports.length > 0 ? (
               <div className="space-y-4">
-                {filteredReports.map((report) => (
+                {visibleReports.map((report) => (
                   <div
                     key={report.reportId}
                     className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
@@ -124,6 +146,14 @@ export default function FlaggedAdmin() {
               </div>
             ) : (
               <p className="text-gray-500">No flagged reports found.</p>
+            )}
+            {offset < reports.length && (
+              <button
+                onClick={handleLoadMore}
+                className="mt-6 w-full bg-[#22C55E] text-white py-2 rounded-lg font-bold hover:bg-green-600 transition"
+              >
+                View More
+              </button>
             )}
           </div>
         </div>

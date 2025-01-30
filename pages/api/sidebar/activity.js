@@ -19,17 +19,33 @@ export default async function handler(req, res) {
         orderBy: { createdAt: 'desc' },
         include: {
           actionUser: {
-            select: { username: true, profile: { select: { profile_img: true } } },
+            select: {
+              username: true,
+              profile: { select: { profile_img: true } },
+            },
           },
         },
       });
 
-      res.status(200).json(notifications);
+      const formattedNotifications = notifications.map((notif) => {
+        let message = notif.message;
+
+        if (notif.type === 'REPORT_SUBMITTED') {
+          message = notif.message; // Keep the stored message as it is
+        }
+
+        return {
+          ...notif,
+          message,
+        };
+      });
+
+      res.status(200).json(formattedNotifications);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   } else {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 }

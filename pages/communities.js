@@ -53,7 +53,7 @@ export default function Communities({ openCreateCommunityModal }) {
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}
           >
-            Enter
+            Joined
           </button>
         </li>
         <li

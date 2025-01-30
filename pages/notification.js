@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Image from 'next/image';
 
-export default function NotificationSidebar() {
+export default function NotificationSidebar({ refreshTrigger }) {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function NotificationSidebar() {
     };
 
     fetchNotifications();
-  }, []);
+  }, [refreshTrigger]); // Re-fetch notifications whenever refreshTrigger changes
 
   return (
     <div className="right-[16rem] flex flex-col space-y-5 fixed z-40 top-8">
@@ -37,11 +37,7 @@ export default function NotificationSidebar() {
         <ul className="space-y-2">
           {notifications.length > 0 ? (
             notifications.map((notif) => {
-              // Determine the message dynamically
-              const message =
-                notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE'
-                  ? notif.message.replace(/^You /, '') // Remove redundant "You" prefix
-                  : notif.message.replace(`${notif.actionUser?.username || ''} `, ''); // Remove username prefix
+              const message = notif.message.replace(/^.*?reported/, 'You reported');
 
               return (
                 <li key={notif.id} className="flex items-center">
@@ -53,15 +49,7 @@ export default function NotificationSidebar() {
                     className="rounded-full mr-2"
                   />
                   <span className="text-[16px] text-black">
-                    {notif.type === 'PROFILE_UPDATE' || notif.type === 'POST_CREATE' ? (
-                      <>
-                        <strong>You</strong> {message}
-                      </>
-                    ) : (
-                      <>
-                        <strong>{notif.actionUser?.username || 'Unknown User'}</strong> {message}
-                      </>
-                    )}
+                    <strong>You</strong> {message.replace(/^You/, '').trim()}
                   </span>
                 </li>
               );
