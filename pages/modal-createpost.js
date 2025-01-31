@@ -1,10 +1,12 @@
+// components/modal-createpost.js
+
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useRouter } from "next/router";
 
-export default function CreatePostModal({ isOpen, onClose, userData }) {
+export default function CreatePostModal({ isOpen, onClose, userData, communityId }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -85,7 +87,12 @@ export default function CreatePostModal({ isOpen, onClose, userData }) {
     const formData = new FormData();
     formData.append("description", description);
     formData.append("category_id", category);
-    formData.append("image", selectedImage);
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    }
+    if (communityId) {
+      formData.append("community_id", communityId);
+    }
 
     try {
       const response = await axios.post("/api/post/createpost", formData, {

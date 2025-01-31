@@ -8,15 +8,6 @@ export default async function handler(req, res) {
       // Retrieve the session using getServerSession with authOptions
       const session = await getServerSession(req, res, authOptions);
 
-      // Log session data to verify its contents
-      console.log('Session data:', session);
-
-      // Ensure that session exists and user data is available
-      if (!session || !session.user) {
-        console.log('No session or user found in the session');
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
       // Extract username and email from session user object
       const { username, email } = session.user;
       console.log('Extracted username:', username, 'email:', email);
@@ -38,9 +29,6 @@ export default async function handler(req, res) {
         },
       });
 
-      // Log user retrieval from the database
-      console.log('User fetched from the database:', user);
-
       // Handle case where user or user profile is not found
       if (!user || !user.profile) {
         console.log(`User profile not found for identifier: ${username || email}`);
@@ -57,8 +45,6 @@ export default async function handler(req, res) {
         followers: user.profile.followers || 0,
         following: user.profile.following || 0,
       };
-
-      console.log('User profile data being fetched:', userData);
 
       // Send the response with the user profile data
       return res.status(200).json(userData);

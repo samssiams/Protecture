@@ -1,3 +1,5 @@
+// pages/api/post/createpost.js
+
 import fs from "fs";
 import path from "path";
 import prisma from "../../../lib/prisma";
@@ -41,7 +43,7 @@ export default async function handler(req, res) {
       const userId = session.user.id;
 
       // Rate limiting: Check the user's recent posts
-      const postLimitTimeWindow = 5 * 60 * 1000; // 2 minutes in milliseconds
+      const postLimitTimeWindow = 2 * 60 * 1000; // 2 minutes in milliseconds
       const now = new Date();
 
       const recentPostsCount = await prisma.post.count({
@@ -65,30 +67,34 @@ export default async function handler(req, res) {
       // Extract fields
       const description = fields.description[0];
       const category_id = fields.category_id[0];
+      const community_id = fields.community_id ? parseInt(fields.community_id[0], 10) : null;
 
       if (!description || !category_id) {
         return res.status(400).json({ message: "All fields are required" });
       }
 
       // Handle file upload
-      const file = files.image[0].filepath;
-      const originalFilename = files.image[0].originalFilename;
+      let imageUrl = null;
+      if (files.image && files.image.length > 0) {
+        const file = files.image[0].filepath;
+        const originalFilename = files.image[0].originalFilename;
 
-      if (!file || !originalFilename) {
-        return res.status(400).json({ message: "Image file is required" });
-      }
+        if (!file || !originalFilename) {
+          return res.status(400).json({ message: "Image file is required" });
+        }
 
-      // Upload file to Supabase
-      const imageUrl = await uploadFileToSupabase(
-        file,
-        file,
-        originalFilename,
-        session.user.id,
-        "protecture/post-image"
-      );
+        // Upload file to Supabase
+        imageUrl = await uploadFileToSupabase(
+          file,
+          file,
+          originalFilename,
+          session.user.id,
+          "protecture/post-image"
+        );
 
-      if (!imageUrl) {
-        return res.status(500).json({ message: "Error uploading file to Supabase" });
+        if (!imageUrl) {
+          return res.status(500).json({ message: "Error uploading file to Supabase" });
+        }
       }
 
       // Create post in the database
@@ -100,6 +106,16 @@ export default async function handler(req, res) {
           category_id,
         },
       });
+
+      // If community_id is provided, create CommunityPost
+      if (community_id) {
+        await prisma.communityPost.create({
+          data: {
+            postId: newPost.id,
+            communityId: community_id,
+          },
+        });
+      }
 
       // Create a notification for successful post creation
       await prisma.notification.create({

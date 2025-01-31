@@ -1,4 +1,4 @@
-// pages/home/index.js
+// pages/community/home.js
 
 import Link from 'next/link';
 import Navbar from '@/components/ui/navbar';
@@ -10,9 +10,10 @@ import Skeleton from '@/components/ui/skeleton';
 import axios from 'axios';
 import Chatbot from '@/components/ui/chatbot';
 import { useRouter } from 'next/router';
+import CommunityPostContainer from './communitypostcontainer';
 
-export default function Home() {
-  const [isModalOpen, setModalOpen] = useState(false);
+export default function CommunityHome() {
+  const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -51,19 +52,19 @@ export default function Home() {
     fetchCommunityDetails();
   }, [id]);
 
-  const openModal = () => setModalOpen(true);
-  const closeModal = () => setModalOpen(false);
+  const openPostModal = () => setPostModalOpen(true);
+  const closePostModal = () => setPostModalOpen(false);
   const openCreateCommunityModal = () => setCreateCommunityModalOpen(true);
   const closeCreateCommunityModal = () => setCreateCommunityModalOpen(false);
 
-  const refreshHomePage = () => {
+  const refreshCommunityHome = () => {
     window.location.reload();
   };
 
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar>
-        <button onClick={refreshHomePage} className="text-black font-bold text-lg">Home</button>
+        <button onClick={refreshCommunityHome} className="text-black font-bold text-lg">Home</button>
       </Navbar>
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
@@ -90,24 +91,24 @@ export default function Home() {
                 <div
                   className="w-full bg-cover bg-center rounded-t-[15px] mb-[-2rem]"
                   style={{
-                    backgroundImage: `url(${userData?.headerImg || '/images/headers.png'})`,
+                    backgroundImage: `url(${communityData?.headerImg || '/images/headers.png'})`,
                     height: '100px',
                     borderRadius: '8px',
                   }}
                 ></div>
 
                 <Image
-                  src={userData?.profileImg || '/images/user.png'}
-                  alt="Profile"
+                  src={communityData?.profileImg || '/images/community.png'}
+                  alt="Community"
                   width={96}
                   height={96}
                   className="rounded-full border-4 border-white mb-4"
                 />
 
-                {userData ? (
+                {communityData ? (
                   <>
-                    <h2 className="text-[25px] font-bold text-black">{userData.name}</h2>
-                    <p className="text-[#787070] text-[15px]">@{userData.username}</p>
+                    <h2 className="text-[25px] font-bold text-black">p/{communityData.name}</h2>
+                    <p className="text-[#787070] text-[15px]">@{communityData.username}</p>
                   </>
                 ) : (
                   <>
@@ -118,16 +119,16 @@ export default function Home() {
 
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{userData?.followers || 0}</p>
+                    <p className="font-bold text-[18px] text-black">{communityData?.followers || 0}</p>
                     <p className="text-[15px] text-[#787070]">Followers</p>
                   </div>
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{userData?.following || 0}</p>
+                    <p className="font-bold text-[18px] text-black">{communityData?.following || 0}</p>
                     <p className="text-[15px] text-[#787070]">Following</p>
                   </div>
                 </div>
 
-                <Link href="/home/profile">
+                <Link href="/community/profile">
                   <button
                     className="border border-[#28B446] text-[#28B446] font-semibold rounded-[6px] mt-5 transition duration-300 hover:bg-[#28B446] hover:text-white"
                     style={{
@@ -147,7 +148,7 @@ export default function Home() {
         <div className="flex flex-col space-y-4" style={{ width: '655px' }}>
           <div
             className="fixed w-[41rem] z-40 flex bg-white p-4 rounded-[15px] shadow-lg cursor-pointer"
-            onClick={openModal}
+            onClick={openPostModal}
             style={{
               height: '92px',
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.3)',
@@ -181,7 +182,7 @@ export default function Home() {
           
           {/* CommunityPost */}
           <div className="pt-[11rem] flex items-center mt-5 mb-[43px] relative">
-            
+            <CommunityPostContainer communityId={id} />
           </div>
         </div>
 
@@ -230,8 +231,8 @@ export default function Home() {
         <Chatbot />
       </div>
 
-      <CreatePostModal open={isModalOpen} closeModal={closeModal} />
-      <CreateCommunityModal open={isCreateCommunityModalOpen} closeModal={closeCreateCommunityModal} />
+      <CreatePostModal isOpen={isPostModalOpen} onClose={closePostModal} userData={userData} communityId={id} />
+      <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />
     </div>
   );
 }
