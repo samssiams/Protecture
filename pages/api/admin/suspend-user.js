@@ -27,7 +27,6 @@ export default async function handler(req, res) {
       res.status(500).json({ error: "Failed to suspend user." });
     }
   } else {
-    // Handle unsupported methods
     res.setHeader("Allow", ["POST"]);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }

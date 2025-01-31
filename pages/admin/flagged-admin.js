@@ -5,99 +5,97 @@ import { useEffect, useState } from "react";
 export default function FlaggedAdmin() {
   const [reports, setReports] = useState([]);
   const [visibleReports, setVisibleReports] = useState([]);
+  const [filteredReports, setFilteredReports] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [offset, setOffset] = useState(0); // Offset for pagination
-  const limit = 5; // Number of reports to display per page
+  const [showAllReports, setShowAllReports] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [modalData, setModalData] = useState(null); // For modal confirmation
-  const [successModalVisible, setSuccessModalVisible] = useState(false); // State for success modal
+  const [modalData, setModalData] = useState(null);
+  const [modalAction, setModalAction] = useState(null);
+  const limit = 5;
 
+  // Fetch reports from API
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const response = await fetch("/api/admin/admin-flagged");
-        if (!response.ok) {
-          throw new Error("Failed to fetch reports");
-        }
-        const data = await response.json();
-        setReports(data.reports);
-        setVisibleReports(data.reports.slice(0, limit)); // Display first 5 reports
-        setOffset(limit);
+    setLoading(true);
+    fetch("/api/admin/admin-flagged")
+      .then((res) => res.json())
+      .then((data) => {
+        // Filter for "PENDING" status reports
+        const filtered = data.reports.filter((report) => report.status === "PENDING");
+
+        setReports(filtered);
+        setFilteredReports(filtered);
+        setVisibleReports(filtered.slice(0, limit));
         setLoading(false);
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error("Error fetching reports:", error);
         setLoading(false);
-      }
-    };
-
-    fetchReports();
+      });
   }, []);
 
-  const handleLoadMore = () => {
-    const newVisibleReports = reports.slice(0, offset + limit);
-    setVisibleReports(newVisibleReports);
-    setOffset(offset + limit);
-  };
-
+  // Handle search input change
   const handleSearchChange = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
 
-    const filtered = reports.filter(
-      (report) =>
-        report.reportedBy?.username?.toLowerCase().includes(query) ||
-        report.reportedUser?.username?.toLowerCase().includes(query) ||
-        report.reason?.toLowerCase().includes(query)
+    const filtered = reports.filter((report) =>
+      report.reportedBy?.username.toLowerCase().includes(query) ||
+      report.reportedUser?.username.toLowerCase().includes(query) ||
+      report.reason.toLowerCase().includes(query)
     );
 
-    setVisibleReports(filtered.slice(0, limit)); // Reset visible reports
-    setOffset(limit); // Reset offset
+    setFilteredReports(filtered);
+    setVisibleReports(showAllReports ? filtered : filtered.slice(0, limit));
   };
 
-  const handleSuspendPost = async (postId, reportId) => {
-    if (!postId || !reportId) {
-      console.error("Post ID or Report ID is undefined or invalid.");
-      return;
-    }
+  // Handle "View All" click
+  const handleSeeAll = () => {
+    setShowAllReports(true);
+    setLoading(true);
+    setTimeout(() => {
+      setVisibleReports(filteredReports);
+      setLoading(false);
+    }, 500);
+  };
+
+  // Handle confirmation modal action
+  const handleConfirmAction = async () => {
+    if (!modalData) return;
 
     try {
-      const response = await fetch("/api/admin/suspend-post", {
+      const response = await fetch("/api/admin/admin-flagged", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ postId, reportId }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportId: modalData.reportId, action: modalAction }),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to suspend post");
+        throw new Error(result.message || "Action failed");
       }
 
-      const data = await response.json();
-      console.log("Suspension successful:", data);
+      console.log(`${modalAction === "suspend" ? "Post suspended" : "Report rejected"} successfully.`);
 
-      setReports((prevReports) =>
-        prevReports.filter((report) => report.reportId !== reportId)
-      );
+      // Remove the processed report from UI
+      setReports((prevReports) => prevReports.filter((report) => report.reportId !== modalData.reportId));
+      setFilteredReports((prevFiltered) => prevFiltered.filter((report) => report.reportId !== modalData.reportId));
+      setVisibleReports((prevVisible) => prevVisible.filter((report) => report.reportId !== modalData.reportId));
 
-      setVisibleReports((prevVisibleReports) =>
-        prevVisibleReports.filter((report) => report.reportId !== reportId)
-      );
-
-      setModalData(null); // Close confirmation modal
-      setSuccessModalVisible(true); // Show success modal
+      setModalData(null);
     } catch (error) {
-      console.error("Error suspending post:", error);
+      console.error(`Error ${modalAction === "suspend" ? "suspending post" : "rejecting report"}:`, error);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
       <Navbar />
-      <div className="pt-24 px-8 flex justify-center">
+      <div className="pt-20 px-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Tabs />
+
+          {/* Search Bar */}
           <div className="mb-6">
             <input
               type="text"
@@ -107,24 +105,40 @@ export default function FlaggedAdmin() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-gray-500"
             />
           </div>
+
+          {/* Reports List */}
           <div
             className="bg-white p-6 rounded-lg"
             style={{
-              boxShadow:
-                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
-            <h2 className="text-lg font-bold text-black mb-6">Flagged Reports</h2>
+            {/* Header with "View All" + Total Reports Count (Only if 6+) */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-black">Flagged Reports</h2>
+              {filteredReports.length > limit && (
+                <span
+                  className="text-black font-bold italic cursor-pointer hover:underline"
+                  onClick={handleSeeAll}
+                >
+                  View All {filteredReports.length}
+                </span>
+              )}
+            </div>
+
             {loading ? (
-              <p className="text-gray-500">Loading...</p>
+              <p className="text-gray-500 text-center">Loading flagged reports...</p>
             ) : visibleReports.length > 0 ? (
               <div className="space-y-4">
                 {visibleReports.map((report) => (
                   <div
                     key={report.reportId}
-                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                    className="flex items-center justify-between bg-gray-100 p-4 rounded-lg"
+                    style={{
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                    }}
                   >
-                    <div>
+                    <div className="flex-1">
                       <p className="text-gray-700 font-bold">
                         Reporter: {report.reportedBy?.username || "Unknown"}
                       </p>
@@ -133,65 +147,58 @@ export default function FlaggedAdmin() {
                       </p>
                       <p className="text-gray-500">Reason: {report.reason}</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        setModalData(report);
-                      }}
-                      className="bg-red-500 text-white font-bold px-4 py-2 rounded-md hover:bg-red-600"
-                    >
-                      Suspend Post
-                    </button>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => {
+                          setModalData(report);
+                          setModalAction("suspend");
+                        }}
+                        className="bg-yellow-500 text-white font-bold px-4 py-2 rounded-md hover:bg-yellow-600"
+                      >
+                        Suspend Post
+                      </button>
+                      <button
+                        onClick={() => {
+                          setModalData(report);
+                          setModalAction("reject");
+                        }}
+                        className="bg-red-500 text-white font-bold px-4 py-2 rounded-md hover:bg-red-600"
+                      >
+                        Reject
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500">No flagged reports found.</p>
-            )}
-            {offset < reports.length && (
-              <button
-                onClick={handleLoadMore}
-                className="mt-6 w-full bg-[#22C55E] text-white py-2 rounded-lg font-bold hover:bg-green-600 transition"
-              >
-                View More
-              </button>
+              <p className="text-gray-500 text-center">No flagged reports found.</p>
             )}
           </div>
         </div>
       </div>
+
       {modalData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg">
-            <h3 className="text-lg font-medium mb-4 text-black">Are you sure?</h3>
-            <p className="text-black font-medium">
-              Do you want to suspend the user "{modalData.reportedUser?.username || "Unknown"}"?
-            </p>
-            <div className="mt-4 flex justify-end space-x-4">
+          <div className="bg-white p-6 rounded-lg text-center shadow-lg">
+            <h3 className="text-black font-bold mb-4">
+              {modalAction === "suspend"
+                ? "Are you sure you want to suspend this post?"
+                : "Are you sure you want to reject this report?"}
+            </h3>
+            <div className="flex justify-center space-x-4">
+              <button
+                onClick={handleConfirmAction}
+                className="bg-green-500 text-white px-4 py-2 rounded-md font-bold hover:bg-green-600"
+              >
+                Yes
+              </button>
               <button
                 onClick={() => setModalData(null)}
-                className="px-4 py-2 bg-gray-300 rounded-md text-black font-bold"
+                className="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-600"
               >
                 Cancel
               </button>
-              <button
-                onClick={() => handleSuspendPost(modalData.postId, modalData.reportId)}
-                className="px-4 py-2 bg-red-500 text-white rounded-md font-bold"
-              >
-                Yes, Suspend
-              </button>
             </div>
-          </div>
-        </div>
-      )}
-      {successModalVisible && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg text-center">
-            <h3 className="text-lg font-bold mb-4 text-green-500">Successfully Suspended Post</h3>
-            <button
-              onClick={() => setSuccessModalVisible(false)}
-              className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 font-bold"
-            >
-              Close
-            </button>
           </div>
         </div>
       )}
