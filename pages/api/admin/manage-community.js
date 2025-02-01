@@ -26,6 +26,24 @@ export default async function handler(req, res) {
       data: { status: action.toUpperCase() },
     });
 
+    // Fetch the community owner
+    const community = await prisma.community.findUnique({
+      where: { id: communityId },
+      select: { ownerId: true },
+    });
+
+    if (action.toUpperCase() === "APPROVE") {
+      // Create a notification for the owner
+      await prisma.notification.create({
+        data: {
+          userId: community.ownerId,
+          message: `Your community "hatdog" has been approved by the admin.`,
+          type: "COMMUNITY_APPROVAL",
+          isRead: false,
+        },
+      });
+    }
+
     res.status(200).json({
       message: `Community ${action.toLowerCase()}d successfully.`,
       community: updatedCommunity,

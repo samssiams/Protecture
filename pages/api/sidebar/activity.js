@@ -32,6 +32,8 @@ export default async function handler(req, res) {
 
         if (notif.type === 'REPORT_SUBMITTED') {
           message = notif.message; // Keep the stored message as it is
+        } else if (notif.type === 'COMMUNITY_APPROVAL') {
+          message = `Your community "hatdog" has been approved by the admin.`; // Fixed formatting
         }
 
         return {

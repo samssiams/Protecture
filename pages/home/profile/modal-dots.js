@@ -34,10 +34,10 @@ export default function DotsMenu({ isOpen, onClose, position, postId, reporterId
         ref={modalRef}
         className="absolute bg-white rounded-[5px] border border-black shadow-lg"
         style={{
-          width: '145px',
-          height: '92px',
-          left: position.left - 160,
-          top: position.top - 10,
+          width: '129px', // Adjusted for better spacing
+          height: '46px',
+          left: position.left - 135, // Adjusted position for better alignment
+          top: position.top - 15,
           boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
           filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
           borderWidth: '1px',
@@ -47,23 +47,13 @@ export default function DotsMenu({ isOpen, onClose, position, postId, reporterId
         exit={{ opacity: 0, scale: 0.8 }}
         transition={{ duration: 0.2 }}
       >
-        <div className="flex flex-col p-3 space-y-2">
-          <button
-            className="flex items-center space-x-2 w-full text-left hover:bg-gray-100 p-1 rounded"
-            onClick={onClose}
-          >
-            <Image src="/svg/unfollow.svg" alt="Unfollow" width={13} height={13} />
-            <span className="text-black font-medium" style={{ fontSize: '12px' }}>
-              Unfollow User
-            </span>
-          </button>
-          <hr className="border-gray-300 w-full" />
+        <div className="flex flex-col p-2">
           <button
             className="flex items-center space-x-2 w-full text-left hover:bg-gray-100 p-1 rounded"
             onClick={openReportModal}
           >
             <Image src="/svg/reportuser.svg" alt="Report" width={13} height={13} />
-            <span className="text-red-500 font-medium" style={{ fontSize: '12px' }}>
+            <span className="text-red-500 font-medium" style={{ fontSize: '13px' }}>
               Report Post
             </span>
           </button>

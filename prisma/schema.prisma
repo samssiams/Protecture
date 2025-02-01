@@ -131,13 +131,14 @@ model Downvote {
 model Notification {
   id           Int      @id @default(autoincrement())
   userId       Int
-  actionUserId Int
+  actionUserId Int?
   type         String
   message      String
-  createdAt    DateTime @default(now())
+  isRead       Boolean   @default(false)
+  createdAt    DateTime  @default(now())
 
   user         User      @relation("UserNotifications", fields: [userId], references: [id])
-  actionUser   User      @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
+  actionUser   User?     @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
 
   @@index([userId])
 }
@@ -192,7 +193,7 @@ model CommunityPost {
   communityId  Int
 
   post         Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
-  community     Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  community    Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   @@unique([postId, communityId])
   @@index([communityId])

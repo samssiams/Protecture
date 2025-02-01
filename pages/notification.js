@@ -36,24 +36,18 @@ export default function NotificationSidebar({ refreshTrigger }) {
         <hr className="border-t border-black w-full mb-3" />
         <ul className="space-y-2">
           {notifications.length > 0 ? (
-            notifications.map((notif) => {
-              const message = notif.message.replace(/^.*?reported/, 'You reported');
-
-              return (
-                <li key={notif.id} className="flex items-center">
-                  <Image
-                    src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
-                    alt="Notification Icon"
-                    width={32}
-                    height={32}
-                    className="rounded-full mr-2"
-                  />
-                  <span className="text-[16px] text-black">
-                    <strong>You</strong> {message.replace(/^You/, '').trim()}
-                  </span>
-                </li>
-              );
-            })
+            notifications.map((notif) => (
+              <li key={notif.id} className="flex items-center">
+                <Image
+                  src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
+                  alt="Notification Icon"
+                  width={32}
+                  height={32}
+                  className="rounded-full mr-2"
+                />
+                <span className="text-[16px] text-black">{notif.message}</span>
+              </li>
+            ))
           ) : (
             <p className="text-center text-gray-500">No notifications available.</p>
           )}
