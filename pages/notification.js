@@ -38,13 +38,14 @@ export default function NotificationSidebar({ refreshTrigger }) {
           {notifications.length > 0 ? (
             notifications.map((notif) => (
               <li key={notif.id} className="flex items-center">
-                <Image
-                  src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
-                  alt="Notification Icon"
-                  width={32}
-                  height={32}
-                  className="rounded-full mr-2"
-                />
+              <Image
+                src={notif.actionUser?.profile?.profile_img || '/images/default-profile.png'}
+                alt="Notification Icon"
+                width={32}
+                height={32}
+                unoptimized
+                className="rounded-full mr-2"
+              />
                 <span className="text-[16px] text-black">{notif.message}</span>
               </li>
             ))
