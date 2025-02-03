@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         where: { userId },
         orderBy: { createdAt: 'desc' },
         include: {
-          actionUser: {
+          actionUser: { 
             select: {
               username: true,
               profile: { select: { profile_img: true } },
@@ -28,16 +28,11 @@ export default async function handler(req, res) {
       });
 
       const formattedNotifications = notifications.map((notif) => {
-        let message = notif.message;
-
-        if (notif.type === 'REPORT_SUBMITTED') {
-          message = notif.message; // Keep the stored message as it is
-        } else if (notif.type === 'COMMUNITY_APPROVAL') {
-          message = `Your community "hatdog" has been approved by the admin.`; // Fixed formatting
-        }
+        let message = notif.message || "Notification message unavailable"; // Ensure message is never undefined
 
         return {
           ...notif,
+          profileImg: notif.actionUser?.profile?.profile_img || '/images/default-profile.png',
           message,
         };
       });

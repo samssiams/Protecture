@@ -195,27 +195,7 @@ export default function Profile() {
                     <p className="font-bold text-[18px] text-black">
                       {userPostCount || 0}
                     </p>
-                    <p className="text-[15px] text-[#787070]">Posts</p>
-                  </div>
-                  <div
-                    className="flex flex-col items-center cursor-pointer"
-                    style={{ minWidth: "80px" }}
-                    onClick={() => setIsFollowerModalOpen(true)}
-                  >
-                    <p className="font-bold text-[18px] text-black">
-                      {userData?.followers || 0}
-                    </p>
-                    <p className="text-[15px] text-[#787070]">Followers</p>
-                  </div>
-                  <div
-                    className="flex flex-col items-center cursor-pointer"
-                    style={{ minWidth: "80px" }}
-                    onClick={() => setIsFollowingModalOpen(true)}
-                  >
-                    <p className="font-bold text-[18px] text-black">
-                      {userData?.following || 0}
-                    </p>
-                    <p className="text-[15px] text-[#787070]">Following</p>
+                    <p className="text-[15px] text-[#787070]">Users Posts</p>
                   </div>
                 </div>
 

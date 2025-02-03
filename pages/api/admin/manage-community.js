@@ -9,6 +9,12 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const session = await getServerSession(req, res, authOptions);
+
+  if (!session || !session.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   const { communityId, action } = req.body;
 
   if (!communityId || !action) {
@@ -20,24 +26,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Update the community status
+    // Fetch community details before updating
+    const community = await prisma.community.findUnique({
+      where: { id: communityId },
+      select: { ownerId: true, name: true },
+    });
+
+    if (!community || !community.name) {
+      return res.status(404).json({ error: "Community not found or has no name" });
+    }
+
+    // Update community status
     const updatedCommunity = await prisma.community.update({
       where: { id: communityId },
       data: { status: action.toUpperCase() },
     });
 
-    // Fetch the community owner
-    const community = await prisma.community.findUnique({
-      where: { id: communityId },
-      select: { ownerId: true },
-    });
-
     if (action.toUpperCase() === "APPROVE") {
-      // Create a notification for the owner
       await prisma.notification.create({
         data: {
           userId: community.ownerId,
-          message: `Your community "hatdog" has been approved by the admin.`,
+          actionUserId: session.user.id, // Track which admin approved it
+          message: `Your community "${community.name}" has been approved by the admin.`,
           type: "COMMUNITY_APPROVAL",
           isRead: false,
         },

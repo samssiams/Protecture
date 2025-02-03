@@ -35,11 +35,12 @@ export default function Communities({ openCreateCommunityModal }) {
 
   return (
     <div
-      className="fixed bg-white p-4 rounded-[15px] shadow-lg right-[16rem] bottom-[19.7rem]"
+      className="fixed bg-white p-4 rounded-[15px] shadow-lg right-[16rem] bottom-[19.7rem] custom-scrollbar"
       style={{
         width: '316px',
         height: '288px',
         boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+        overflowY: 'auto', // Enables scrolling
       }}
     >
       <div className="flex justify-between items-center">
@@ -48,7 +49,6 @@ export default function Communities({ openCreateCommunityModal }) {
           className="text-[#22C55E] text-[15px]"
           onClick={openCreateCommunityModal}
         >
-          See all
         </button>
       </div>
       <hr
@@ -126,6 +126,23 @@ export default function Communities({ openCreateCommunityModal }) {
           )}
         </ul>
       )}
+      
+      {/* Custom scrollbar styling */}
+      <style jsx>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #555;
+          border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f0f0f0;
+        }
+      `}</style>
     </div>
   );
 }
