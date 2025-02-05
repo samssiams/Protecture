@@ -111,7 +111,9 @@ export default function Home() {
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar>
-        <button onClick={refreshHomePage} className="text-black font-bold text-lg">Home</button>
+        <button onClick={refreshHomePage} className="text-black font-bold text-lg">
+          Home
+        </button>
       </Navbar>
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
@@ -250,11 +252,9 @@ export default function Home() {
             </motion.button>
           </div>
 
-          {loading ? (
-            <div className="text-center mt-10 text-black font-bold text-lg">Loading posts...</div>
-          ) : (
-            <PostContainer selectedCategory={selectedCategory} />
-          )}
+          {/* The PostContainer is always rendered.
+              It will show skeleton loaders internally while fetching posts. */}
+          <PostContainer selectedCategory={selectedCategory} />
         </div>
 
         {/* Right Sidebar */}

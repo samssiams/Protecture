@@ -15,8 +15,8 @@ model User {
   username       String           @unique
   email          String?          @unique
   password       String?
-  name           String?          // Add the missing `name` field
-  suspendedUntil DateTime?        // Field to track suspension until a specific time
+  name           String?          
+  suspendedUntil DateTime?        
 
   accounts       Account[]
   profile        UserProfile?
@@ -27,10 +27,21 @@ model User {
   notifications  Notification[]   @relation("UserNotifications")
   actions        Notification[]   @relation("ActionUserNotifications")
   reports        Report[]         @relation("ReportedUsers")
-
-  // New Relations
-  ownedCommunities  Community[]        @relation("OwnedCommunities")
+  ownedCommunities  Community[]   @relation("OwnedCommunities")
   communityMemberships CommunityMember[]
+  appeals        AppealRequest[]  @relation("UserAppeals")
+}
+
+model AppealRequest {
+  id        Int      @id @default(autoincrement())
+  userId    Int      
+  msg       String
+  status    String   @default("pending") // Status: pending, accepted, rejected
+  createdAt DateTime @default(now())
+
+  user      User     @relation("UserAppeals", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Otp {
@@ -40,7 +51,7 @@ model Otp {
   createdAt DateTime @default(now())
   expiresAt DateTime
 
-  @@index([email]) // Optimize lookups by email
+  @@index([email]) 
 }
 
 model Account {
@@ -63,7 +74,7 @@ model Account {
 model UserProfile {
   id          Int     @id @default(autoincrement())
   userId      Int     @unique
-  name        String? // Added support for Google user profiles
+  name        String?
   profile_img String?
   header_img  String?
   posts       Int     @default(0)
@@ -83,14 +94,13 @@ model Post {
   created_at  DateTime  @default(now())
   counter     Int       @default(0)
   archived    Boolean   @default(false)
-  status      String?   // Nullable status column added
+  status      String?
   comments    Comment[]
   upvotes     Upvote[]
   downvotes   Downvote[]
   user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
   reports     Report[]  @relation("ReportedPosts")
 
-  // New Relations
   communityPosts CommunityPost[]
 }
 

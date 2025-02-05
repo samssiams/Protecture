@@ -123,7 +123,7 @@ export default async function handler(req, res) {
           userId: session.user.id,
           actionUserId: session.user.id,
           type: "POST_CREATE",
-          message: "successfully created a new post.",
+          message: `You have successfully created a new post.`,
         },
       });
 

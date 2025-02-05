@@ -124,7 +124,7 @@ export default function TopicAdmin() {
                       <div className="flex space-x-4">
                         <button
                           onClick={() => handleManageCommunity(community.id, "REJECT")}
-                          className="bg-red-500 text-black px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
+                          className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
                         >
                           Reject
                         </button>

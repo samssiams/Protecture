@@ -29,27 +29,8 @@ export default function Navbar() {
 
   return (
     <div className="z-50 fixed top-0 left-0 w-full bg-white shadow-md py-1 px-8 flex justify-between items-center">
-      {/* Logo and Search */}
-      <div className="flex items-center space-x-6">
-        <h1 className="text-xl font-bold text-green-600">Protecture</h1>
-        <div
-          className="flex items-center border rounded-full px-4 py-2"
-          style={{
-            borderColor: "#787070",
-            borderWidth: "1px",
-            width: "220px",
-            borderRadius: "12px",
-          }}
-        >
-          <Image src="/svg/search.svg" alt="Search Icon" width={18} height={18} />
-          <input
-            type="text"
-            placeholder="Search"
-            className="ml-3 bg-transparent outline-none placeholder-gray-500 text-black text-sm"
-            style={{ width: "100%" }}
-          />
-        </div>
-      </div>
+      {/* Logo */}
+      <h1 className="text-xl font-bold text-green-600">Protecture</h1>
 
       {/* Navigation Links */}
       <div className="flex items-center space-x-5">
@@ -64,10 +45,7 @@ export default function Navbar() {
           style={{ minWidth: "80px", cursor: "pointer" }}
           onClick={handleHomeClick} // Reload Home on every click
         >
-          <div
-            className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105"
-            style={{ width: 30, height: 30 }}
-          >
+          <div className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105">
             <Image
               src="/svg/home_gray.svg"
               alt="Home Icon Gray"
@@ -93,7 +71,6 @@ export default function Navbar() {
                 ? "inline-block text-[#22C55E]"
                 : "opacity-0 group-hover:opacity-100 text-[#22C55E]"
             }`}
-            style={{ minWidth: "50px", textAlign: "center" }}
           >
             Home
           </span>
@@ -108,12 +85,8 @@ export default function Navbar() {
                             ? "bg-[#E4FCDE] text-[#22C55E]"
                             : "text-[#787070] hover:bg-[#f0fdf4] hover:text-[#22C55E]"
                         }`}
-            style={{ minWidth: "80px" }}
           >
-            <div
-              className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105"
-              style={{ width: 30, height: 30 }}
-            >
+            <div className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105">
               <Image
                 src="/svg/profile_gray.svg"
                 alt="Profile Icon Gray"
@@ -139,7 +112,6 @@ export default function Navbar() {
                   ? "inline-block text-[#22C55E]"
                   : "opacity-0 group-hover:opacity-100 text-[#22C55E]"
               }`}
-              style={{ minWidth: "50px", textAlign: "center" }}
             >
               Profile
             </span>
@@ -155,12 +127,8 @@ export default function Navbar() {
                             ? "bg-[#E4FCDE] text-[#22C55E]"
                             : "text-[#787070] hover:bg-[#f0fdf4] hover:text-[#22C55E]"
                         }`}
-            style={{ minWidth: "80px" }}
           >
-            <div
-              className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105"
-              style={{ width: 30, height: 30 }}
-            >
+            <div className="relative flex items-center justify-center transform transition-transform duration-300 ease-out group-hover:scale-105">
               <Image
                 src="/svg/about_gray.svg"
                 alt="About Icon Gray"
@@ -186,7 +154,6 @@ export default function Navbar() {
                   ? "inline-block text-[#22C55E]"
                   : "opacity-0 group-hover:opacity-100 text-[#22C55E]"
               }`}
-              style={{ minWidth: "50px", textAlign: "center" }}
             >
               About
             </span>
@@ -212,8 +179,8 @@ export default function Navbar() {
             transition={{ duration: 0.3 }}
             className="bg-white rounded-lg shadow-lg p-6 w-[300px] text-center"
             style={{
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)", // Outer drop shadow
-              filter: "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))", // Inner shadow effect
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              filter: "drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))",
             }}
           >
             <h2 className="text-lg font-semibold text-black mb-4">

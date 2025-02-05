@@ -1,18 +1,69 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react"; // Import useSession hook
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
-import { useRouter } from "next/router";
+import Skeleton from "@/components/ui/skeleton";
+
+// A skeleton loader component that mimics a post container
+function PostSkeleton() {
+  return (
+    <div
+      className="bg-white rounded-[15px] shadow-lg p-5 mb-4 animate-pulse"
+      style={{
+        width: "656px",
+        boxShadow:
+          "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      {/* Header Skeleton */}
+      <div className="flex items-center mb-4">
+        <Skeleton width="40px" height="40px" borderRadius="50%" />
+        <div className="ml-4 flex-1">
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
+          <Skeleton width="20%" height="12px" borderRadius="6px" />
+        </div>
+        <Skeleton width="20px" height="20px" borderRadius="6px" />
+      </div>
+
+      {/* Description Skeleton */}
+      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
+
+      {/* Image Skeleton */}
+      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+
+      {/* Footer Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function PostContainer({ selectedCategory }) {
   const [posts, setPosts] = useState([]);
+  const [votedPosts, setVotedPosts] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [votedPosts, setVotedPosts] = useState({});
-  const { data: session } = useSession(); // Get the session using useSession
+  const [isLoading, setIsLoading] = useState(true);
+  const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +78,7 @@ function PostContainer({ selectedCategory }) {
           const data = await response.json();
           setPosts(data);
 
+          // Initialize votes for each post based on userVote
           const initialVotes = data.reduce((acc, post) => {
             if (post.userVote) {
               acc[post.id] = post.userVote;
@@ -39,11 +91,27 @@ function PostContainer({ selectedCategory }) {
         }
       } catch (error) {
         console.error("Error fetching posts:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchPosts();
   }, [router.pathname]);
+
+  // Disable right-click on images
+  useEffect(() => {
+    const disableRightClick = (event) => {
+      if (event.target.tagName === "IMG") {
+        event.preventDefault();
+      }
+    };
+
+    document.addEventListener("contextmenu", disableRightClick);
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick);
+    };
+  }, []);
 
   const handleModalToggle = (event, post) => {
     const dotsButton = event.currentTarget;
@@ -112,7 +180,6 @@ function PostContainer({ selectedCategory }) {
 
       if (response.ok) {
         alert("Post archived successfully!");
-
         setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
       } else {
         const errorData = await response.json();
@@ -123,12 +190,20 @@ function PostContainer({ selectedCategory }) {
     }
   };
 
+  // Filter posts based on the selected category if provided
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
 
-  if (!filteredPosts.length) {
-    return <div>Fetching all posts...</div>;
+  // Show skeleton loaders if loading or if there are no posts
+  if (isLoading || filteredPosts.length === 0) {
+    return (
+      <div>
+        {[...Array(5)].map((_, idx) => (
+          <PostSkeleton key={idx} />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -194,7 +269,12 @@ function PostContainer({ selectedCategory }) {
                   </button>
                 ) : (
                   <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                    <Image
+                      src="/svg/dots.svg"
+                      alt="Options"
+                      width={4}
+                      height={16}
+                    />
                   </button>
                 )}
               </div>
@@ -214,7 +294,7 @@ function PostContainer({ selectedCategory }) {
                 alt="Post Image"
                 width={444}
                 height={300}
-                className="object-cover h-[250px] w-[656px] rounded-lg"
+                className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
               />
             </div>
 
@@ -263,7 +343,12 @@ function PostContainer({ selectedCategory }) {
 
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
-                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+                  <Image
+                    src="/svg/comments.svg"
+                    alt="Comments"
+                    width={21}
+                    height={21}
+                  />
                 </button>
                 <span className="text-black">{post.comments.length}</span>
               </div>
@@ -291,7 +376,7 @@ function PostContainer({ selectedCategory }) {
                 onClose={() => setShowModal(false)}
                 position={modalPosition}
                 postId={selectedPost?.id}
-                reporterId={session?.user?.id} // Use session user ID here
+                reporterId={session?.user?.id}
               />
             )}
           </div>
