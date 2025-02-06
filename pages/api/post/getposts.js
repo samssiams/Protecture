@@ -1,6 +1,6 @@
 import prisma from "../../../lib/prisma";
-import { getServerSession } from "next-auth"; // Import NextAuth session
-import { authOptions } from "../auth/[...nextauth]"; // Import auth options for session handling
+import { getServerSession } from "next-auth/next"; // Use this if you're on NextAuth v4
+import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
@@ -17,32 +17,30 @@ export default async function handler(req, res) {
       const userId = session.user.id;
       console.log(`Logged-in user ID: ${userId}`);
 
-      // Check if this is a request for the post count only
-      const { countOnly, archived } = req.query;
+      // Extract query parameters
+      const { countOnly, archived, currentPath } = req.query;
 
       if (countOnly === "true") {
         console.log("Fetching post count for the logged-in user...");
 
-        // Count the posts created by the logged-in user
+        // Count the posts created by the logged-in user (excluding archived posts)
         const postCount = await prisma.post.count({
-          where: { user_id: userId, archived: false }, // Exclude archived posts
+          where: { user_id: userId, archived: false },
         });
 
         console.log(`Post count for user ${userId}: ${postCount}`);
         return res.status(200).json({ count: postCount });
       }
 
-      // Get the current route from the query parameters
-      const { currentPath } = req.query;
       let posts;
 
       if (currentPath === "/home/profile") {
         console.log("Fetching posts only for the logged-in user...");
-        // Fetch posts created by the logged-in user
+        // Fetch posts created by the logged-in user; use the archived flag from the query
         posts = await prisma.post.findMany({
           where: {
             user_id: userId,
-            archived: archived === "true" ? true : false, // Fetch archived or non-archived posts
+            archived: archived === "true",
           },
           include: {
             comments: {
@@ -80,7 +78,7 @@ export default async function handler(req, res) {
             },
           },
           orderBy: {
-            created_at: "desc", // Sort posts by creation date, newest first
+            created_at: "desc",
           },
         });
       } else {
@@ -88,7 +86,7 @@ export default async function handler(req, res) {
         // Fetch all non-archived posts
         posts = await prisma.post.findMany({
           where: {
-            archived: false, // Exclude archived posts
+            archived: false,
           },
           include: {
             comments: {
@@ -126,12 +124,12 @@ export default async function handler(req, res) {
             },
           },
           orderBy: {
-            created_at: "desc", // Sort posts by creation date, newest first
+            created_at: "desc",
           },
         });
       }
 
-      // Map the posts to include the voting state for the current user
+      // Map posts to include the current user's vote state and transform comments
       const postsWithVoteState = posts.map((post) => ({
         ...post,
         comments: post.comments.map((comment) => ({
@@ -140,16 +138,17 @@ export default async function handler(req, res) {
           username: comment.user.username,
           text: comment.comment_text,
           timestamp: comment.created_at,
-        })), // Transform comments to include user details
-        userVote: post.upvotes.length > 0
-          ? "UPVOTE"
-          : post.downvotes.length > 0
-          ? "DOWNVOTE"
-          : null, // Determine the user's vote state
+        })),
+        userVote:
+          post.upvotes.length > 0
+            ? "UPVOTE"
+            : post.downvotes.length > 0
+            ? "DOWNVOTE"
+            : null,
       }));
 
-      console.log(`Fetched ${posts.length} posts.`); // Log the number of posts fetched
-      return res.status(200).json(postsWithVoteState); // Return posts to the client
+      console.log(`Fetched ${posts.length} posts.`);
+      return res.status(200).json(postsWithVoteState);
     } catch (error) {
       console.error("Error fetching posts:", error);
       return res.status(500).json({ message: "Internal Server Error" });

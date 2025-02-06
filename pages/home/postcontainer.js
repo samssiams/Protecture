@@ -72,7 +72,6 @@ function PostContainer({ selectedCategory }) {
         const currentPath = router.pathname;
         const query =
           currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
-
         const response = await fetch(`/api/post/getposts${query}`);
         if (response.ok) {
           const data = await response.json();
@@ -116,12 +115,10 @@ function PostContainer({ selectedCategory }) {
   const handleModalToggle = (event, post) => {
     const dotsButton = event.currentTarget;
     const rect = dotsButton.getBoundingClientRect();
-
     const position = {
       left: rect.left + window.scrollX,
       top: rect.bottom + window.scrollY + 5,
     };
-
     setSelectedPost(post);
     setModalPosition(position);
     setShowModal((prevShowModal) => !prevShowModal);
@@ -139,7 +136,6 @@ function PostContainer({ selectedCategory }) {
   const handleVote = async (postId, action) => {
     try {
       const requestBody = { postId, action };
-
       const response = await fetch("/api/post/vote", {
         method: "POST",
         headers: {
@@ -147,15 +143,12 @@ function PostContainer({ selectedCategory }) {
         },
         body: JSON.stringify(requestBody),
       });
-
       if (response.ok) {
         const updatedPost = await response.json();
-
         setVotedPosts((prevVotes) => ({
           ...prevVotes,
           [postId]: prevVotes[postId] === action ? null : action,
         }));
-
         setPosts((prevPosts) =>
           prevPosts.map((post) =>
             post.id === updatedPost.id ? updatedPost : post
@@ -177,7 +170,6 @@ function PostContainer({ selectedCategory }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId }),
       });
-
       if (response.ok) {
         alert("Post archived successfully!");
         setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
@@ -195,8 +187,8 @@ function PostContainer({ selectedCategory }) {
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
 
-  // Show skeleton loaders if loading or if there are no posts
-  if (isLoading || filteredPosts.length === 0) {
+  // Show skeleton loaders if still loading
+  if (isLoading) {
     return (
       <div>
         {[...Array(5)].map((_, idx) => (
@@ -206,11 +198,15 @@ function PostContainer({ selectedCategory }) {
     );
   }
 
+  // Display "No Post" text if there are no posts after loading
+  if (filteredPosts.length === 0) {
+    return <div className="text-center text-black font-bold text-lg">No Post Available</div>;
+  }
+
   return (
     <div>
       {filteredPosts.map((post) => {
         const voteState = votedPosts[post.id];
-
         return (
           <div
             key={post.id}
@@ -235,9 +231,7 @@ function PostContainer({ selectedCategory }) {
                   onClick={async () => {
                     const userId = post.user?.id;
                     try {
-                      const response = await fetch(
-                        `/api/user/getUser?userId=${userId}`
-                      );
+                      const response = await fetch(`/api/user/getUser?userId=${userId}`);
                       if (response.ok) {
                         const userData = await response.json();
                         console.log("Fetched user data:", userData);

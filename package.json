@@ -12,7 +12,7 @@
   "dependencies": {
     "@prisma/client": "^5.21.1",
     "@supabase/supabase-js": "^2.46.1",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "bcryptjs": "^2.4.3",
     "formidable": "^3.5.2",
     "framer-motion": "^11.11.9",
