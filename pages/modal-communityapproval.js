@@ -35,7 +35,7 @@ export default function ApprovalCommunityModal({ isOpen, onClose }) {
         {/* Modal Content */}
         <div className="text-center mt-10">
           <p className="text-[18px] font-regular text-black">
-            Your community will be approved once the admin accepts it. We'll notify you when it's ready!
+            {"Your community will be approved once the admin accepts it. We'll notify you when it's ready!"}
           </p>
 
           {/* Accept Button */}
