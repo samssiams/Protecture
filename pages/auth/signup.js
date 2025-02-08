@@ -46,7 +46,13 @@ export default function Signup() {
 
   // Handle Regular Signup - Generate OTP
   const handleRegularSignup = async () => {
-    if (!username.trim() || !name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (
+      !username.trim() ||
+      !name.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim()
+    ) {
       setErrorMessage("All fields are required.");
       setIsErrorModalOpen(true);
       return;
@@ -64,8 +70,6 @@ export default function Signup() {
       return;
     }
 
-    console.log("Sending signup data for OTP generation:", { username, name, email, password });
-
     setIsSigningUp(true);
     try {
       const response = await axios.post("/api/auth/register", {
@@ -76,7 +80,6 @@ export default function Signup() {
       });
 
       if (response.status === 200) {
-        console.log("OTP generated successfully:", response.data);
         setIsOtpModalOpen(true);
       }
     } catch (error) {
@@ -98,8 +101,6 @@ export default function Signup() {
       return;
     }
 
-    console.log("Sending OTP verification request:", { email, otp, username, name, password });
-
     setIsVerifying(true);
     try {
       const response = await axios.post("/api/auth/verify", {
@@ -111,7 +112,6 @@ export default function Signup() {
       });
 
       if (response.status === 201) {
-        console.log("OTP verified successfully. User created:", response.data);
         setIsSuccessModalOpen(true);
         setTimeout(() => {
           navigateToLogin();

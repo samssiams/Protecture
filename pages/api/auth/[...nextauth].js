@@ -65,7 +65,7 @@ export const authOptions = {
           id: user.id,
           username: user.username,
           email: user.email,
-          role: normalizedRole, // Include normalized role
+          role: normalizedRole,
           profileImg: user.profile?.profile_img || null,
         };
       },
@@ -176,17 +176,14 @@ export const authOptions = {
           id: token.id,
           username: token.username || token.email?.split("@")[0],
           email: token.email,
-          role: token.role, // Include role in session
+          role: token.role,
           profileImg: token.profileImg,
         };
-
-        console.log("Role in session:", session.user.role); // Log role
       }
       return session;
     },
 
     async redirect({ url, baseUrl, token }) {
-      console.log("Role from token:", token?.role);
       if (token?.role === "admin") {
         return routes.admin.users; // Redirect to admin users page
       } else if (token?.role === "user") {

@@ -33,8 +33,12 @@ export default function UsersAdmin() {
         });
         setSuspendedUsers(suspensions);
 
+      
+
         // Prioritize suspended users at the top
-        const sortedUsers = [...data].sort((a, b) => (suspensions[b.id] ? -1 : 1));
+        const sortedUsers = [...data].sort((a, b) =>
+          suspensions[b.id] ? -1 : 1
+        );
         setVisibleUsers(sortedUsers.slice(0, limit));
         setLoading(false);
       })
@@ -72,7 +76,9 @@ export default function UsersAdmin() {
     setFilteredUsers(filtered);
 
     // Sort filtered users to keep suspended ones at the top
-    const sortedUsers = filtered.sort((a, b) => (suspendedUsers[b.id] ? -1 : 1));
+    const sortedUsers = filtered.sort((a, b) =>
+      suspendedUsers[b.id] ? -1 : 1
+    );
     setVisibleUsers(showAllUsers ? sortedUsers : sortedUsers.slice(0, limit));
   };
 
@@ -81,7 +87,9 @@ export default function UsersAdmin() {
     setShowAllUsers(true);
     setLoading(true);
     setTimeout(() => {
-      setVisibleUsers(filteredUsers.sort((a, b) => (suspendedUsers[b.id] ? -1 : 1)));
+      setVisibleUsers(
+        filteredUsers.sort((a, b) => (suspendedUsers[b.id] ? -1 : 1))
+      );
       setLoading(false);
     }, 500);
   };
@@ -142,7 +150,9 @@ export default function UsersAdmin() {
       return null;
     }
 
-    const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60));
+    const minutes = Math.floor(
+      (remainingTime % (1000 * 60 * 60)) / (1000 * 60)
+    );
     const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000);
 
     return `${minutes}m ${seconds}s`;
@@ -156,13 +166,23 @@ export default function UsersAdmin() {
       {showConfirmModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold text-red-500 mb-4">Confirm Suspension</h2>
-            <p className="text-black">Are you sure you want to suspend this user for 1 hour?</p>
+            <h2 className="text-lg font-bold text-red-500 mb-4">
+              Confirm Suspension
+            </h2>
+            <p className="text-black">
+              Are you sure you want to suspend this user for 1 hour?
+            </p>
             <div className="flex justify-end space-x-4 mt-4">
-              <button onClick={() => setShowConfirmModal(false)} className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
                 No
               </button>
-              <button onClick={suspendUser} className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition">
+              <button
+                onClick={suspendUser}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
+              >
                 Yes
               </button>
             </div>
@@ -187,32 +207,61 @@ export default function UsersAdmin() {
           </div>
 
           {/* Users List */}
-          <div className="bg-white p-6 rounded-lg relative">
+          <div className="bg-white p-6 rounded-lg relative"
+          style={{
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-black">Users Module</h2>
-              <span className="text-black font-bold italic cursor-pointer hover:underline" onClick={handleSeeAll}>
+              <span
+                className="text-black font-bold italic cursor-pointer hover:underline"
+                onClick={handleSeeAll}
+              >
                 View All {filteredUsers.length}
               </span>
             </div>
 
             {loading ? (
-              <p className="text-gray-500 text-center">Loading all users...</p>
+              <div className="space-y-4">
+                {Array.from({ length: limit }).map((_, index) => (
+                  <div key={index} className="animate-pulse flex space-x-4">
+                    <div className="bg-gray-300 h-10 w-10 rounded-full"></div>
+                    <div className="flex-1 space-y-2 py-1">
+                      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : visibleUsers.length === 0 ? (
               <p className="text-gray-500 text-center">No user found.</p>
             ) : (
               <div className="space-y-4">
                 {visibleUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                  >
                     <span className="text-gray-700">@{user.username}</span>
                     {suspendedUsers[user.id] ? (
                       <>
-                        <span className="text-red-500 font-bold">{calculateRemainingTime(suspendedUsers[user.id]) || "Suspension expired"}</span>
-                        <button className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition" onClick={() => unsuspendUser(user.id)}>
+                        <span className="text-red-500 font-bold">
+                          {calculateRemainingTime(suspendedUsers[user.id]) ||
+                            "Suspension expired"}
+                        </span>
+                        <button
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition"
+                          onClick={() => unsuspendUser(user.id)}
+                        >
                           Unsuspend
                         </button>
                       </>
                     ) : (
-                      <button className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition" onClick={() => handleSuspendClick(user.id)}>
+                      <button
+                        className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
+                        onClick={() => handleSuspendClick(user.id)}
+                      >
                         Suspend
                       </button>
                     )}
@@ -226,4 +275,3 @@ export default function UsersAdmin() {
     </div>
   );
 }
-  

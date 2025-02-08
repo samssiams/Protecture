@@ -1,3 +1,4 @@
+// schema.prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -8,33 +9,33 @@ generator client {
 }
 
 model User {
-  id             Int              @id @default(autoincrement())
-  role           String
-  user_id        String           @unique @default(uuid())
-  google_id      String?          @unique
-  username       String           @unique
-  email          String?          @unique
-  password       String?
-  name           String?          
-  suspendedUntil DateTime?        
+  id                    Int                @id @default(autoincrement())
+  role                  String
+  user_id               String             @unique @default(uuid())
+  google_id             String?            @unique
+  username              String             @unique
+  email                 String?            @unique
+  password              String?
+  name                  String?
+  suspendedUntil        DateTime?
 
-  accounts       Account[]
-  profile        UserProfile?
-  comments       Comment[]
-  posts          Post[]
-  upvotes        Upvote[]
-  downvotes      Downvote[]
-  notifications  Notification[]   @relation("UserNotifications")
-  actions        Notification[]   @relation("ActionUserNotifications")
-  reports        Report[]         @relation("ReportedUsers")
-  ownedCommunities  Community[]   @relation("OwnedCommunities")
-  communityMemberships CommunityMember[]
-  appeals        AppealRequest[]  @relation("UserAppeals")
+  accounts              Account[]
+  profile               UserProfile?
+  comments              Comment[]
+  posts                 Post[]
+  upvotes               Upvote[]
+  downvotes             Downvote[]
+  notifications         Notification[]     @relation("UserNotifications")
+  actions               Notification[]     @relation("ActionUserNotifications")
+  reports               Report[]           @relation("ReportedUsers")
+  ownedCommunities      Community[]        @relation("OwnedCommunities")
+  communityMemberships  CommunityMember[]
+  appeals               AppealRequest[]    @relation("UserAppeals")
 }
 
 model AppealRequest {
   id        Int      @id @default(autoincrement())
-  userId    Int      
+  userId    Int
   msg       String
   status    String   @default("pending") // Status: pending, accepted, rejected
   createdAt DateTime @default(now())
@@ -51,22 +52,22 @@ model Otp {
   createdAt DateTime @default(now())
   expiresAt DateTime
 
-  @@index([email]) 
+  @@index([email])
 }
 
 model Account {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  provider           String
-  providerAccountId  String
-  refresh_token      String?   @map("refreshToken")
-  access_token       String?   @map("accessToken")
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
-  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @map("refreshToken")
+  access_token      String?  @map("accessToken")
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -86,21 +87,20 @@ model UserProfile {
 }
 
 model Post {
-  id          Int       @id @default(autoincrement())
-  user_id     Int
-  category_id String
-  image_url   String
-  description String
-  created_at  DateTime  @default(now())
-  counter     Int       @default(0)
-  archived    Boolean   @default(false)
-  status      String?
-  comments    Comment[]
-  upvotes     Upvote[]
-  downvotes   Downvote[]
-  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  reports     Report[]  @relation("ReportedPosts")
-
+  id            Int            @id @default(autoincrement())
+  user_id       Int
+  category_id   String
+  image_url     String
+  description   String
+  created_at    DateTime       @default(now())
+  counter       Int            @default(0)
+  archived      Boolean        @default(false)
+  status        String?
+  comments      Comment[]
+  upvotes       Upvote[]
+  downvotes     Downvote[]
+  user          User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  reports       Report[]       @relation("ReportedPosts")
   communityPosts CommunityPost[]
 }
 
@@ -117,23 +117,23 @@ model Comment {
 }
 
 model Upvote {
-  id        Int      @id @default(autoincrement())
-  post_id   Int
-  user_id   Int
+  id       Int   @id @default(autoincrement())
+  post_id  Int
+  user_id  Int
 
-  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post     Post  @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user     User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([post_id, user_id])
 }
 
 model Downvote {
-  id        Int      @id @default(autoincrement())
-  post_id   Int
-  user_id   Int
+  id       Int   @id @default(autoincrement())
+  post_id  Int
+  user_id  Int
 
-  post      Post     @relation(fields: [post_id], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  post     Post  @relation(fields: [post_id], references: [id], onDelete: Cascade)
+  user     User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@unique([post_id, user_id])
 }
@@ -144,25 +144,25 @@ model Notification {
   actionUserId Int?
   type         String
   message      String
-  isRead       Boolean   @default(false)
-  createdAt    DateTime  @default(now())
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
-  user         User      @relation("UserNotifications", fields: [userId], references: [id])
-  actionUser   User?     @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
+  user         User     @relation("UserNotifications", fields: [userId], references: [id])
+  actionUser   User?    @relation("ActionUserNotifications", fields: [actionUserId], references: [id])
 
   @@index([userId])
 }
 
 model Report {
-  id          Int      @id @default(autoincrement())
-  postId      Int
-  reportedBy  Int
-  reason      String
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  postId     Int
+  reportedBy Int
+  reason     String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
 
-  post        Post     @relation("ReportedPosts", fields: [postId], references: [id], onDelete: Cascade)
-  reporter    User     @relation("ReportedUsers", fields: [reportedBy], references: [id], onDelete: Cascade)
+  post       Post     @relation("ReportedPosts", fields: [postId], references: [id], onDelete: Cascade)
+  reporter   User     @relation("ReportedUsers", fields: [reportedBy], references: [id], onDelete: Cascade)
 
   @@index([postId])
 }
@@ -176,7 +176,7 @@ model Community {
 
   owner          User             @relation("OwnedCommunities", fields: [ownerId], references: [id])
   members        CommunityMember[]
-  communityPosts  CommunityPost[]
+  communityPosts CommunityPost[]
 
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -185,9 +185,10 @@ model Community {
 }
 
 model CommunityMember {
-  id          Int        @id @default(autoincrement())
+  id          Int                @id @default(autoincrement())
   communityId Int
   userId      Int
+  status      MembershipStatus   @default(joined)
 
   community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -208,4 +209,9 @@ model CommunityPost {
   @@unique([postId, communityId])
   @@index([communityId])
   @@index([postId])
+}
+
+enum MembershipStatus {
+  joined
+  left
 }

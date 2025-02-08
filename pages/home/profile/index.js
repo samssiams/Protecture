@@ -217,7 +217,7 @@ export default function Profile() {
         {/* Main Content Area */}
         <div className="flex flex-col space-y-4" style={{ width: "655px" }}>
           <div
-            className="z-50 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
+            className="z-40 fixed flex items-center justify-between bg-white rounded-[15px] p-4 shadow-inner"
             style={{
               width: "655px",
               height: "69px",

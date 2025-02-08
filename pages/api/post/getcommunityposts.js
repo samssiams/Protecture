@@ -1,13 +1,9 @@
-// pages/api/community/get-community-posts.js
-
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
-    console.log("Received GET request to fetch community posts...");
-
     try {
       // Get the session to identify the logged-in user
       const session = await getServerSession(req, res, authOptions);
@@ -17,7 +13,6 @@ export default async function handler(req, res) {
       }
 
       const userId = session.user.id;
-      console.log(`Logged-in user ID: ${userId}`);
 
       // Extract query parameters
       const { countOnly, archived, communityId } = req.query;
@@ -27,8 +22,6 @@ export default async function handler(req, res) {
       }
 
       if (countOnly === "true") {
-        console.log("Fetching post count for the specified community...");
-
         // Count the posts in the specified community
         const postCount = await prisma.communityPost.count({
           where: {
@@ -39,11 +32,8 @@ export default async function handler(req, res) {
           },
         });
 
-        console.log(`Post count for community ${communityId}: ${postCount}`);
         return res.status(200).json({ count: postCount });
       }
-
-      console.log("Fetching posts for the specified community...");
 
       // Fetch posts associated with the specified community
       const communityPosts = await prisma.communityPost.findMany({
@@ -122,7 +112,6 @@ export default async function handler(req, res) {
           : null, // Determine the user's vote state
       }));
 
-      console.log(`Fetched ${postsWithVoteState.length} community posts.`);
       return res.status(200).json(postsWithVoteState); // Return community posts to the client
     } catch (error) {
       console.error("Error fetching community posts:", error);

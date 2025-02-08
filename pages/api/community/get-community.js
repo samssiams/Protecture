@@ -13,7 +13,12 @@ export default async function handler(req, res) {
     // Retrieve the session using getServerSession
     const session = await getServerSession(req, res, authOptions);
 
-    // Find the user in the database
+    // Verify that the session and session.user exist
+    if (!session || !session.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Find the user in the database using session data
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -22,13 +27,17 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Fetch communities — example shows retrieving APPROVED communities
-    // Modify as needed for your specific requirements
+    // Fetch communities — retrieving APPROVED communities and including:
+    // - the current user's membership (for the join button)
+    // - the total member count using _count
     const communities = await prisma.community.findMany({
       where: { status: "APPROVE" },
       include: {
         members: {
           where: { userId: user.id },
+        },
+        _count: {
+          select: { members: true },
         },
       },
       orderBy: {
@@ -36,14 +45,16 @@ export default async function handler(req, res) {
       },
     });
 
-    // Map the result to include whether the user is a member
+    // Map the result to include community description and member count
     const data = communities.map((community) => ({
       id: community.id,
       name: community.name,
-      joined: community.members.length > 0,
+      description: community.description, // new field for the description
+      joined: community.members.filter((m) => m.status === "joined").length > 0,
+      memberCount: community.members.filter((m) => m.status === "joined").length,
     }));
 
-    res.status(200).json(data);
+    return res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching communities:", error);
     return res.status(500).json({ error: "Internal server error" });

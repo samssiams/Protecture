@@ -15,12 +15,15 @@ import CommunityPostContainer from './communitypostcontainer';
 export default function CommunityHome() {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
+  const [isLeaveModalOpen, setLeaveModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [communityData, setCommunityData] = useState(null);
+  const [userPostCount, setUserPostCount] = useState(0);
   const router = useRouter();
   const { id } = router.query;
 
+  // Fetch current user's profile
   const fetchUserData = async () => {
     setLoading(true);
     try {
@@ -33,6 +36,7 @@ export default function CommunityHome() {
     }
   };
 
+  // Fetch community details (for right sidebar)
   const fetchCommunityDetails = async () => {
     if (!id) return;
     try {
@@ -47,10 +51,43 @@ export default function CommunityHome() {
     }
   };
 
+  // Fetch user post count (used in left sidebar)
+  const fetchUserPostCount = async () => {
+    try {
+      const response = await axios.get('/api/post/getposts?countOnly=true');
+      if (response.status === 200) {
+        setUserPostCount(response.data.count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch user post count:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUserData();
     fetchCommunityDetails();
+    fetchUserPostCount();
   }, [id]);
+
+  // Function to actually leave the community:
+  // It calls the updated leave API (which updates the membership status to "left")
+  // and then redirects the user to the index page.
+  const handleConfirmLeave = async () => {
+    console.log("Leaving Community...");
+    try {
+      await axios.post(
+        '/api/community/leave',
+        { communityId: Number(id) },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      // After a successful leave, redirect to the index page.
+      router.push('/');
+    } catch (error) {
+      console.error("Error leaving community:", error.response?.data || error.message);
+    } finally {
+      setLeaveModalOpen(false);
+    }
+  };
 
   const openPostModal = () => setPostModalOpen(true);
   const closePostModal = () => setPostModalOpen(false);
@@ -64,7 +101,9 @@ export default function CommunityHome() {
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar>
-        <button onClick={refreshCommunityHome} className="text-black font-bold text-lg">Home</button>
+        <button onClick={refreshCommunityHome} className="text-black font-bold text-lg">
+          Home
+        </button>
       </Navbar>
 
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
@@ -73,8 +112,8 @@ export default function CommunityHome() {
           className="mt-14 left-[17.7rem] bg-white p-6 rounded-[15px] shadow-lg fixed z-40 top-8"
           style={{
             width: '318px',
-            height: '430px',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
+            height: 'auto',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.1), inset 0 2px 6px rgba(0,0,0,0.2)',
             border: '1px solid #E0E0E0',
           }}
         >
@@ -91,24 +130,24 @@ export default function CommunityHome() {
                 <div
                   className="w-full bg-cover bg-center rounded-t-[15px] mb-[-2rem]"
                   style={{
-                    backgroundImage: `url(${communityData?.headerImg || '/images/headers.png'})`,
+                    backgroundImage: `url(${userData?.headerImg || '/images/headers.png'})`,
                     height: '100px',
                     borderRadius: '8px',
                   }}
                 ></div>
 
                 <Image
-                  src={communityData?.profileImg || '/images/community.png'}
-                  alt="Community"
+                  src={userData?.profileImg || '/images/user.png'}
+                  alt="Profile"
                   width={96}
                   height={96}
                   className="rounded-full border-4 border-white mb-4"
                 />
 
-                {communityData ? (
+                {userData ? (
                   <>
-                    <h2 className="text-[25px] font-bold text-black">p/{communityData.name}</h2>
-                    <p className="text-[#787070] text-[15px]">@{communityData.username}</p>
+                    <h2 className="text-[25px] font-bold text-black">{userData.name}</h2>
+                    <p className="text-[#787070] text-[15px]">@{userData.username}</p>
                   </>
                 ) : (
                   <>
@@ -119,16 +158,12 @@ export default function CommunityHome() {
 
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{communityData?.followers || 0}</p>
-                    <p className="text-[15px] text-[#787070]">Followers</p>
-                  </div>
-                  <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
-                    <p className="font-bold text-[18px] text-black">{communityData?.following || 0}</p>
-                    <p className="text-[15px] text-[#787070]">Following</p>
+                    <p className="font-bold text-[18px] text-black">{userPostCount}</p>
+                    <p className="text-[15px] text-[#787070]">Users Posts</p>
                   </div>
                 </div>
 
-                <Link href="/community/profile">
+                <Link href="/home/profile">
                   <button
                     className="border border-[#28B446] text-[#28B446] font-semibold rounded-[6px] mt-5 transition duration-300 hover:bg-[#28B446] hover:text-white"
                     style={{
@@ -139,6 +174,18 @@ export default function CommunityHome() {
                     My Profile
                   </button>
                 </Link>
+
+                {/* "Leave Community" button */}
+                <button
+                  onClick={() => setLeaveModalOpen(true)}
+                  className="border border-red-500 text-red-500 font-semibold rounded-[6px] mt-4 transition duration-300 hover:bg-red-500 hover:text-white"
+                  style={{
+                    width: '170px',
+                    height: '34px',
+                  }}
+                >
+                  Leave Community
+                </button>
               </>
             )}
           </div>
@@ -151,7 +198,8 @@ export default function CommunityHome() {
             onClick={openPostModal}
             style={{
               height: '92px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.3)',
+              boxShadow:
+                '0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.3)',
               borderRadius: '15px',
             }}
           >
@@ -176,11 +224,11 @@ export default function CommunityHome() {
               </div>
             </div>
           </div>
-          
+
           <hr className="fixed left-0 top-0 w-full z-10 flex-grow border-t-[15.5rem] border-[#F0FDF4]" />
           <hr className="fixed top-[220px] z-40 w-[41rem] flex-grow border-[.5] border-[#000000]" />
-          
-          {/* CommunityPost */}
+
+          {/* Community Posts */}
           <div className="pt-[11rem] flex items-center mt-5 mb-[43px] relative">
             <CommunityPostContainer communityId={id} />
           </div>
@@ -192,21 +240,27 @@ export default function CommunityHome() {
             className="mt-14 bg-white p-4 rounded-[15px] shadow-lg custom-scrollbar"
             style={{
               width: '316px',
-              maxHeight: '200px',
+              maxHeight: 'auto',
               overflowY: 'auto',
               boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)',
               border: '1px solid #E0E0E0',
             }}
           >
+            {/* Header with community name and member count */}
             <div className="flex justify-between items-center mb-2">
               <h2 className="font-semibold text-[18px] text-black">
                 {communityData ? `p/${communityData.name}` : <Skeleton width="150px" height="25px" />}
               </h2>
+              <span className="text-[16px] text-gray-600 font-bold">
+                {communityData && communityData.members
+                  ? `Members: ${communityData.members.filter(m => m.status === "joined").length}`
+                  : <Skeleton width="80px" height="20px" />}
+              </span>
             </div>
             <hr className="border-t border-black w-full mb-3" />
             <ul className="space-y-2">
               {communityData ? (
-                <p className='text-black/80'>{communityData.description}</p>
+                <p className="text-black/80 text-center">{communityData.description}</p>
               ) : (
                 <Skeleton width="100%" height="20px" />
               )}
@@ -230,6 +284,32 @@ export default function CommunityHome() {
         </div>
         <Chatbot />
       </div>
+
+      {/* Leave Community Confirmation Modal */}
+      {isLeaveModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg text-red-500 font-semibold mb-4">Confirm Leave</h2>
+            <p className="mb-8 text-black font-semibold">
+              Are you sure you want to leave this community?
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setLeaveModalOpen(false)}
+                className="px-4 py-2 bg-gray-600 font-bold rounded hover:bg-gray-500"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLeave}
+                className="px-4 py-2 bg-red-500 text-white font-bold rounded hover:bg-red-600"
+              >
+                Leave Community
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CreatePostModal isOpen={isPostModalOpen} onClose={closePostModal} userData={userData} communityId={id} />
       <CreateCommunityModal isOpen={isCreateCommunityModalOpen} onClose={closeCreateCommunityModal} />

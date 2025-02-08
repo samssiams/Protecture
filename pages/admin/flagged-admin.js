@@ -20,7 +20,9 @@ export default function FlaggedAdmin() {
       .then((res) => res.json())
       .then((data) => {
         // Filter for "PENDING" status reports
-        const filtered = data.reports.filter((report) => report.status === "PENDING");
+        const filtered = data.reports.filter(
+          (report) => report.status === "PENDING"
+        );
 
         setReports(filtered);
         setFilteredReports(filtered);
@@ -66,7 +68,10 @@ export default function FlaggedAdmin() {
       const response = await fetch("/api/admin/admin-flagged", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportId: modalData.reportId, action: modalAction }),
+        body: JSON.stringify({
+          reportId: modalData.reportId,
+          action: modalAction,
+        }),
       });
 
       const result = await response.json();
@@ -75,16 +80,31 @@ export default function FlaggedAdmin() {
         throw new Error(result.message || "Action failed");
       }
 
-      console.log(`${modalAction === "suspend" ? "Post suspended" : "Report rejected"} successfully.`);
+      console.log(
+        `${
+          modalAction === "suspend" ? "Post suspended" : "Report rejected"
+        } successfully.`
+      );
 
       // Remove the processed report from UI
-      setReports((prevReports) => prevReports.filter((report) => report.reportId !== modalData.reportId));
-      setFilteredReports((prevFiltered) => prevFiltered.filter((report) => report.reportId !== modalData.reportId));
-      setVisibleReports((prevVisible) => prevVisible.filter((report) => report.reportId !== modalData.reportId));
+      setReports((prevReports) =>
+        prevReports.filter((report) => report.reportId !== modalData.reportId)
+      );
+      setFilteredReports((prevFiltered) =>
+        prevFiltered.filter((report) => report.reportId !== modalData.reportId)
+      );
+      setVisibleReports((prevVisible) =>
+        prevVisible.filter((report) => report.reportId !== modalData.reportId)
+      );
 
       setModalData(null);
     } catch (error) {
-      console.error(`Error ${modalAction === "suspend" ? "suspending post" : "rejecting report"}:`, error);
+      console.error(
+        `Error ${
+          modalAction === "suspend" ? "suspending post" : "rejecting report"
+        }:`,
+        error
+      );
     }
   };
 
@@ -110,12 +130,15 @@ export default function FlaggedAdmin() {
           <div
             className="bg-white p-6 rounded-lg"
             style={{
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
-            {/* Header with "View All" + Total Reports Count (Only if 6+) */}
+            {/* Header with "View All" + Total Reports Count (Only if more than limit) */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-black">Flagged Reports</h2>
+              <h2 className="text-lg font-bold text-black">
+                Flagged Reports
+              </h2>
               {filteredReports.length > limit && (
                 <span
                   className="text-black font-bold italic cursor-pointer hover:underline"
@@ -127,7 +150,25 @@ export default function FlaggedAdmin() {
             </div>
 
             {loading ? (
-              <p className="text-gray-500 text-center">Loading flagged reports...</p>
+              <div className="space-y-4">
+                {Array.from({ length: limit }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="animate-pulse flex items-center justify-between bg-gray-100 p-4 rounded-lg"
+                    style={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}
+                  >
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                      <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                    </div>
+                    <div className="flex space-x-3">
+                      <div className="h-10 w-20 bg-gray-300 rounded"></div>
+                      <div className="h-10 w-20 bg-gray-300 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : visibleReports.length > 0 ? (
               <div className="space-y-4">
                 {visibleReports.map((report) => (
@@ -171,7 +212,9 @@ export default function FlaggedAdmin() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center">No flagged reports found.</p>
+              <p className="text-gray-500 text-center">
+                No flagged reports found.
+              </p>
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
-import Navbar from "../../components/ui/navbar-admin"; // Import Navbar
-import Tabs from "./tabs"; // Import Tabs
+import Navbar from "../../components/ui/navbar-admin";
+import Tabs from "./tabs";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useSession, signIn } from "next-auth/react";
@@ -79,7 +79,7 @@ export default function TopicAdmin() {
 
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
-      <Navbar /> {/* Navbar Component */}
+      <Navbar />
       <div className="pt-24 px-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Tabs />
@@ -107,7 +107,19 @@ export default function TopicAdmin() {
           >
             <h2 className="text-lg font-bold text-black mb-6">Community Requests</h2>
             {loading ? (
-              <p>Loading communities...</p>
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div key={index} className="animate-pulse flex flex-col space-y-2">
+                    <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                    <div className="h-4 bg-gray-300 rounded w-full"></div>
+                    <div className="flex space-x-4 mt-2">
+                      <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                      <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="space-y-4">
                 {filteredCommunities.length > 0 ? (
@@ -138,7 +150,7 @@ export default function TopicAdmin() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-black">No pending community requests found.</p>
+                  <p className="text-left text-gray-600">No pending community requests found.</p>
                 )}
               </div>
             )}

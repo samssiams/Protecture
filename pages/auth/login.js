@@ -1,5 +1,4 @@
-// components/Login.js
-
+// pages/auth/login.js (or wherever your login component is)
 import { useState, useEffect } from "react";
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from "next/router";
@@ -20,11 +19,14 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isLoginActive, setIsLoginActive] = useState(true); // Dynamic color toggle
+  const [isAppealModalOpen, setIsAppealModalOpen] = useState(false);
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [appealMessage, setAppealMessage] = useState("");
+  const [isLoginActive, setIsLoginActive] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    setIsLoginActive(true); // Ensure "Log In" is active when on login page
+    setIsLoginActive(true);
   }, []);
 
   // Toggle password visibility
@@ -34,7 +36,7 @@ export default function Login() {
 
   // Navigate to SignUp page
   const navigateToSignUp = () => {
-    setIsLoginActive(false); // Set "Sign Up" active
+    setIsLoginActive(false);
     router.push(routes.auth.signup);
   };
 
@@ -52,21 +54,19 @@ export default function Login() {
       });
 
       if (response?.ok) {
-        // Fetch the session to get user role
         const session = await getSession();
         if (session?.user?.role === "admin") {
-          router.push(routes.admin.users); // Admin redirection
+          router.push(routes.admin.users);
         } else {
-          router.push(routes.pages.home); // User redirection
+          router.push(routes.pages.home);
         }
       } else {
         let errorData;
         try {
-          errorData = JSON.parse(response.error); // Attempt to parse as JSON
+          errorData = JSON.parse(response.error);
         } catch {
-          errorData = { message: response.error }; // Fallback to plain string
+          errorData = { message: response.error };
         }
-
         setErrorMessage(
           errorData.message || "Invalid username or password. Please try again."
         );
@@ -74,9 +74,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setErrorMessage(
-        "An error occurred while trying to log in. Please try again."
-      );
+      setErrorMessage("An error occurred while trying to log in. Please try again.");
       setIsModalOpen(true);
     } finally {
       setIsLoading(false);
@@ -89,7 +87,6 @@ export default function Login() {
       const response = await signIn("google", {
         callbackUrl: `${window.location.origin}${routes.pages.home}`,
       });
-
       if (response?.url) {
         router.push(response.url);
       } else {
@@ -98,16 +95,46 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Google authentication failed:", error);
-      setErrorMessage(
-        "An error occurred during Google authentication. Please try again."
-      );
+      setErrorMessage("An error occurred during Google authentication. Please try again.");
       setIsModalOpen(true);
     }
   };
 
-  // Close modal
+  // Close error modal
   const closeModal = () => {
     setIsModalOpen(false);
+  };
+
+  // Open appeal modal (close error modal first)
+  const openAppealModal = () => {
+    setIsModalOpen(false);
+    setIsAppealModalOpen(true);
+  };
+
+  // Handle appeal submission: call the API and show confirmation on success
+  const handleAppealSubmit = async () => {
+    try {
+      const response = await fetch("/api/admin/admin-appeal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, msg: appealMessage }),
+      });
+      if (response.ok) {
+        setIsAppealModalOpen(false);
+        setAppealMessage("");
+        setIsConfirmationModalOpen(true);
+      } else {
+        console.error("Failed to submit appeal");
+      }
+    } catch (error) {
+      console.error("Error submitting appeal", error);
+    }
+  };
+
+  // Cancel the appeal
+  const handleAppealCancel = () => {
+    setIsAppealModalOpen(false);
+    setAppealMessage("");
   };
 
   return (
@@ -129,26 +156,13 @@ export default function Login() {
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm font-light text-black">Already registered?</p>
             <div className="flex items-center space-x-2">
-              <p
-                className={`text-sm font-bold ${
-                  isLoginActive ? "text-green-600" : "text-black"
-                }`}
-              >
+              <p className={`text-sm font-bold ${isLoginActive ? "text-green-600" : "text-black"}`}>
                 Log In
               </p>
               <button type="button" onClick={navigateToSignUp}>
-                <Image
-                  src="/svg/signup_switch.svg"
-                  alt="Toggle Sign Up and Log In"
-                  width={24}
-                  height={24}
-                />
+                <Image src="/svg/signup_switch.svg" alt="Toggle Sign Up and Log In" width={24} height={24} />
               </button>
-              <p
-                className={`text-sm font-bold ${
-                  !isLoginActive ? "text-green-600" : "text-black"
-                }`}
-              >
+              <p className={`text-sm font-bold ${!isLoginActive ? "text-green-600" : "text-black"}`}>
                 Sign Up
               </p>
             </div>
@@ -159,16 +173,8 @@ export default function Login() {
             className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white mb-4"
             onClick={handleGoogleAuth}
           >
-            <Image
-              src="/svg/google_login.svg"
-              alt="Google Icon"
-              width={20}
-              height={20}
-              className="mr-2"
-            />
-            <span className="text-black text-[18px] font-bold">
-              Continue with Google
-            </span>
+            <Image src="/svg/google_login.svg" alt="Google Icon" width={20} height={20} className="mr-2" />
+            <span className="text-black text-[18px] font-bold">Continue with Google</span>
           </Button>
 
           <div className="flex items-center justify-between my-4">
@@ -190,7 +196,6 @@ export default function Login() {
                 required
               />
             </div>
-
             <div className="mb-4">
               <label className="block text-black text-sm mb-2">Password</label>
               <div className="relative">
@@ -208,9 +213,7 @@ export default function Login() {
                   onClick={togglePasswordVisibility}
                 >
                   <Image
-                    src={
-                      showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"
-                    }
+                    src={showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"}
                     alt="Toggle Password Visibility"
                     width={24}
                     height={24}
@@ -218,12 +221,9 @@ export default function Login() {
                 </button>
               </div>
             </div>
-
             <Button
               type="submit"
-              className={`w-full flex items-center justify-center ${
-                isLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`w-full flex items-center justify-center ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -234,14 +234,7 @@ export default function Login() {
                     fill="none"
                     viewBox="0 0 24 24"
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path
                       className="opacity-75"
                       fill="currentColor"
@@ -264,64 +257,92 @@ export default function Login() {
           </h2>
           <ul className="space-y-4">
             <li className="flex items-center space-x-2">
-              <Image
-                src="/svg/community_login.svg"
-                alt="Community Icon"
-                width={24}
-                height={24}
-              />
+              <Image src="/svg/community_login.svg" alt="Community Icon" width={24} height={24} />
               <p className="font-light">Share it with other architects</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image
-                src="/svg/post_login.svg"
-                alt="Post Icon"
-                width={24}
-                height={24}
-              />
+              <Image src="/svg/post_login.svg" alt="Post Icon" width={24} height={24} />
               <p className="font-light">Feel free to post your work</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image
-                src="/svg/handshake_login.svg"
-                alt="Handshake Icon"
-                width={24}
-                height={24}
-              />
+              <Image src="/svg/handshake_login.svg" alt="Handshake Icon" width={24} height={24} />
               <p className="font-light">Find and build a healthy community</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image
-                src="/svg/security_login.svg"
-                alt="Security Icon"
-                width={24}
-                height={24}
-              />
+              <Image src="/svg/security_login.svg" alt="Security Icon" width={24} height={24} />
               <p className="font-light">Protection against AI exploitation</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image
-                src="/svg/archi_login.svg"
-                alt="Architecture Icon"
-                width={24}
-                height={24}
-              />
+              <Image src="/svg/archi_login.svg" alt="Architecture Icon" width={24} height={24} />
               <p className="font-light">A web dedicated to Architecture</p>
             </li>
           </ul>
         </div>
       </div>
 
-      {/* Modal for Error Messages */}
+      {/* Error Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg text-[#22C55E] font-semibold text-center">
-              Error
-            </h2>
+            <h2 className="text-lg text-red-500 font-semibold text-center">Error</h2>
             <p className="mt-4 text-center">{errorMessage}</p>
             <div className="mt-6 flex justify-center">
-              <Button onClick={closeModal}>Close</Button>
+              {errorMessage.toLowerCase().includes("suspended") ? (
+                <Button onClick={openAppealModal}>Appeal</Button>
+              ) : (
+                <Button onClick={closeModal}>Close</Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Appeal Modal */}
+      {isAppealModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg text-[#22C55E] font-semibold text-center">Message us</h2>
+            <textarea
+              value={appealMessage}
+              onChange={(e) => setAppealMessage(e.target.value)}
+              placeholder="Type your appeal message here..."
+              className="w-full h-24 mt-4 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black"
+            />
+            <div className="mt-6 flex justify-center space-x-20">
+              <button
+                onClick={handleAppealSubmit}
+                className="bg-green-500 text-white px-4 py-2 rounded-md font-bold hover:bg-green-600"
+              >
+                Submit
+              </button>
+              <button
+                onClick={handleAppealCancel}
+                className="bg-red-500 text-white px-4 py-2 rounded-md font-bold hover:bg-red-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {isConfirmationModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg text-[#22C55E] font-semibold text-center">
+              Appeal Received
+            </h2>
+            <p className="mt-4 text-center">
+              Your appeal has been received. We will review it. Thank you!
+            </p>
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={() => setIsConfirmationModalOpen(false)}
+                className="bg-green-500 text-white px-4 py-2 rounded-md font-bold hover:bg-green-600"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

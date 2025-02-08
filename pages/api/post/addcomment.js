@@ -1,4 +1,3 @@
-
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -6,15 +5,12 @@ import { authOptions } from "../auth/[...nextauth]";
 const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
-  console.log("[INFO] Handler invoked.");
-
   if (req.method !== "POST") {
     console.error("[ERROR] Invalid method. Only POST allowed.");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   const { postId, commentText } = req.body;
-  console.log("[INFO] Request body:", req.body);
 
   if (!postId || !commentText.trim()) {
     console.error("[ERROR] Missing postId or commentText.");
@@ -24,7 +20,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log("[INFO] Attempting to fetch session...");
     const session = await getServerSession(req, res, authOptions);
 
     if (!session || !session.user) {
@@ -33,9 +28,7 @@ export default async function handler(req, res) {
     }
 
     const userId = session.user.id;
-    console.log("[INFO] User ID:", userId);
 
-    console.log("[INFO] Attempting to create a new comment...");
     const newComment = await prisma.comment.create({
       data: {
         post_id: parseInt(postId),
@@ -57,8 +50,6 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log("[INFO] New comment created:", newComment);
-
     // Construct full profile image URL if the user has one
     const profileImageUrl = newComment.user?.profile?.profile_img
       ? `/uploads/${newComment.user.profile.profile_img}` // Adjust to your upload path
@@ -75,7 +66,6 @@ export default async function handler(req, res) {
       edited: newComment.edited, // Include the edited field in the response
     };
 
-    console.log("[INFO] Returning response comment structure:", responseComment);
     return res.status(201).json(responseComment);
   } catch (error) {
     console.error("[ERROR] Error adding comment:", error);
@@ -87,7 +77,6 @@ export default async function handler(req, res) {
 
     return res.status(500).json({ error: "Internal server error" });
   } finally {
-    console.log("[INFO] Disconnecting Prisma...");
     await prisma.$disconnect();
   }
 }

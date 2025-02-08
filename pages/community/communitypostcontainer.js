@@ -1,14 +1,59 @@
-// components/CommunityPostContainer.js
-
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
+import { createPortal } from "react-dom"; // Import createPortal
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
-import { useRouter } from "next/router";
+import Skeleton from "@/components/ui/skeleton";
+
+// PostSkeleton copied from your PostContainer
+function PostSkeleton() {
+  return (
+    <div
+      className="bg-white rounded-[15px] shadow-lg p-5 mb-4 animate-pulse"
+      style={{
+        width: "656px",
+        boxShadow:
+          "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      {/* Header Skeleton */}
+      <div className="flex items-center mb-4">
+        <Skeleton width="40px" height="40px" borderRadius="50%" />
+        <div className="ml-4 flex-1">
+          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton width="20%" height="12px" borderRadius="6px" />
+        </div>
+        <Skeleton width="20px" height="20px" borderRadius="6px" />
+      </div>
+
+      {/* Description Skeleton */}
+      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
+
+      {/* Image Skeleton */}
+      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+
+      {/* Footer Skeleton */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function CommunityPostContainer({ communityId }) {
   const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
@@ -20,6 +65,7 @@ function CommunityPostContainer({ communityId }) {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
+        setIsLoading(true);
         const query = `?communityId=${communityId}`;
         const response = await fetch(`/api/post/getcommunityposts${query}`);
         if (response.ok) {
@@ -38,6 +84,8 @@ function CommunityPostContainer({ communityId }) {
         }
       } catch (error) {
         console.error("Error fetching community posts:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -46,18 +94,17 @@ function CommunityPostContainer({ communityId }) {
     }
   }, [communityId]);
 
+  // Same modal toggle function as in PostContainer
   const handleModalToggle = (event, post) => {
     const dotsButton = event.currentTarget;
     const rect = dotsButton.getBoundingClientRect();
-
     const position = {
       left: rect.left + window.scrollX,
       top: rect.bottom + window.scrollY + 5,
     };
-
     setSelectedPost(post);
     setModalPosition(position);
-    setShowModal((prevShowModal) => !prevShowModal);
+    setShowModal((prev) => !prev);
   };
 
   const handleCommentModalToggle = (post) => {
@@ -72,27 +119,19 @@ function CommunityPostContainer({ communityId }) {
   const handleVote = async (postId, action) => {
     try {
       const requestBody = { postId, action };
-
       const response = await fetch("/api/post/vote", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
-
       if (response.ok) {
         const updatedPost = await response.json();
-
         setVotedPosts((prevVotes) => ({
           ...prevVotes,
           [postId]: prevVotes[postId] === action ? null : action,
         }));
-
         setPosts((prevPosts) =>
-          prevPosts.map((post) =>
-            post.id === updatedPost.id ? updatedPost : post
-          )
+          prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
         );
       } else {
         const errorData = await response.json();
@@ -110,11 +149,11 @@ function CommunityPostContainer({ communityId }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId }),
       });
-
       if (response.ok) {
         alert("Post archived successfully!");
-
-        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+        setPosts((prevPosts) =>
+          prevPosts.filter((post) => post.id !== postId)
+        );
       } else {
         const errorData = await response.json();
         console.error("Error archiving post:", errorData.message);
@@ -124,15 +163,28 @@ function CommunityPostContainer({ communityId }) {
     }
   };
 
-  if (!posts.length) {
-    return <div>Fetching community posts...</div>;
+  if (isLoading) {
+    return (
+      <div>
+        {[...Array(5)].map((_, idx) => (
+          <PostSkeleton key={idx} />
+        ))}
+      </div>
+    );
+  }
+
+  if (!isLoading && posts.length === 0) {
+    return (
+      <div className="text-center text-gray-600 font-bold">
+        No community posts yet...
+      </div>
+    );
   }
 
   return (
     <div>
       {posts.map((post) => {
         const voteState = votedPosts[post.id];
-
         return (
           <div
             key={post.id}
@@ -157,12 +209,10 @@ function CommunityPostContainer({ communityId }) {
                   onClick={async () => {
                     const userId = post.user?.id;
                     try {
-                      const response = await fetch(
-                        `/api/user/getUser?userId=${userId}`
-                      );
+                      const response = await fetch(`/api/user/getUser?userId=${userId}`);
                       if (response.ok) {
                         const userData = await response.json();
-                        console.log("Fetched user data:", userData);
+                        // Optionally handle the user data here
                       } else {
                         console.error("Failed to fetch user data");
                       }
@@ -226,9 +276,7 @@ function CommunityPostContainer({ communityId }) {
                     }}
                   />
                 </button>
-
                 <span className="text-black">{post.counter}</span>
-
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
@@ -273,15 +321,19 @@ function CommunityPostContainer({ communityId }) {
               />
             )}
 
-            {showModal && selectedPost?.id === post.id && (
-              <ModalDots
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                position={modalPosition}
-                postId={selectedPost?.id}
-                reporterId={session?.user?.id}
-              />
-            )}
+            {showModal && selectedPost?.id === post.id &&
+              // Render ModalDots via a portal so its position is relative to the viewport
+              createPortal(
+                <ModalDots
+                  isOpen={showModal}
+                  onClose={() => setShowModal(false)}
+                  position={modalPosition}
+                  postId={selectedPost?.id}
+                  reporterId={session?.user?.id}
+                />,
+                document.body
+              )
+            }
           </div>
         );
       })}

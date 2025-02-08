@@ -1,5 +1,4 @@
 // File: /pages/api/admin/admin-flagged.js
-
 import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {
@@ -12,7 +11,7 @@ export default async function handler(req, res) {
         include: {
           post: {
             include: {
-              user: { 
+              user: {
                 select: {
                   id: true,
                   username: true,
@@ -20,7 +19,7 @@ export default async function handler(req, res) {
               },
             },
           },
-          reporter: { 
+          reporter: {
             select: {
               id: true,
               username: true,
@@ -30,8 +29,8 @@ export default async function handler(req, res) {
       });
 
       const formattedReports = reports.map((report) => ({
-        reportId: report.id, 
-        postId: report.post?.id || null, 
+        reportId: report.id,
+        postId: report.post?.id || null,
         reason: report.reason,
         reportedBy: {
           id: report.reporter?.id || null,
@@ -59,7 +58,7 @@ export default async function handler(req, res) {
 
     try {
       let updatedReport;
-      
+
       if (action === "reject") {
         updatedReport = await prisma.report.update({
           where: { id: reportId },
@@ -73,7 +72,7 @@ export default async function handler(req, res) {
           include: {
             post: {
               include: {
-                user: { select: { id: true } }, // Ensure user ID is fetched
+                user: { select: { id: true } },
               },
             },
           },
@@ -83,14 +82,16 @@ export default async function handler(req, res) {
           return res.status(404).json({ message: "Report, post, or user not found." });
         }
 
+        // Optionally suspend the user for 7 days
         await prisma.user.update({
           where: { id: report.post.user.id },
-          data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }, // 7-day suspension
+          data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
         });
 
+        // Archive the post by setting archived: true so it no longer appears
         await prisma.post.update({
           where: { id: report.post.id },
-          data: { status: "SUSPENDED" },
+          data: { archived: true },
         });
 
         updatedReport = await prisma.report.update({
