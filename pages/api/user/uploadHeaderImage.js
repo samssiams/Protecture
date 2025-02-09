@@ -1,5 +1,3 @@
-// /pages/api/user/uploadHeaderImage.js
-
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
@@ -52,17 +50,24 @@ function runMiddleware(req, res, fn) {
 }
 
 export default async function handler(req, res) {
+  console.log("UploadHeaderImage API called");
+
   // Use getServerSession to properly read the session on the server
   const session = await getServerSession(req, res, authOptions);
+  console.log("Session:", session);
   if (!session || !session.user) {
+    console.log("Unauthorized access attempt");
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method === 'POST') {
     try {
       await runMiddleware(req, res, upload.single('file'));
+      console.log("Multer middleware completed");
       const file = req.file;
+      console.log("Uploaded file info:", file);
       if (!file) {
+        console.log("No file uploaded");
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
@@ -73,7 +78,9 @@ export default async function handler(req, res) {
         'uploads',
         `resized_${file.filename}`
       );
+      console.log("Resized file path:", resizedFilePath);
       await sharp(file.path).resize(1200, 400).toFile(resizedFilePath);
+      console.log("Header image resized successfully");
 
       // Upload the resized file to Supabase
       const publicUrl = await uploadFileToSupabase(
@@ -83,7 +90,9 @@ export default async function handler(req, res) {
         session.user.id,
         "protecture/headerimage"
       );
+      console.log("Public URL from Supabase:", publicUrl);
       if (!publicUrl) {
+        console.log("Failed to get public URL from Supabase");
         return res.status(500).json({ error: 'Error uploading header image to Supabase' });
       }
 
@@ -92,6 +101,7 @@ export default async function handler(req, res) {
         where: { userId: session.user.id },
         data: { header_img: publicUrl },
       });
+      console.log("User profile updated with new header image URL");
 
       res.status(200).json({ fileUrl: publicUrl });
     } catch (error) {
@@ -102,6 +112,7 @@ export default async function handler(req, res) {
       if (req.file && fs.existsSync(req.file.path)) {
         try {
           fs.unlinkSync(req.file.path);
+          console.log("Original file deleted:", req.file.path);
         } catch (err) {
           console.error('Failed to delete original file:', req.file.path, err);
         }
@@ -115,6 +126,7 @@ export default async function handler(req, res) {
       if (req.file && fs.existsSync(resizedPath)) {
         try {
           fs.unlinkSync(resizedPath);
+          console.log("Resized file deleted:", resizedPath);
         } catch (err) {
           console.error('Failed to delete resized file:', resizedPath, err);
         }
