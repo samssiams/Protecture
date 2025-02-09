@@ -5,58 +5,73 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
+  console.log("API /user/profile called, method:", req.method);
+  
   if (req.method !== "GET") {
     console.log("Invalid request method:", req.method);
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    // Retrieve the session using getServerSession
+    // Retrieve session from NextAuth
     const session = await getServerSession(req, res, authOptions);
+    console.log("Session:", session);
 
-    // Verify that the session and session.user exist
     if (!session || !session.user) {
+      console.log("No session user found, unauthorized");
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Extract username and email from the session user object
-    const { username, email } = session.user;
-    console.log("Extracted username:", username, "email:", email);
-
-    // Ensure that a unique identifier is present
-    if (!username && !email) {
-      console.log("No unique identifier found in session");
+    // Prefer using the unique id if available, then fallback to email or username
+    let user;
+    if (session.user.id) {
+      console.log("Fetching user by id:", session.user.id);
+      user = await prisma.user.findUnique({
+        where: { id: parseInt(session.user.id, 10) },
+        include: { profile: true },
+      });
+    } else if (session.user.email) {
+      console.log("Fetching user by email:", session.user.email);
+      user = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        include: { profile: true },
+      });
+    } else if (session.user.username) {
+      console.log("Fetching user by username:", session.user.username);
+      user = await prisma.user.findUnique({
+        where: { username: session.user.username },
+        include: { profile: true },
+      });
+    } else {
+      console.log("No valid identifier found in session");
       return res.status(400).json({ error: "Invalid session data" });
     }
 
-    // Fetch the user profile using either username or email as a unique identifier
-    const user = await prisma.user.findUnique({
-      where: {
-        username: username || undefined,
-        email: username ? undefined : email, // Use email if username is not present
-      },
-      include: {
-        profile: true, // Fetch the profile associated with the user
-      },
-    });
-
-    // Handle case where user or user profile is not found
-    if (!user || !user.profile) {
-      console.log(`User profile not found for identifier: ${username || email}`);
-      return res.status(404).json({ error: "User profile not found" });
+    if (!user) {
+      console.log("User not found in database");
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Prepare the user profile data for the response
+    console.log("User found:", user);
+
+    // Prepare the user data for response, using fallbacks if profile data is missing
     const userData = {
       username: user.username,
-      name: user.profile.name,
-      profileImg: user.profile.profile_img || "/images/default-profile.png",
-      headerImg: user.profile.header_img || "/images/default-header.png",
-      posts: user.profile.posts || 0,
-      followers: user.profile.followers || 0,
-      following: user.profile.following || 0,
+      name: (user.profile && user.profile.name) || user.name || "",
+      profileImg:
+        (user.profile && user.profile.profile_img) ||
+        user.profileURL ||
+        "/images/default-profile.png",
+      headerImg:
+        (user.profile && user.profile.header_img) ||
+        user.headerURL ||
+        "/images/default-header.png",
+      posts: (user.profile && user.profile.posts) || 0,
+      followers: (user.profile && user.profile.followers) || 0,
+      following: (user.profile && user.profile.following) || 0,
     };
 
+    console.log("Returning user data:", userData);
     return res.status(200).json(userData);
   } catch (error) {
     console.error("Error fetching user profile:", error);
