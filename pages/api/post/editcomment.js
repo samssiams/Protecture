@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 const prisma = new PrismaClient();
 
@@ -10,22 +12,37 @@ export default async function handler(req, res) {
   const { commentId, commentText } = req.body;
 
   if (!commentId || !commentText.trim()) {
-    return res
-      .status(400)
-      .json({ error: "Comment ID and text are required" });
+    return res.status(400).json({ error: "Comment ID and text are required" });
   }
 
   try {
+    const session = await getServerSession(req, res, authOptions);
+    if (!session || !session.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const currentUserId = session.user.id;
+
+    // Verify that the current user is the owner of the comment.
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: parseInt(commentId, 10) },
+    });
+
+    if (!existingComment || existingComment.user_id !== currentUserId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const updatedComment = await prisma.comment.update({
-      where: { id: parseInt(commentId) },
+      where: { id: parseInt(commentId, 10) },
       data: { comment_text: commentText.trim(), edited: true },
     });
 
+    // Return the updated comment with both the edited and isCurrentUser flags.
     return res.status(200).json({
       id: updatedComment.id,
       text: updatedComment.comment_text,
       timestamp: updatedComment.created_at,
-      edited: updatedComment.edited,
+      edited: updatedComment.edited, // true indicates the comment was edited
+      isCurrentUser: true,            // Ensures the UI shows edit/delete buttons for the owner
     });
   } catch (error) {
     console.error("Error editing comment:", error);

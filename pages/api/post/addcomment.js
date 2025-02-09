@@ -14,9 +14,7 @@ export default async function handler(req, res) {
 
   if (!postId || !commentText.trim()) {
     console.error("[ERROR] Missing postId or commentText.");
-    return res
-      .status(400)
-      .json({ error: "Post ID and comment text are required" });
+    return res.status(400).json({ error: "Post ID and comment text are required" });
   }
 
   try {
@@ -31,50 +29,45 @@ export default async function handler(req, res) {
 
     const newComment = await prisma.comment.create({
       data: {
-        post_id: parseInt(postId),
+        post_id: parseInt(postId, 10),
         user_id: userId,
         comment_text: commentText.trim(),
-        edited: false, // Newly created comments should have `edited` set to false
+        edited: false,
       },
       include: {
         user: {
           select: {
+            id: true,
             username: true,
             profile: {
-              select: {
-                profile_img: true,
-              },
+              select: { profile_img: true },
             },
           },
         },
       },
     });
 
-    // Construct full profile image URL if the user has one
     const profileImageUrl = newComment.user?.profile?.profile_img
-      ? `/uploads/${newComment.user.profile.profile_img}` // Adjust to your upload path
-      : "/images/default-avatar.png"; // Default image
+      ? `/uploads/${newComment.user.profile.profile_img}`
+      : "/images/default-avatar.png";
 
+    // Since the creator is the current user, set isCurrentUser to true.
     const responseComment = {
       id: newComment.id,
       text: newComment.comment_text,
-      user: {
-        username: newComment.user?.username || "Anonymous",
-        profile_img: profileImageUrl,
-      },
+      username: newComment.user?.username || "Anonymous",
+      userImage: profileImageUrl,
       timestamp: newComment.created_at,
-      edited: newComment.edited, // Include the edited field in the response
+      edited: newComment.edited,
+      isCurrentUser: true,
     };
 
     return res.status(201).json(responseComment);
   } catch (error) {
     console.error("[ERROR] Error adding comment:", error);
-
-    // Enhance error handling for Prisma errors
     if (error.code === "P2025") {
       return res.status(404).json({ error: "Post not found" });
     }
-
     return res.status(500).json({ error: "Internal server error" });
   } finally {
     await prisma.$disconnect();

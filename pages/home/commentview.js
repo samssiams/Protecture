@@ -16,31 +16,30 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
   const sanitizeText = (text) => {
     if (!text) return "No content available";
     const bannedWords = [
-    // English Profanity
-    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
-    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
-    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
-    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , "MotherFucker" ,
-  
-    // Tagalog Profanity
-    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
-    "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu", 
-    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
-    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
-    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
-    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina" , "tangina" , "hayuf" , "hayf" ,"inamo" , "namo"
+      // English Profanity
+      "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
+      "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
+      "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
+      "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+      "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
+      // Tagalog Profanity
+      "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
+      "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu",
+      "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
+      "gunggong", "salot", "walanghiya", "ampota", "syet", "gago",
+      "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
+      "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
+      "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
     ];
-    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
+    const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
     return text.replace(regex, (match) => "*".repeat(match.length));
   };
 
   return (
     <div className="custom-scrollbar">
       {Array.isArray(comments) && comments.length > 0 ? (
-        comments.map((comment, index) => (
-          <div key={index} className="flex items-start mb-4">
+        comments.map((comment) => (
+          <div key={comment.id} className="flex items-start mb-4">
             <Image
               src={comment?.userImage || "/images/default-avatar.png"}
               alt={comment?.username || "Anonymous"}
@@ -56,7 +55,9 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
                 <span className="text-black text-base font-normal">
                   {sanitizeText(comment?.text)}
                   {comment?.edited && (
-                    <span className="text-xs text-gray-500 ml-2">(Edited)</span>
+                    <span className="inline text-xs text-gray-500 ml-1">
+                      (edited)
+                    </span>
                   )}
                 </span>
               </div>
@@ -64,18 +65,23 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
                 <span className="text-gray-500 text-xs">
                   {formatTime(comment?.timestamp)}
                 </span>
-                <button
-                  className="text-gray-500 text-xs ml-3 hover:underline"
-                  onClick={() => onEdit(comment)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-gray-500 text-xs ml-3 hover:underline"
-                  onClick={() => onDelete(comment.id)}
-                >
-                  Delete
-                </button>
+                {/* Render edit and delete buttons only if the comment belongs to the current user */}
+                {comment.isCurrentUser && (
+                  <>
+                    <button
+                      className="text-gray-500 text-xs ml-3 hover:underline"
+                      onClick={() => onEdit(comment)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="text-gray-500 text-xs ml-3 hover:underline"
+                      onClick={() => onDelete(comment.id)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import CommentView from "../home/commentview";
+import CommentView from "./commentview";
 import { useSession } from "next-auth/react";
 
 export default function CommentModal({
@@ -12,11 +12,11 @@ export default function CommentModal({
   setCommentSubmitted,
 }) {
   const [commentText, setCommentText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState(null); // Track the editing state
+  const [editingCommentId, setEditingCommentId] = useState(null);
   const [isPostOwner, setIsPostOwner] = useState(false);
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
-  const [updatedComments, setUpdatedComments] = useState(comments); // State to hold updated comments
-  const [warning, setWarning] = useState(null); // Warning state for profanity
+  const [updatedComments, setUpdatedComments] = useState(comments);
+  const [warning, setWarning] = useState(null);
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
 
@@ -25,30 +25,29 @@ export default function CommentModal({
 
   const bannedWords = [
     // English Profanity
-    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
-    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
-    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
+    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
+    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
+    "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
     "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf" , "dfq" , "dick" , "pussy" , "MotherFucker" ,
-  
+    "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
     // Tagalog Profanity
-    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
-    "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu", 
-    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
-    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
+    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
+    "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu",
+    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
+    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago",
     "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
     "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina" , "tangina" , "hayuf" , "hayf" ,"inamo" , "namo"
+    "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
   ];
 
   const containsProfanity = (text) => {
-    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
+    const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
     return regex.test(text);
   };
 
   const sanitizeText = (text) => {
-    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, 'gi');
-    return text.replace(regex, (match) => '*'.repeat(match.length));
+    const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
+    return text.replace(regex, (match) => "*".repeat(match.length));
   };
 
   const fetchComments = useCallback(async () => {
@@ -82,16 +81,14 @@ export default function CommentModal({
     };
   }, [isOpen]);
 
+  // Example post ownership check (adjust as needed)
   const checkPostOwnership = useCallback(async () => {
     try {
       const response = await fetch("/api/post/downloadimage", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ postId: post?.id }),
       });
-
       const data = await response.json();
       setIsPostOwner(data.isOwner);
     } catch (error) {
@@ -121,7 +118,6 @@ export default function CommentModal({
     } else {
       document.removeEventListener("mousedown", handleClickOutside);
     }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
@@ -139,18 +135,13 @@ export default function CommentModal({
 
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) return;
-
     try {
-      const url = editingCommentId
-        ? "/api/post/editcomment"
-        : "/api/post/addcomment";
+      const url = editingCommentId ? "/api/post/editcomment" : "/api/post/addcomment";
       const method = editingCommentId ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           postId: post?.id,
           commentText: commentText.trim(),
@@ -167,19 +158,12 @@ export default function CommentModal({
             )
           );
         } else {
-          setUpdatedComments((prevComments) => [
-            updatedComment,
-            ...prevComments,
-          ]);
+          setUpdatedComments((prevComments) => [updatedComment, ...prevComments]);
         }
         setCommentText("");
         setEditingCommentId(null);
         setShowSuccessPopover(true);
-
-        if (setCommentSubmitted) {
-          setCommentSubmitted(true);
-        }
-
+        if (setCommentSubmitted) setCommentSubmitted(true);
         setTimeout(() => setShowSuccessPopover(false), 2000);
       } else {
         const errorData = await response.json();
@@ -194,12 +178,9 @@ export default function CommentModal({
     try {
       const response = await fetch("/api/post/deletecomment", {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ commentId }),
       });
-
       if (response.ok) {
         setUpdatedComments((prevComments) =>
           prevComments.filter((comment) => comment.id !== commentId)
@@ -254,10 +235,7 @@ export default function CommentModal({
 
         <div
           className="relative mb-8 rounded-lg overflow-hidden"
-          style={{
-            width: "100%",
-            height: "400px",
-          }}
+          style={{ width: "100%", height: "400px" }}
         >
           {post?.image_url ? (
             <Image
@@ -341,13 +319,13 @@ export default function CommentModal({
               placeholder="Write something..."
               style={{
                 borderRadius: "5px",
-                borderColor: "787070",
+                borderColor: "#787070", // Consider including the '#' for proper color value
                 borderWidth: "1px",
                 outline: "none",
               }}
             />
             {warning && (
-              <p className="text-red-500 text-bold absolute -[-20px] left-2 mt-1">
+              <p className="text-red-500 text-bold absolute top-[-20px] left-2 mt-1">
                 {warning}
               </p>
             )}

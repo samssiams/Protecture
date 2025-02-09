@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 
 const prisma = new PrismaClient();
 
@@ -14,10 +16,23 @@ export default async function handler(req, res) {
   }
 
   try {
+    const session = await getServerSession(req, res, authOptions);
+    if (!session || !session.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const currentUserId = session.user.id;
+
+    // Verify that the current user is the owner of the comment.
+    const existingComment = await prisma.comment.findUnique({
+      where: { id: parseInt(commentId, 10) },
+    });
+
+    if (!existingComment || existingComment.user_id !== currentUserId) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     await prisma.comment.delete({
-      where: {
-        id: parseInt(commentId),
-      },
+      where: { id: parseInt(commentId, 10) },
     });
 
     return res.status(200).json({ message: "Comment deleted successfully" });
