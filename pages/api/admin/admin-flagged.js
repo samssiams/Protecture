@@ -1,4 +1,3 @@
-// File: /pages/api/admin/admin-flagged.js
 import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {
@@ -53,7 +52,9 @@ export default async function handler(req, res) {
     const { reportId, action } = req.body;
 
     if (!reportId || !action) {
-      return res.status(400).json({ message: "Report ID and action are required." });
+      return res
+        .status(400)
+        .json({ message: "Report ID and action are required." });
     }
 
     try {
@@ -65,7 +66,9 @@ export default async function handler(req, res) {
           data: { status: "REJECTED" },
           select: { id: true, status: true },
         });
-        res.status(200).json({ message: "Report rejected successfully.", updatedReport });
+        res
+          .status(200)
+          .json({ message: "Report rejected successfully.", updatedReport });
       } else if (action === "suspend") {
         const report = await prisma.report.findUnique({
           where: { id: reportId },
@@ -79,16 +82,20 @@ export default async function handler(req, res) {
         });
 
         if (!report || !report.post || !report.post.user) {
-          return res.status(404).json({ message: "Report, post, or user not found." });
+          return res
+            .status(404)
+            .json({ message: "Report, post, or user not found." });
         }
 
-        // Optionally suspend the user for 7 days
+        // Suspend the user for 7 days
         await prisma.user.update({
           where: { id: report.post.user.id },
-          data: { suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+          data: {
+            suspendedUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          },
         });
 
-        // Archive the post by setting archived: true so it no longer appears
+        // Archive the post so it no longer appears
         await prisma.post.update({
           where: { id: report.post.id },
           data: { archived: true },
@@ -100,7 +107,9 @@ export default async function handler(req, res) {
           select: { id: true, status: true },
         });
 
-        res.status(200).json({ message: "User suspended successfully.", updatedReport });
+        res
+          .status(200)
+          .json({ message: "User suspended successfully.", updatedReport });
       } else {
         res.status(400).json({ message: "Invalid action." });
       }

@@ -19,14 +19,16 @@ export default function FlaggedAdmin() {
     fetch("/api/admin/admin-flagged")
       .then((res) => res.json())
       .then((data) => {
-        // Filter for "PENDING" status reports
-        const filtered = data.reports.filter(
-          (report) => report.status === "PENDING"
-        );
-
-        setReports(filtered);
-        setFilteredReports(filtered);
-        setVisibleReports(filtered.slice(0, limit));
+        if (!data.reports || !Array.isArray(data.reports)) {
+          console.error("Unexpected API response format:", data);
+          setLoading(false);
+          return;
+        }
+        // API returns only pending reports, so we simply use the results.
+        const pendingReports = data.reports;
+        setReports(pendingReports);
+        setFilteredReports(pendingReports);
+        setVisibleReports(pendingReports.slice(0, limit));
         setLoading(false);
       })
       .catch((error) => {
@@ -81,9 +83,7 @@ export default function FlaggedAdmin() {
       }
 
       console.log(
-        `${
-          modalAction === "suspend" ? "Post suspended" : "Report rejected"
-        } successfully.`
+        `${modalAction === "suspend" ? "Post suspended" : "Report rejected"} successfully.`
       );
 
       // Remove the processed report from UI
@@ -100,9 +100,7 @@ export default function FlaggedAdmin() {
       setModalData(null);
     } catch (error) {
       console.error(
-        `Error ${
-          modalAction === "suspend" ? "suspending post" : "rejecting report"
-        }:`,
+        `Error ${modalAction === "suspend" ? "suspending post" : "rejecting report"}:`,
         error
       );
     }
@@ -134,11 +132,9 @@ export default function FlaggedAdmin() {
                 "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
-            {/* Header with "View All" + Total Reports Count (Only if more than limit) */}
+            {/* Header with "View All" + Total Reports Count */}
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-black">
-                Flagged Reports
-              </h2>
+              <h2 className="text-lg font-bold text-black">Flagged Reports</h2>
               {filteredReports.length > limit && (
                 <span
                   className="text-black font-bold italic cursor-pointer hover:underline"
@@ -175,9 +171,7 @@ export default function FlaggedAdmin() {
                   <div
                     key={report.reportId}
                     className="flex items-center justify-between bg-gray-100 p-4 rounded-lg"
-                    style={{
-                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-                    }}
+                    style={{ boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)" }}
                   >
                     <div className="flex-1">
                       <p className="text-gray-700 font-bold">
