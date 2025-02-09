@@ -1,7 +1,8 @@
 // /pages/api/user/uploadProfileImage.js
 
 import { PrismaClient } from '@prisma/client';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -51,7 +52,8 @@ function runMiddleware(req, res, fn) {
 }
 
 export default async function handler(req, res) {
-  const session = await getSession({ req });
+  // Use getServerSession to properly read the session on the server
+  const session = await getServerSession(req, res, authOptions);
   if (!session || !session.user) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
