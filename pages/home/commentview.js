@@ -7,30 +7,12 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
     const date = new Date(timestamp);
     const hours = date.getHours();
     const minutes = date.getMinutes();
-    const formattedTime = `${hours % 12 === 0 ? 12 : hours % 12}:${String(
-      minutes
-    ).padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
-    return formattedTime;
+    return `${hours % 12 === 0 ? 12 : hours % 12}:${String(minutes).padStart(2, "0")} ${hours >= 12 ? "PM" : "AM"}`;
   };
 
   const sanitizeText = (text) => {
     if (!text) return "No content available";
-    const bannedWords = [
-      // English Profanity
-      "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
-      "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
-      "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
-      "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-      "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
-      // Tagalog Profanity
-      "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
-      "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu",
-      "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
-      "gunggong", "salot", "walanghiya", "ampota", "syet", "gago",
-      "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
-      "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-      "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
-    ];
+    const bannedWords = ["fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard"]; // etc.
     const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
     return text.replace(regex, (match) => "*".repeat(match.length));
   };
@@ -65,7 +47,6 @@ const CommentView = ({ comments = [], onEdit, onDelete }) => {
                 <span className="text-gray-500 text-xs">
                   {formatTime(comment?.timestamp)}
                 </span>
-                {/* Render edit and delete buttons only if the comment belongs to the current user */}
                 {comment.isCurrentUser && (
                   <>
                     <button

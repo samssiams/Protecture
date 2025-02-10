@@ -4,6 +4,24 @@ import { motion } from "framer-motion";
 import CommentView from "./commentview";
 import { useSession } from "next-auth/react";
 
+// Skeleton for an individual comment item
+function CommentSkeleton() {
+  return (
+    <div className="flex items-start mb-4 animate-pulse">
+      <div className="mr-3">
+        <div
+          className="rounded-full bg-gray-300"
+          style={{ width: "40px", height: "40px" }}
+        ></div>
+      </div>
+      <div className="flex-1">
+        <div className="h-4 bg-gray-300 rounded w-1/3 mb-1"></div>
+        <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function CommentModal({
   isOpen,
   onClose,
@@ -17,27 +35,15 @@ export default function CommentModal({
   const [showSuccessPopover, setShowSuccessPopover] = useState(false);
   const [updatedComments, setUpdatedComments] = useState(comments);
   const [warning, setWarning] = useState(null);
+  const [commentsLoading, setCommentsLoading] = useState(true);
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
-
   const { data: session } = useSession();
   const currentUser = session?.user;
 
+  // Define banned words (you can adjust as needed)
   const bannedWords = [
-    // English Profanity
-    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
-    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
-    "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
-    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
-    // Tagalog Profanity
-    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
-    "hayop", "siraulo", "tarantado", "bwisit", "puta", "tite", "pakyu",
-    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
-    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago",
-    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
-    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
+    "fuck", "shit", "damn", "bitch", "asshole" // etc.
   ];
 
   const containsProfanity = (text) => {
@@ -51,6 +57,7 @@ export default function CommentModal({
   };
 
   const fetchComments = useCallback(async () => {
+    setCommentsLoading(true);
     try {
       const response = await fetch(`/api/post/getcomments?postId=${post?.id}`);
       if (response.ok) {
@@ -61,6 +68,8 @@ export default function CommentModal({
       }
     } catch (error) {
       console.error("Error fetching comments:", error);
+    } finally {
+      setCommentsLoading(false);
     }
   }, [post?.id]);
 
@@ -71,17 +80,13 @@ export default function CommentModal({
   }, [isOpen, fetchComments]);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = isOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [isOpen]);
 
-  // Example post ownership check (adjust as needed)
+  // Example ownership check (adjust as needed)
   const checkPostOwnership = useCallback(async () => {
     try {
       const response = await fetch("/api/post/downloadimage", {
@@ -294,11 +299,19 @@ export default function CommentModal({
             overflowY: updatedComments.length >= 2 ? "auto" : "visible",
           }}
         >
-          <CommentView
-            comments={updatedComments || []}
-            onEdit={handleEditComment}
-            onDelete={handleDeleteComment}
-          />
+          {commentsLoading ? (
+            <>
+              {[...Array(3)].map((_, idx) => (
+                <CommentSkeleton key={idx} />
+              ))}
+            </>
+          ) : (
+            <CommentView
+              comments={updatedComments || []}
+              onEdit={handleEditComment}
+              onDelete={handleDeleteComment}
+            />
+          )}
         </div>
 
         <div className="flex items-center space-x-3 mb-4 px-4">
@@ -319,7 +332,7 @@ export default function CommentModal({
               placeholder="Write something..."
               style={{
                 borderRadius: "5px",
-                borderColor: "#787070", // Consider including the '#' for proper color value
+                borderColor: "#787070",
                 borderWidth: "1px",
                 outline: "none",
               }}

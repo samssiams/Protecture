@@ -8,9 +8,6 @@ export default async function handler(req, res) {
       // Get the session to identify the logged-in user
       const session = await getServerSession(req, res, authOptions);
 
-      if (!session || !session.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
 
       const userId = session.user.id;
 

@@ -9,8 +9,11 @@ export default async function handler(req, res) {
   
   try {
     const session = await getServerSession(req, res, authOptions);
+    
+    // Check for a valid session and user
     if (!session || !session.user) {
-      return res.status(401).json({ error: "Unauthorized" });
+      console.error("No valid session or user found.");
+      return res.status(401).json({ error: "Unauthorized: No session found" });
     }
     
     const userId = session.user.id;
@@ -36,8 +39,8 @@ export default async function handler(req, res) {
     });
     const currentUserProfileImg = currentUser?.profile?.profile_img || "/images/default-profile.png";
     
-    // Map notifications and use the actionUser's profile image if available,
-    // otherwise use the current user's profile image.
+    // Map notifications to include a profile image:
+    // Use actionUser's profile image if available; otherwise, use the current user's profile image.
     const formattedNotifications = notifications.map((notif) => ({
       ...notif,
       profileImg: notif.actionUser?.profile?.profile_img || currentUserProfileImg,

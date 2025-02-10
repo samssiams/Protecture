@@ -13,19 +13,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const userId = session.user.id;
-    const { countOnly } = req.query;
+    // Use the archived flag from the query (default is false)
+    const archivedFlag = req.query.archived === "true";
 
-    // If countOnly is true, count the posts created by the logged-in user that are not archived.
-    if (countOnly === "true") {
-      const postCount = await prisma.post.count({
-        where: { user_id: userId, archived: false },
-      });
-      return res.status(200).json({ count: postCount });
-    }
-
-    // Otherwise, fetch all posts (from all users) that are not archived.
     const posts = await prisma.post.findMany({
-      where: { archived: false },
+      where: {
+        user_id: userId,
+        archived: archivedFlag,
+      },
       include: {
         comments: {
           include: {
@@ -74,7 +69,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json(postsWithVoteState);
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    console.error("Error fetching user posts:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 }

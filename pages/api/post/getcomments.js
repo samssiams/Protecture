@@ -1,3 +1,4 @@
+// pages/api/post/getcomments.js
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -18,11 +19,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Retrieve the current session (if available)
     const session = await getServerSession(req, res, authOptions);
     const currentUserId = session?.user?.id;
 
-    // Fetch comments for the post along with the user and profile data
     const comments = await prisma.comment.findMany({
       where: { post_id: parseInt(postId, 10) },
       orderBy: { created_at: "desc" },
@@ -37,11 +36,10 @@ export default async function handler(req, res) {
       },
     });
 
-    // Map over the comments to shape the response and flag comments by the current user
     const responseComments = comments.map((comment) => {
-      const profileImageUrl = comment.user?.profile?.profile_img
-        ? `/uploads/${comment.user.profile.profile_img}`
-        : "/images/default-avatar.png";
+      // Use the profile image URL from the database (public URL from Supabase)
+      const profileImageUrl =
+        comment.user?.profile?.profile_img || "/images/default-avatar.png";
 
       return {
         id: comment.id,

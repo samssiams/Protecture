@@ -1,3 +1,4 @@
+// pages/api/post/addcomment.js
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -47,11 +48,10 @@ export default async function handler(req, res) {
       },
     });
 
-    const profileImageUrl = newComment.user?.profile?.profile_img
-      ? `/uploads/${newComment.user.profile.profile_img}`
-      : "/images/default-avatar.png";
+    // Use the profile image URL as stored in the database (from Supabase)
+    const profileImageUrl =
+      newComment.user?.profile?.profile_img || "/images/default-avatar.png";
 
-    // Since the creator is the current user, set isCurrentUser to true.
     const responseComment = {
       id: newComment.id,
       text: newComment.comment_text,

@@ -11,6 +11,72 @@ import axios from "axios";
 import NotificationSidebar from "../../notification";
 import CommunitySidebar from "../../communities";
 
+// A skeleton loader for profile posts with matching shadow style
+function ProfilePostsSkeleton() {
+  return (
+    <div>
+      {[...Array(5)].map((_, idx) => (
+        <div
+          key={idx}
+          className="bg-white rounded-[15px] p-5 mb-4 animate-pulse"
+          style={{
+            width: "656px",
+            boxShadow:
+              "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+          }}
+        >
+          {/* Header Skeleton */}
+          <div className="flex items-center mb-4">
+            <Skeleton width="40px" height="40px" borderRadius="50%" />
+            <div className="ml-4 flex-1">
+              <Skeleton
+                width="30%"
+                height="16px"
+                borderRadius="6px"
+                className="mb-2"
+              />
+              <Skeleton width="20%" height="12px" borderRadius="6px" />
+            </div>
+            <Skeleton width="20px" height="20px" borderRadius="6px" />
+          </div>
+          {/* Description Skeleton */}
+          <Skeleton
+            width="100%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-4"
+          />
+          <Skeleton
+            width="50%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-4"
+          />
+          {/* Image Skeleton */}
+          <Skeleton
+            width="100%"
+            height="250px"
+            borderRadius="15px"
+            className="mb-4"
+          />
+          {/* Footer Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Skeleton width="21px" height="21px" borderRadius="50%" />
+              <Skeleton width="30px" height="16px" borderRadius="6px" />
+              <Skeleton width="21px" height="21px" borderRadius="50%" />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton width="21px" height="21px" borderRadius="50%" />
+              <Skeleton width="30px" height="16px" borderRadius="6px" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("Posts");
   const [isFollowerModalOpen, setIsFollowerModalOpen] = useState(false);
@@ -20,6 +86,7 @@ export default function Profile() {
   const [userData, setUserData] = useState(null);
   const [userPostCount, setUserPostCount] = useState(0);
   const [posts, setPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(true);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -34,22 +101,25 @@ export default function Profile() {
   };
 
   const fetchPosts = async () => {
+    setPostsLoading(true);
     try {
+      // Use the getuserposts endpoint to fetch only the current user's posts.
       const query =
-        activeTab === "Archived"
-          ? "?currentPath=/home/profile&archived=true"
-          : "?currentPath=/home/profile&archived=false";
-      const response = await axios.get(`/api/post/getposts${query}`);
+        activeTab === "Archived" ? "?archived=true" : "?archived=false";
+      const response = await axios.get(`/api/post/getuserposts${query}`);
       if (response.status === 200) {
         setPosts(response.data);
       }
     } catch (error) {
       console.error("Failed to fetch posts:", error);
+    } finally {
+      setPostsLoading(false);
     }
   };
 
   const fetchUserPostCount = async () => {
     try {
+      // Fetch count from getposts with countOnly=true.
       const response = await axios.get("/api/post/getposts?countOnly=true");
       if (response.status === 200) {
         setUserPostCount(response.data.count);
@@ -69,39 +139,31 @@ export default function Profile() {
   }, [activeTab]);
 
   const handleProfileUpdate = (updatedData) => {
-    setUserData((prevData) => ({
-      ...prevData,
-      ...updatedData,
-    }));
+    setUserData((prevData) => ({ ...prevData, ...updatedData }));
   };
 
   const handleImageUpdate = async (type, file) => {
     const formData = new FormData();
     formData.append("file", file);
-
     try {
       const endpoint =
         type === "profile"
           ? "/api/user/uploadProfileImage"
           : "/api/user/uploadHeaderImage";
-
       const response = await fetch(endpoint, {
         method: "POST",
         body: formData,
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Image upload failed");
       }
-
       const data = await response.json();
       if (type === "profile") {
         setUserData((prevData) => ({ ...prevData, profileImg: data.fileUrl }));
       } else {
         setUserData((prevData) => ({ ...prevData, headerImg: data.fileUrl }));
       }
-
       return data.fileUrl;
     } catch (error) {
       console.error("Image upload error:", error);
@@ -118,7 +180,6 @@ export default function Profile() {
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar />
-
       <div className="px-16 py-10 mt-12 flex justify-center space-x-8">
         {/* Profile Sidebar */}
         <div
@@ -152,60 +213,46 @@ export default function Profile() {
                 <div
                   className="w-full bg-cover bg-center rounded-t-[15px] mb-[-2rem]"
                   style={{
-                    backgroundImage: `url(${
-                      userData?.headerImg || "/images/headers.png"
-                    })`,
+                    backgroundImage: `url(${userData?.headerImg || "/images/headers.png"})`,
                     height: "100px",
                     borderRadius: "8px",
                   }}
                 ></div>
-
                 <Image
                   src={userData?.profileImg || "/images/user.png"}
                   alt="Profile"
                   width={100}
                   height={100}
                   className="rounded-full border-4 border-white mb-4"
-                  onClick={() => {
-                    document.getElementById("profileFileInput").click();
-                  }}
+                  onClick={() =>
+                    document.getElementById("profileFileInput").click()
+                  }
                 />
                 <input
                   type="file"
                   id="profileFileInput"
                   style={{ display: "none" }}
                   accept="image/jpeg, image/png"
-                  onChange={(e) =>
-                    handleImageUpdate("profile", e.target.files[0])
-                  }
+                  onChange={(e) => handleImageUpdate("profile", e.target.files[0])}
                 />
-
                 <h2 className="text-[25px] font-bold text-black">
                   {userData?.name}
                 </h2>
                 <p className="text-[#787070] text-[15px]">
                   @{userData?.username}
                 </p>
-
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
-                  <div
-                    className="flex flex-col items-center"
-                    style={{ minWidth: "80px" }}
-                  >
+                  <div className="flex flex-col items-center" style={{ minWidth: "80px" }}>
                     <p className="font-bold text-[18px] text-black">
                       {userPostCount || 0}
                     </p>
                     <p className="text-[15px] text-[#787070]">Users Posts</p>
                   </div>
                 </div>
-
                 <button
                   onClick={() => setIsEditProfileModalOpen(true)}
                   className="border border-[#28B446] text-[#28B446] font-semibold rounded-[6px] mt-5 transition duration-300 hover:bg-[#28B446] hover:text-white"
-                  style={{
-                    width: "170px",
-                    height: "34px",
-                  }}
+                  style={{ width: "170px", height: "34px" }}
                 >
                   Edit Profile
                 </button>
@@ -225,7 +272,9 @@ export default function Profile() {
                 "0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)",
             }}
           >
-            <h2 className="text-[25px] font-bold text-black mr-4">My Posts</h2>
+            <h2 className="text-[25px] font-bold text-black mr-4">
+              My Posts
+            </h2>
             <div className="flex">
               <button
                 onClick={() => setActiveTab("Posts")}
@@ -249,12 +298,15 @@ export default function Profile() {
               </button>
             </div>
           </div>
-
           <hr className="z-[20] fixed left-0 top-0 w-full flex-grow border-t-[10rem] border-[#F0FDF4]" />
           <div className="pt-[6rem]">
-            {posts.length === 0 && activeTab === "Archived" ? (
+            {postsLoading ? (
+              <ProfilePostsSkeleton />
+            ) : posts.length === 0 ? (
               <div className="text-center text-[#787070] font-semibold text-lg mt-10">
-                No archived posts yet.
+                {activeTab === "Archived"
+                  ? "No archived posts yet."
+                  : "No posts available."}
               </div>
             ) : (
               <PostContainer posts={posts} />

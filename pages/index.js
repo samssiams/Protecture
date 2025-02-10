@@ -12,8 +12,8 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import Chatbot from '../components/ui/chatbot';
 import { useRouter } from 'next/router';
-import NotificationSidebar from './notification'; // Import the Notification Sidebar
-import CommunitySidebar from './communities'; // Import the Communities Sidebar
+import NotificationSidebar from './notification';
+import CommunitySidebar from './communities';
 
 export default function Home() {
   const [isModalOpen, setModalOpen] = useState(false);
@@ -59,7 +59,6 @@ export default function Home() {
 
   useEffect(() => {
     const { postId } = router.query;
-
     if (postId) {
       const fetchPostDetails = async () => {
         try {
@@ -72,7 +71,6 @@ export default function Home() {
           console.error("Failed to fetch post details:", error);
         }
       };
-
       fetchPostDetails();
     }
   }, [router.query]);
@@ -87,13 +85,11 @@ export default function Home() {
   const closeCommentModal = () => {
     setCommentModalOpen(false);
     setCurrentPost(null);
-
     if (commentSubmitted) {
       fetchUserPostCount();
       window.location.reload();
       setCommentSubmitted(false);
     }
-
     router.push('/', undefined, { shallow: true });
   };
 
@@ -145,7 +141,6 @@ export default function Home() {
                     borderRadius: '8px',
                   }}
                 ></div>
-
                 <Image
                   src={userData?.profileImg || '/images/user.png'}
                   alt="Profile"
@@ -153,7 +148,6 @@ export default function Home() {
                   height={96}
                   className="rounded-full border-4 border-white mb-4"
                 />
-
                 {userData ? (
                   <>
                     <h2 className="text-[25px] font-bold text-black">{userData.name}</h2>
@@ -165,21 +159,16 @@ export default function Home() {
                     <Skeleton width="100px" height="20px" />
                   </>
                 )}
-
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: '80px' }}>
                     <p className="font-bold text-[18px] text-black">{userPostCount}</p>
                     <p className="text-[15px] text-[#787070]">Users Posts</p>
                   </div>
                 </div>
-
                 <Link href="/home/profile">
                   <button
                     className="border border-[#28B446] text-[#28B446] font-semibold rounded-[6px] mt-5 transition duration-300 hover:bg-[#28B446] hover:text-white"
-                    style={{
-                      width: '170px',
-                      height: '34px',
-                    }}
+                    style={{ width: '170px', height: '34px' }}
                   >
                     My Profile
                   </button>
@@ -240,20 +229,12 @@ export default function Home() {
               onClick={openFilterModal}
             >
               <Image src="/svg/filter.svg" alt="Filter Icon" width={16} height={16} />
-              <span
-                style={{
-                  flex: 1,
-                  textAlign: 'center',
-                }}
-              >
-                {selectedCategoryName}
-              </span>
+              <span style={{ flex: 1, textAlign: 'center' }}>{selectedCategoryName}</span>
               <Image src="/svg/downfilter.svg" alt="Down Arrow Icon" width={12} height={12} />
             </motion.button>
           </div>
 
-          {/* The PostContainer is always rendered.
-              It will show skeleton loaders internally while fetching posts. */}
+          {/* The PostContainer will fetch and display the global posts */}
           <PostContainer selectedCategory={selectedCategory} />
         </div>
 

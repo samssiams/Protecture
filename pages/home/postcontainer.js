@@ -55,48 +55,63 @@ function PostSkeleton() {
   );
 }
 
-function PostContainer({ selectedCategory }) {
-  const [posts, setPosts] = useState([]);
+function PostContainer({ selectedCategory, posts: initialPosts }) {
+  // Use the passed-in posts if available; otherwise, initialize with an empty array.
+  const [posts, setPosts] = useState(initialPosts || []);
   const [votedPosts, setVotedPosts] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Only show the loading spinner if we haven't been passed posts.
+  const [isLoading, setIsLoading] = useState(initialPosts ? false : true);
   const { data: session } = useSession();
   const router = useRouter();
 
+  // If no initial posts were provided, fetch posts from the global endpoint.
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const currentPath = router.pathname;
-        const query =
-          currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
-        const response = await fetch(`/api/post/getposts${query}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPosts(data);
-
-          // Initialize votes for each post based on userVote
-          const initialVotes = data.reduce((acc, post) => {
-            if (post.userVote) {
-              acc[post.id] = post.userVote;
-            }
-            return acc;
-          }, {});
-          setVotedPosts(initialVotes);
-        } else {
-          console.error("Error fetching posts");
+    if (!initialPosts) {
+      const fetchPosts = async () => {
+        try {
+          const currentPath = router.pathname;
+          // For pages other than profile, fetch global posts.
+          const query =
+            currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
+          const response = await fetch(`/api/post/getposts${query}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPosts(data);
+            // Initialize votes based on userVote
+            const initialVotes = data.reduce((acc, post) => {
+              if (post.userVote) {
+                acc[post.id] = post.userVote;
+              }
+              return acc;
+            }, {});
+            setVotedPosts(initialVotes);
+          } else {
+            console.error("Error fetching posts");
+          }
+        } catch (error) {
+          console.error("Error fetching posts:", error);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (error) {
-        console.error("Error fetching posts:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      };
 
-    fetchPosts();
-  }, [router.pathname]);
+      fetchPosts();
+    } else {
+      // If posts are passed in via props, disable loading spinner.
+      setIsLoading(false);
+    }
+  }, [router.pathname, initialPosts]);
+
+  // Update local posts state when the initialPosts prop changes.
+  useEffect(() => {
+    if (initialPosts) {
+      setPosts(initialPosts);
+    }
+  }, [initialPosts]);
 
   // Disable right-click on images
   useEffect(() => {
@@ -121,7 +136,7 @@ function PostContainer({ selectedCategory }) {
     };
     setSelectedPost(post);
     setModalPosition(position);
-    setShowModal((prevShowModal) => !prevShowModal);
+    setShowModal((prev) => !prev);
   };
 
   const handleCommentModalToggle = (post) => {
@@ -182,12 +197,11 @@ function PostContainer({ selectedCategory }) {
     }
   };
 
-  // Filter posts based on the selected category if provided
+  // Filter posts based on the selected category if provided.
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
 
-  // Show skeleton loaders if still loading
   if (isLoading) {
     return (
       <div>
@@ -198,9 +212,12 @@ function PostContainer({ selectedCategory }) {
     );
   }
 
-  // Display "No Post" text if there are no posts after loading
   if (filteredPosts.length === 0) {
-    return <div className="text-center text-black font-bold text-lg">No Post Available</div>;
+    return (
+      <div className="text-center text-black font-bold text-lg">
+        No Post Available
+      </div>
+    );
   }
 
   return (

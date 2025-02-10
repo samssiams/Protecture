@@ -1,5 +1,3 @@
-// pages/api/user/profile.js
-
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -17,9 +15,10 @@ export default async function handler(req, res) {
     const session = await getServerSession(req, res, authOptions);
     console.log("Session:", session);
 
+    // Check if session and session.user exist
     if (!session || !session.user) {
-      console.log("No session user found, unauthorized");
-      return res.status(401).json({ error: "Unauthorized" });
+      console.log("No session or user found in session");
+      return res.status(401).json({ error: "Unauthorized: No session found" });
     }
 
     // Prefer using the unique id if available, then fallback to email or username
