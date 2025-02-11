@@ -13,8 +13,12 @@ export default async function handler(req, res) {
     // Retrieve the session using getServerSession
     const session = await getServerSession(req, res, authOptions);
 
+    // Ensure session and session.user exist
+    if (!session || !session.user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
-    // Find the user in the database using session data
+    // Find the user in the database using session data (using email)
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -45,7 +49,7 @@ export default async function handler(req, res) {
     const data = communities.map((community) => ({
       id: community.id,
       name: community.name,
-      description: community.description, // new field for the description
+      description: community.description,
       joined: community.members.filter((m) => m.status === "joined").length > 0,
       memberCount: community.members.filter((m) => m.status === "joined").length,
     }));
