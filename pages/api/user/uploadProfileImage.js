@@ -1,4 +1,4 @@
-// pages/api/user/uploadProfileImage.js
+// /api/user/uploadProfileImage.js
 import { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
@@ -16,7 +16,6 @@ export const config = {
   },
 };
 
-// Helper to parse incoming form data using formidable
 const parseForm = (req) =>
   new Promise((resolve, reject) => {
     const form = formidable({ multiples: false, keepExtensions: true });
@@ -27,77 +26,92 @@ const parseForm = (req) =>
   });
 
 export default async function handler(req, res) {
-  console.log('UploadProfileImage API called');
+  console.log("UploadProfileImage API called");
 
   const session = await getServerSession(req, res, authOptions);
-  console.log('Session:', session);
+  console.log("Session:", session);
   if (!session || !session.user) {
-    console.log('Unauthorized access attempt');
+    console.log("Unauthorized access attempt");
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
   if (req.method === 'POST') {
+    let files; // Declare files for use in finally block
     try {
-      const { files } = await parseForm(req);
-      const file = files.file;
-      console.log('Uploaded file info:', file);
-      if (!file) {
-        console.log('No file uploaded');
+      ({ files } = await parseForm(req));
+      let file = files.file;
+      const fileData = Array.isArray(file) ? file[0] : file;
+      console.log("Uploaded file info:", fileData);
+      if (!fileData) {
+        console.log("No file uploaded");
         return res.status(400).json({ error: 'No file uploaded' });
       }
+      // No MIME type check is performed.
 
-      // Validate file type
-      const validMimeTypes = ['image/jpeg', 'image/png'];
-      if (!validMimeTypes.includes(file.mimetype)) {
-        return res.status(400).json({ error: 'Only JPEG and PNG files are allowed' });
+      const originalName = fileData.originalFilename || fileData.newFilename;
+      if (!originalName) {
+        return res.status(400).json({ error: 'No filename provided' });
       }
-
-      // Resize the profile image to 300×300
       const resizedFilePath = path.join(
         process.cwd(),
         'public',
         'uploads',
-        `resized_${Date.now()}${path.extname(file.originalFilename)}`
+        `resized_${Date.now()}${path.extname(originalName)}`
       );
-      console.log('Resized file path:', resizedFilePath);
-      await sharp(file.filepath).resize(300, 300).toFile(resizedFilePath);
-      console.log('Profile image resized successfully');
+      console.log("Resized file path:", resizedFilePath);
+      await sharp(fileData.filepath).resize(300, 300).toFile(resizedFilePath);
+      console.log("Profile image resized successfully");
 
-      // Upload the resized file to Supabase
       const publicUrl = await uploadFileToSupabase(
         resizedFilePath,
         resizedFilePath,
-        file.originalFilename,
+        originalName,
         session.user.id,
-        'protecture/profileimage'
+        "protecture/profileimage"
       );
-      console.log('Public URL from Supabase:', publicUrl);
+      console.log("Public URL from Supabase:", publicUrl);
       if (!publicUrl) {
-        console.log('Failed to get public URL from Supabase');
+        console.log("Failed to get public URL from Supabase");
         return res.status(500).json({ error: 'Error uploading profile image to Supabase' });
       }
 
-      // Update the user's profile with the new profile image URL
       await prisma.userProfile.update({
         where: { userId: session.user.id },
         data: { profile_img: publicUrl },
       });
-      console.log('User profile updated with new profile image URL');
-
-      // Cleanup: Delete temporary files
-      if (fs.existsSync(file.filepath)) {
-        fs.unlinkSync(file.filepath);
-        console.log('Original file deleted:', file.filepath);
-      }
-      if (fs.existsSync(resizedFilePath)) {
-        fs.unlinkSync(resizedFilePath);
-        console.log('Resized file deleted:', resizedFilePath);
-      }
+      console.log("User profile updated with new profile image URL");
 
       res.status(200).json({ fileUrl: publicUrl });
     } catch (error) {
       console.error('Error uploading or processing profile image:', error);
       res.status(500).json({ error: 'Error processing profile image' });
+    } finally {
+      if (files?.file) {
+        const fileData = Array.isArray(files.file) ? files.file[0] : files.file;
+        if (fileData && fs.existsSync(fileData.filepath)) {
+          try {
+            fs.unlinkSync(fileData.filepath);
+            console.log("Original file deleted:", fileData.filepath);
+          } catch (err) {
+            console.error('Failed to delete original file:', fileData.filepath, err);
+          }
+        }
+        const resizedFilename = `resized_${fileData ? fileData.filename : ''}`;
+        const resizedPath = path.join(
+          process.cwd(),
+          'public',
+          'uploads',
+          resizedFilename
+        );
+        if (fs.existsSync(resizedPath)) {
+          try {
+            fs.unlinkSync(resizedPath);
+            console.log("Resized file deleted:", resizedPath);
+          } catch (err) {
+            console.error('Failed to delete resized file:', resizedPath, err);
+          }
+        }
+      }
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });

@@ -1,3 +1,4 @@
+// /home/profile/index.js
 import Link from "next/link";
 import Navbar from "../../../components/ui/navbar";
 import Image from "next/image";
@@ -11,7 +12,7 @@ import axios from "axios";
 import NotificationSidebar from "../../notification";
 import CommunitySidebar from "../../communities";
 
-// A skeleton loader for profile posts with matching shadow style
+// Reused skeleton loader for profile posts
 function ProfilePostsSkeleton() {
   return (
     <div>
@@ -87,6 +88,7 @@ export default function Profile() {
   const [userPostCount, setUserPostCount] = useState(0);
   const [posts, setPosts] = useState([]);
   const [postsLoading, setPostsLoading] = useState(true);
+  const [archiveModalMessage, setArchiveModalMessage] = useState(null);
 
   const fetchUserData = async () => {
     setLoading(true);
@@ -103,9 +105,8 @@ export default function Profile() {
   const fetchPosts = async () => {
     setPostsLoading(true);
     try {
-      // Use the getuserposts endpoint to fetch only the current user's posts.
-      const query =
-        activeTab === "Archived" ? "?archived=true" : "?archived=false";
+      // When activeTab is "Archived", add the query flag.
+      const query = activeTab === "Archived" ? "?archived=true" : "?archived=false";
       const response = await axios.get(`/api/post/getuserposts${query}`);
       if (response.status === 200) {
         setPosts(response.data);
@@ -119,7 +120,6 @@ export default function Profile() {
 
   const fetchUserPostCount = async () => {
     try {
-      // Fetch count from getposts with countOnly=true.
       const response = await axios.get("/api/post/getposts?countOnly=true");
       if (response.status === 200) {
         setUserPostCount(response.data.count);
@@ -177,6 +177,36 @@ export default function Profile() {
     fetchUserPostCount();
   };
 
+  // Archive/Unarchive handler
+  const handleArchive = async (postId) => {
+    // When in the Posts tab, clicking will archive;
+    // when in Archived, clicking will unarchive.
+    const isArchive = activeTab === "Posts";
+    try {
+      const response = await fetch("/api/post/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postId, action: isArchive ? "archive" : "unarchive" }),
+      });
+      if (response.ok) {
+        setArchiveModalMessage(isArchive ? "Post Archive" : "Post Unarchive");
+        if (isArchive) {
+          // Remove the post from the current list if archiving.
+          setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+        } else {
+          // For unarchive, switch to the "Posts" tab; the useEffect will re-fetch posts.
+          setActiveTab("Posts");
+        }
+        setTimeout(() => setArchiveModalMessage(null), 2000);
+      } else {
+        const errorData = await response.json();
+        console.error("Error in archive/unarchive:", errorData.message);
+      }
+    } catch (error) {
+      console.error("Error in archive/unarchive:", error);
+    }
+  };
+
   return (
     <div className="bg-[#F0FDF4] min-h-screen">
       <Navbar />
@@ -195,16 +225,8 @@ export default function Profile() {
           <div className="flex flex-col items-center">
             {loading ? (
               <>
-                <Skeleton
-                  width="100%"
-                  height="80px"
-                  className="rounded-t-[15px] mb-[-2rem]"
-                />
-                <Skeleton
-                  width="96px"
-                  height="96px"
-                  className="rounded-full border-4 mb-4"
-                />
+                <Skeleton width="100%" height="80px" className="rounded-t-[15px] mb-[-2rem]" />
+                <Skeleton width="96px" height="96px" className="rounded-full border-4 mb-4" />
                 <Skeleton width="150px" height="25px" className="mb-2" />
                 <Skeleton width="100px" height="20px" />
               </>
@@ -232,20 +254,14 @@ export default function Profile() {
                   type="file"
                   id="profileFileInput"
                   style={{ display: "none" }}
-                  accept="image/jpeg, image/png"
+                  accept="image/*"
                   onChange={(e) => handleImageUpdate("profile", e.target.files[0])}
                 />
-                <h2 className="text-[25px] font-bold text-black">
-                  {userData?.name}
-                </h2>
-                <p className="text-[#787070] text-[15px]">
-                  @{userData?.username}
-                </p>
+                <h2 className="text-[25px] font-bold text-black">{userData?.name}</h2>
+                <p className="text-[#787070] text-[15px]">@{userData?.username}</p>
                 <div className="flex justify-center space-x-5 w-full mt-5 mb-6">
                   <div className="flex flex-col items-center" style={{ minWidth: "80px" }}>
-                    <p className="font-bold text-[18px] text-black">
-                      {userPostCount || 0}
-                    </p>
+                    <p className="font-bold text-[18px] text-black">{userPostCount || 0}</p>
                     <p className="text-[15px] text-[#787070]">Users Posts</p>
                   </div>
                 </div>
@@ -272,9 +288,7 @@ export default function Profile() {
                 "0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)",
             }}
           >
-            <h2 className="text-[25px] font-bold text-black mr-4">
-              My Posts
-            </h2>
+            <h2 className="text-[25px] font-bold text-black mr-4">My Posts</h2>
             <div className="flex">
               <button
                 onClick={() => setActiveTab("Posts")}
@@ -309,7 +323,11 @@ export default function Profile() {
                   : "No posts available."}
               </div>
             ) : (
-              <PostContainer posts={posts} />
+              <PostContainer
+                posts={posts}
+                activeTab={activeTab}
+                handleArchive={handleArchive}
+              />
             )}
           </div>
         </div>
@@ -338,6 +356,15 @@ export default function Profile() {
         onProfileUpdate={handleProfileUpdate}
         currentProfileData={userData}
       />
+
+      {/* Archive/Unarchive Modal Message */}
+      {archiveModalMessage && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-4 rounded">
+            <p className="text-green-600 font-bold">{archiveModalMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

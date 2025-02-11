@@ -1,248 +1,146 @@
-// components/modal-editprofile.js
-import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import axios from 'axios';
+// /pages/api/user/editprofile.js
 
-export default function EditProfileModal({ isOpen, onClose, currentProfileData, onProfileUpdate }) {
-  const profileInputRef = useRef(null);
-  const headerInputRef = useRef(null);
+import { PrismaClient } from '@prisma/client';
+import formidable from 'formidable';
+import { getSession } from "next-auth/react";
+import { uploadFileToSupabase } from '../../../lib/supabaseHelper';
 
-  const [name, setName] = useState('');
-  const [profileImage, setProfileImage] = useState('');
-  const [headerImage, setHeaderImage] = useState('');
-  const [tempProfileImage, setTempProfileImage] = useState('');
-  const [tempHeaderImage, setTempHeaderImage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+const prisma = new PrismaClient();
 
-  useEffect(() => {
-    const handleEsc = (event) => {
-      if (event.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+export const config = {
+  api: {
+    // Disable the default body parser so we can use our custom logic.
+    bodyParser: false,
+  },
+};
 
-  useEffect(() => {
-    if (isOpen && currentProfileData) {
-      setName(currentProfileData.name || '');
-      setProfileImage(currentProfileData.profile_img || '');
-      setHeaderImage(currentProfileData.header_img || '');
-      setTempProfileImage(currentProfileData.profile_img || '');
-      setTempHeaderImage(currentProfileData.header_img || '');
-      setErrorMessage('');
+// Helper to parse multipart/form-data using formidable
+const parseForm = (req) => {
+  const form = formidable({
+    multiples: false,
+    keepExtensions: true,
+    maxFileSize: 2 * 1024 * 1024, // 2 MB
+  });
+  return new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      else resolve({ fields, files });
+    });
+  });
+};
+
+// Helper to parse a JSON body from a stream
+const parseJSON = (req) =>
+  new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', (chunk) => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on('error', (err) => reject(err));
+  });
+
+export default async function handler(req, res) {
+  if (req.method !== 'PUT') {
+    return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  const session = await getSession({ req });
+  if (!session || !session.user || !session.user.id) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const userId = session.user.id;
+
+  try {
+    let fields = {};
+    let files = {};
+
+    // Check the content-type header. If it contains 'multipart/form-data', use formidable.
+    if (req.headers['content-type'] && req.headers['content-type'].includes('multipart/form-data')) {
+      const parsed = await parseForm(req);
+      fields = parsed.fields;
+      files = parsed.files;
+    } else {
+      // Otherwise, assume JSON.
+      fields = await parseJSON(req);
     }
-  }, [isOpen, currentProfileData]);
 
-  const handleProfileFileClick = () => profileInputRef.current.click();
-  const handleHeaderFileClick = () => headerInputRef.current.click();
+    // Extract fields (name and username)
+    const { name, username } = fields;
+    const userUpdateData = {};
+    const profileUpdateData = {};
 
-  // Upload function using FormData (with axios) for both image types
-  const uploadImage = async (file, endpoint) => {
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('file', file); // key must be "file" for the server parser
+    if (username) userUpdateData.username = username;
+    if (name) profileUpdateData.name = name;
 
-    try {
-      const response = await axios.post(endpoint, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+    // Process profile image if provided (as a file field named 'profile_img')
+    if (files.profile_img) {
+      const filePath = files.profile_img.filepath;
+      const originalFilename = files.profile_img.originalFilename;
+      const publicUrl = await uploadFileToSupabase(
+        filePath,
+        filePath,
+        originalFilename,
+        userId,
+        "protecture/profileimage"
+      );
+      if (!publicUrl) {
+        return res.status(500).json({ error: 'Error uploading profile image' });
+      }
+      profileUpdateData.profile_img = publicUrl;
+    }
+
+    // Process header image if provided (as a file field named 'header_img')
+    if (files.header_img) {
+      const filePath = files.header_img.filepath;
+      const originalFilename = files.header_img.originalFilename;
+      const publicUrl = await uploadFileToSupabase(
+        filePath,
+        filePath,
+        originalFilename,
+        userId,
+        "protecture/headerimage"
+      );
+      if (!publicUrl) {
+        return res.status(500).json({ error: 'Error uploading header image' });
+      }
+      profileUpdateData.header_img = publicUrl;
+    }
+
+    // Update username (in User) if provided.
+    if (Object.keys(userUpdateData).length > 0) {
+      await prisma.user.update({
+        where: { id: parseInt(userId, 10) },
+        data: userUpdateData,
       });
-      return response.data.fileUrl;
-    } catch (error) {
-      setErrorMessage(error.response?.data?.error || 'Failed to upload image.');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFileChange = async (event, type) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const validExtensions = ['image/jpeg', 'image/png'];
-    if (!validExtensions.includes(file.type)) {
-      setErrorMessage('Only JPG and PNG files are allowed.');
-      return;
     }
 
-    try {
-      const endpoint =
-        type === 'profile'
-          ? '/api/user/uploadProfileImage'
-          : '/api/user/uploadHeaderImage';
-      const fileUrl = await uploadImage(file, endpoint);
-      if (type === 'profile') setTempProfileImage(fileUrl);
-      else setTempHeaderImage(fileUrl);
-    } catch (error) {
-      // errorMessage is set inside uploadImage
-    }
-  };
+    // Upsert the profile data (in UserProfile)
+    await prisma.userProfile.upsert({
+      where: { userId: parseInt(userId, 10) },
+      update: profileUpdateData,
+      create: { ...profileUpdateData, userId: parseInt(userId, 10) },
+    });
 
-  const handleSave = async () => {
-    setLoading(true);
-    setErrorMessage('');
+    // Create a notification for the update.
+    await prisma.notification.create({
+      data: {
+        userId: parseInt(userId, 10),
+        actionUserId: parseInt(userId, 10),
+        type: 'PROFILE_UPDATE',
+        message: 'You have updated your profile.',
+      },
+    });
 
-    const updatedData = {
-      name,
-      profile_img: tempProfileImage || profileImage || currentProfileData?.profile_img || '',
-      header_img: tempHeaderImage || headerImage || currentProfileData?.header_img || '',
-    };
-
-    try {
-      const response = await axios.put('/api/user/editProfile', updatedData, {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      if (response.status !== 200) throw new Error('Profile update failed');
-
-      onProfileUpdate(updatedData);
-      setProfileImage(tempProfileImage || profileImage);
-      setHeaderImage(tempHeaderImage || headerImage);
-      setTempProfileImage('');
-      setTempHeaderImage('');
-      setShowSuccessModal(true);
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        onClose();
-      }, 2000);
-    } catch (error) {
-      setErrorMessage('Failed to update profile.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <motion.div
-      className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
-    >
-      <motion.div
-        className="bg-white rounded-[5px] shadow-lg p-6 border border-black"
-        style={{
-          width: '500px',
-          height: 'auto',
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15)',
-          borderWidth: '1px',
-        }}
-        initial={{ scale: 0.8 }}
-        animate={{ scale: 1 }}
-        exit={{ scale: 0.8 }}
-        transition={{ duration: 0.2 }}
-      >
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-[24px] font-semibold text-black mb-.1 -mt-3">Edit Profile</h2>
-          <button onClick={onClose} className="focus:outline-none flex items-center mb-3">
-            <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
-          </button>
-        </div>
-
-        <hr className="border-t border-black" style={{ borderWidth: '0.5px', width: 'calc(100%+50px)', margin: '0 -25px' }} />
-
-        {/* Profile Picture Section */}
-        <div className="mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-[18px] mt-5 text-black font-bold">Profile Picture</p>
-            <button onClick={handleProfileFileClick} className="mt-5 text-[#22C55E] font-bold">Edit</button>
-          </div>
-          <div className="flex flex-col items-center mt-10 mb-8" onClick={handleProfileFileClick} style={{ cursor: 'pointer' }}>
-            {(tempProfileImage || profileImage) ? (
-              <Image src={tempProfileImage || profileImage} alt="Profile" width={100} height={100} className="rounded-full border-4 border-white" />
-            ) : (
-              <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
-            )}
-            <span className="text-gray-500 mt-2">
-              {(tempProfileImage || profileImage) ? 'Change Image' : 'Add Image'}
-            </span>
-          </div>
-          <input
-            type="file"
-            ref={profileInputRef}
-            style={{ display: 'none' }}
-            accept=".jpg, .jpeg, .png"
-            onChange={(e) => handleFileChange(e, 'profile')}
-          />
-        </div>
-
-        {/* Header Profile Section */}
-        <div className="mb-12">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-[18px] text-black font-bold">Header Profile</p>
-            <button onClick={handleHeaderFileClick} className="text-[#22C55E] font-bold">Edit</button>
-          </div>
-          <div className="flex flex-col items-center mt-10 mb-8" onClick={handleHeaderFileClick} style={{ cursor: 'pointer' }}>
-            {(tempHeaderImage || headerImage) ? (
-              <Image src={tempHeaderImage || headerImage} alt="Header" width={300} height={100} className="rounded-md" />
-            ) : (
-              <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
-            )}
-            <span className="text-gray-500 mt-2">
-              {(tempHeaderImage || headerImage) ? 'Change Image' : 'Add Image'}
-            </span>
-          </div>
-          <input
-            type="file"
-            ref={headerInputRef}
-            style={{ display: 'none' }}
-            accept=".jpg, .jpeg, .png"
-            onChange={(e) => handleFileChange(e, 'header')}
-          />
-        </div>
-
-        <hr className="border-t border-gray-400 mb-8" style={{ height: '0.1px', margin: '0' }} />
-
-        {/* Name Field */}
-        <div className="mb-10">
-          <label className="text-[18px] text-black font-bold mb-1 mt-5 block">Name</label>
-          <input
-            type="text"
-            placeholder="Enter your new name"
-            className="border border-gray-400 rounded-[5px] focus:outline-none w-full h-[38px] px-3 text-gray-700"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          disabled={loading}
-          className={`bg-[#22C55E] text-white font-semibold rounded-[5px] w-full h-[38px] ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {loading ? 'Saving...' : 'Save'}
-        </button>
-
-        {/* Error Message */}
-        {errorMessage && <p className="text-red-600 text-center mt-4">{errorMessage}</p>}
-      </motion.div>
-
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <motion.div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          <motion.div
-            className="bg-white rounded-lg p-6 shadow-lg border border-green-600"
-            initial={{ scale: 0.8 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-          >
-            <p className="text-green-600 font-bold text-center">Profile updated successfully!</p>
-          </motion.div>
-        </motion.div>
-      )}
-    </motion.div>
-  );
+    return res.status(200).json({ message: 'Profile updated successfully' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return res.status(500).json({ error: 'Failed to update profile' });
+  }
 }

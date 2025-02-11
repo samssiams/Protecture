@@ -1,3 +1,4 @@
+// modal-editprofile.js
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -64,22 +65,16 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
     }
   };
 
+  // We no longer check for only JPG/PNG; any image file is accepted.
   const handleFileChange = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
-
-    const validExtensions = ["image/jpeg", "image/png"];
-    if (!validExtensions.includes(file.type)) {
-      setErrorMessage("Only JPG and PNG files are allowed.");
-      return;
-    }
 
     try {
       const endpoint = type === 'profile'
         ? '/api/user/uploadProfileImage'
         : '/api/user/uploadHeaderImage';
       const fileUrl = await uploadImage(file, endpoint);
-
       if (type === 'profile') setTempProfileImage(fileUrl);
       else setTempHeaderImage(fileUrl);
     } catch {}
@@ -167,13 +162,15 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             ) : (
               <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
             )}
-            <span className="text-gray-500 mt-2">{(tempProfileImage || profileImage) ? "Change Image" : "Add Image"}</span>
+            <span className="text-gray-500 mt-2">
+              {(tempProfileImage || profileImage) ? "Change Image" : "Add Image"}
+            </span>
           </div>
           <input
             type="file"
             ref={profileInputRef}
             style={{ display: 'none' }}
-            accept=".jpg, .jpeg, .png"
+            accept="image/*"
             onChange={(e) => handleFileChange(e, 'profile')}
           />
         </div>
@@ -190,13 +187,15 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             ) : (
               <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
             )}
-            <span className="text-gray-500 mt-2">{(tempHeaderImage || headerImage) ? "Change Image" : "Add Image"}</span>
+            <span className="text-gray-500 mt-2">
+              {(tempHeaderImage || headerImage) ? "Change Image" : "Add Image"}
+            </span>
           </div>
           <input
             type="file"
             ref={headerInputRef}
             style={{ display: 'none' }}
-            accept=".jpg, .jpeg, .png"
+            accept="image/*"
             onChange={(e) => handleFileChange(e, 'header')}
           />
         </div>

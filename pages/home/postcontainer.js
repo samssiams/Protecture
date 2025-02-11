@@ -1,3 +1,4 @@
+// /home/profile/postcontainer.js
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -17,29 +18,17 @@ function PostSkeleton() {
           "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
       }}
     >
-      {/* Header Skeleton */}
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
+          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-
-      {/* Description Skeleton */}
       <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-
-      {/* Image Skeleton */}
       <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
-
-      {/* Footer Skeleton */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -55,33 +44,28 @@ function PostSkeleton() {
   );
 }
 
-function PostContainer({ selectedCategory, posts: initialPosts }) {
-  // Use the passed-in posts if available; otherwise, initialize with an empty array.
+function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handleArchive }) {
   const [posts, setPosts] = useState(initialPosts || []);
   const [votedPosts, setVotedPosts] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  // Only show the loading spinner if we haven't been passed posts.
   const [isLoading, setIsLoading] = useState(initialPosts ? false : true);
   const { data: session } = useSession();
   const router = useRouter();
 
-  // If no initial posts were provided, fetch posts from the global endpoint.
   useEffect(() => {
     if (!initialPosts) {
       const fetchPosts = async () => {
         try {
           const currentPath = router.pathname;
-          // For pages other than profile, fetch global posts.
           const query =
             currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
           const response = await fetch(`/api/post/getposts${query}`);
           if (response.ok) {
             const data = await response.json();
             setPosts(data);
-            // Initialize votes based on userVote
             const initialVotes = data.reduce((acc, post) => {
               if (post.userVote) {
                 acc[post.id] = post.userVote;
@@ -98,29 +82,24 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
           setIsLoading(false);
         }
       };
-
       fetchPosts();
     } else {
-      // If posts are passed in via props, disable loading spinner.
       setIsLoading(false);
     }
   }, [router.pathname, initialPosts]);
 
-  // Update local posts state when the initialPosts prop changes.
   useEffect(() => {
     if (initialPosts) {
       setPosts(initialPosts);
     }
   }, [initialPosts]);
 
-  // Disable right-click on images
   useEffect(() => {
     const disableRightClick = (event) => {
       if (event.target.tagName === "IMG") {
         event.preventDefault();
       }
     };
-
     document.addEventListener("contextmenu", disableRightClick);
     return () => {
       document.removeEventListener("contextmenu", disableRightClick);
@@ -128,8 +107,7 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
   }, []);
 
   const handleModalToggle = (event, post) => {
-    const dotsButton = event.currentTarget;
-    const rect = dotsButton.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
     const position = {
       left: rect.left + window.scrollX,
       top: rect.bottom + window.scrollY + 5,
@@ -153,9 +131,7 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
       const requestBody = { postId, action };
       const response = await fetch("/api/post/vote", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
       if (response.ok) {
@@ -178,26 +154,6 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
     }
   };
 
-  const handleArchive = async (postId) => {
-    try {
-      const response = await fetch("/api/post/archive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId }),
-      });
-      if (response.ok) {
-        alert("Post archived successfully!");
-        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-      } else {
-        const errorData = await response.json();
-        console.error("Error archiving post:", errorData.message);
-      }
-    } catch (error) {
-      console.error("Error archiving post:", error);
-    }
-  };
-
-  // Filter posts based on the selected category if provided.
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
@@ -276,26 +232,19 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
                     className="bg-green-500 text-white px-3 py-1 rounded"
                     onClick={() => handleArchive(post.id)}
                   >
-                    Archive
+                    {activeTab === "Archived" ? "Unarchive" : "Archive"}
                   </button>
                 ) : (
                   <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image
-                      src="/svg/dots.svg"
-                      alt="Options"
-                      width={4}
-                      height={16}
-                    />
+                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
                   </button>
                 )}
               </div>
             </div>
-
             <p className="text-[#4A4A4A] mb-4">{post.description}</p>
             <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
               {post.category_id}
             </span>
-
             <div
               className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
               onClick={() => handleCommentModalToggle(post)}
@@ -308,7 +257,6 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
                 className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
               />
             </div>
-
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <button
@@ -329,9 +277,7 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
                     }}
                   />
                 </button>
-
                 <span className="text-black">{post.counter}</span>
-
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
@@ -351,20 +297,13 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
                   />
                 </button>
               </div>
-
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
-                  <Image
-                    src="/svg/comments.svg"
-                    alt="Comments"
-                    width={21}
-                    height={21}
-                  />
+                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
                 </button>
                 <span className="text-black">{post.comments.length}</span>
               </div>
             </div>
-
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
                 isOpen={showCommentModal}
@@ -380,7 +319,6 @@ function PostContainer({ selectedCategory, posts: initialPosts }) {
                 }
               />
             )}
-
             {showModal && selectedPost?.id === post.id && (
               <ModalDots
                 isOpen={showModal}
