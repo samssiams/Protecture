@@ -65,7 +65,7 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
     }
   };
 
-  // We no longer check for only JPG/PNG; any image file is accepted.
+  // Accept any image file (the input uses accept="image/*")
   const handleFileChange = async (event, type) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -77,30 +77,44 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
       const fileUrl = await uploadImage(file, endpoint);
       if (type === 'profile') setTempProfileImage(fileUrl);
       else setTempHeaderImage(fileUrl);
-    } catch {}
+    } catch (error) {
+      // Error message is already set in uploadImage.
+    }
   };
 
   const handleSave = async () => {
     setLoading(true);
     setErrorMessage('');
 
-    const updatedData = {
-      name,
-      profile_img: tempProfileImage || profileImage || currentProfileData?.profile_img || '',
-      header_img: tempHeaderImage || headerImage || currentProfileData?.header_img || '',
-    };
+    // Build a FormData object so that the endpoint always receives multipart/form-data.
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append(
+      "profile_img",
+      tempProfileImage || profileImage || currentProfileData?.profile_img || ''
+    );
+    formData.append(
+      "header_img",
+      tempHeaderImage || headerImage || currentProfileData?.header_img || ''
+    );
 
     try {
       const response = await fetch('/api/user/editProfile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
+        body: formData,
       });
 
-      if (!response.ok) throw new Error('Profile update failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Profile update failed');
+      }
       
-      onProfileUpdate(updatedData);
-      
+      // Update the profile data on the parent
+      onProfileUpdate({
+        name,
+        profile_img: tempProfileImage || profileImage,
+        header_img: tempHeaderImage || headerImage,
+      });
       setProfileImage(tempProfileImage || profileImage);
       setHeaderImage(tempHeaderImage || headerImage);
       setTempProfileImage('');
@@ -112,7 +126,7 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
         onClose();
       }, 2000);
     } catch (error) {
-      setErrorMessage('Failed to update profile.');
+      setErrorMessage(error.message || 'Failed to update profile.');
     } finally {
       setLoading(false);
     }
@@ -142,13 +156,13 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
         transition={{ duration: 0.2 }}
       >
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-[24px] font-semibold text-black mb-.1 -mt-3">Edit Profile</h2>
-          <button onClick={onClose} className="focus:outline-none flex items-center mb-3">
+          <h2 className="text-[24px] font-semibold text-black">Edit Profile</h2>
+          <button onClick={onClose} className="focus:outline-none flex items-center">
             <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
           </button>
         </div>
 
-        <hr className="border-t border-black" style={{ borderWidth: '0.5px', width: 'calc(100% + 50px)', margin: '0 -25px' }} />
+        <hr className="border-t border-black" style={{ borderWidth: '0.5px', width: 'calc(100%+50px)', margin: '0 -25px' }} />
 
         {/* Profile Picture Section */}
         <div className="mb-12">

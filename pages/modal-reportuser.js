@@ -8,13 +8,7 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
 
   if (!isOpen) return null;
 
-  // Debugging: Log props to check if they're passed correctly
-  console.log('ReportUserModal props:', { postId, reporterId });
-
   const handleReport = async () => {
-    console.log('Report button clicked'); // Log when the report button is clicked
-    console.log('Submitting report with data:', { postId, reason: description, reportedBy: reporterId });
-
     if (!postId || !reporterId) {
       console.error('postId or reporterId is missing!');
       setReportStatus('error');
@@ -28,10 +22,7 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
         body: JSON.stringify({ postId, reason: description, reportedBy: reporterId }),
       });
 
-      console.log('Response status:', response.status); // Log the response status
-
       if (response.ok) {
-        console.log('Report submitted successfully');
         setReportStatus('success'); // Report was successful
       } else {
         const errorMessage = await response.text();
@@ -75,7 +66,7 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
 
         <hr
           className="border-t border-black top-20"
-          style={{ borderWidth: '.05px', width: 'calc(100% + 40px)', margin: '0 -20px' }}
+          style={{ borderWidth: '.05px', width: 'calc(100%+40px)', margin: '0 -20px' }}
         />
 
         {/* Modal Content */}
@@ -140,18 +131,18 @@ export default function ReportUserModal({ isOpen, onClose, postId, reporterId })
                   border: '1px solid #22C55E',
                   color: '#22C55E',
                   backgroundColor: 'white',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.color = 'white';
-                      e.target.style.backgroundColor = '#22C55E';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.color = '#22C55E';
-                      e.target.style.backgroundColor = 'white';
-                    }}
-                  >
-                    Report
-                  </button>
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = 'white';
+                  e.target.style.backgroundColor = '#22C55E';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#22C55E';
+                  e.target.style.backgroundColor = 'white';
+                }}
+              >
+                Report
+              </button>
             </>
           )}
         </div>

@@ -94,7 +94,7 @@ export default function AppealAdmin() {
                     <div key={appeal.id} className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
                       <div>
                         <h3 className="text-black font-bold">Suspended User: {appeal.user.username}</h3>
-                        <p className="text-red-500 font-medium">Appeal Message: {appeal.msg}</p>
+                        <p className="text-yellow-500 font-medium">Appeal Message: {appeal.msg}</p>
                       </div>
                       <div className="flex space-x-4">
                         <button
