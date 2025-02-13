@@ -206,7 +206,7 @@ export default function FlaggedAdmin() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-center">
+              <p className="text-gray-500 text-left">
                 No flagged reports found.
               </p>
             )}

@@ -1,48 +1,32 @@
-// /pages/api/user/editprofile.js
 import { PrismaClient } from '@prisma/client';
 import formidable from 'formidable';
-import { getSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../auth/[...nextauth]';
+import path from 'path';
+import os from 'os';
+import sharp from 'sharp';
 import { uploadFileToSupabase } from '../../../lib/supabaseHelper';
 
 const prisma = new PrismaClient();
 
 export const config = {
   api: {
-    // We disable the default body parser to allow us to conditionally parse.
-    bodyParser: false,
+    bodyParser: false, // We'll use formidable to parse multipart/form-data
   },
 };
 
-// Helper to parse multipart/form-data with formidable.
-const parseForm = (req) => {
-  const form = formidable({
-    multiples: false,
-    keepExtensions: true,
-    maxFileSize: 2 * 1024 * 1024, // 2 MB limit (adjust as needed)
-  });
-  return new Promise((resolve, reject) => {
-    form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
-    });
-  });
-};
-
-// Helper to parse JSON from the request body.
-const parseJSON = (req) =>
+// Helper to parse the incoming form data.
+const parseForm = (req) =>
   new Promise((resolve, reject) => {
-    let body = '';
-    req.on('data', (chunk) => {
-      body += chunk;
+    const form = formidable({
+      multiples: false,
+      keepExtensions: true,
+      maxFileSize: 2 * 1024 * 1024, // 2 MB limit
     });
-    req.on('end', () => {
-      try {
-        resolve(JSON.parse(body));
-      } catch (error) {
-        reject(error);
-      }
+    form.parse(req, (err, fields, files) => {
+      if (err) return reject(err);
+      resolve({ fields, files });
     });
-    req.on('error', reject);
   });
 
 export default async function handler(req, res) {
@@ -50,114 +34,118 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // Get the session.
-  const session = await getSession({ req });
+  // Validate the session.
+  const session = await getServerSession(req, res, authOptions);
   if (!session || !session.user || !session.user.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  const userId = session.user.id;
+  const userId = parseInt(session.user.id, 10);
 
-  let fields = {};
-  let files = {};
-
-  // Determine how to parse the incoming request.
-  const contentType = req.headers['content-type'] || '';
+  let fields = {}, files = {};
   try {
-    if (contentType.includes('multipart/form-data')) {
-      const parsed = await parseForm(req);
-      fields = parsed.fields;
-      files = parsed.files;
-    } else {
-      fields = await parseJSON(req);
-    }
+    // We expect multipart/form-data.
+    const parsed = await parseForm(req);
+    fields = parsed.fields;
+    files = parsed.files;
   } catch (error) {
-    console.error('Error parsing request body:', error);
-    return res.status(400).json({ error: 'Error parsing request body' });
+    return res.status(400).json({ error: 'Error parsing form data' });
   }
 
-  // When using formidable, fields may be arrays so we take the first value.
-  const nameVal = Array.isArray(fields.name) ? fields.name[0] : fields.name;
-  const profileImgVal = Array.isArray(fields.profile_img)
-    ? fields.profile_img[0]
-    : fields.profile_img;
-  const headerImgVal = Array.isArray(fields.header_img)
-    ? fields.header_img[0]
-    : fields.header_img;
+  // Extract name (ensuring it's a string).
+  const nameValue =
+    fields.name && (Array.isArray(fields.name) ? fields.name[0] : fields.name);
 
-  const userUpdateData = {};
-  const profileUpdateData = {};
-
-  // Update the profile name if provided.
-  if (nameVal) profileUpdateData.name = nameVal;
-  // Update image URLs if provided in the fields.
-  if (profileImgVal) profileUpdateData.profile_img = profileImgVal;
-  if (headerImgVal) profileUpdateData.header_img = headerImgVal;
-
-  // Process profile image file if provided.
+  // Process profile image (if provided) to obtain the public URL.
+  let processedProfileUrl = null;
   if (files.profile_img) {
-    const file = files.profile_img;
-    const filePath = file.filepath;
-    const originalFilename = file.originalFilename;
-    const publicUrl = await uploadFileToSupabase(
-      filePath,
-      filePath,
-      originalFilename,
-      userId,
-      "protecture/profileimage"
+    const file = Array.isArray(files.profile_img)
+      ? files.profile_img[0]
+      : files.profile_img;
+    const originalName = file.originalFilename || file.newFilename;
+    // Resize profile image to 300x300.
+    const tempPath = path.join(
+      os.tmpdir(),
+      `resized_profile_${Date.now()}${path.extname(originalName)}`
     );
-    if (!publicUrl) {
-      return res.status(500).json({ error: 'Error uploading profile image' });
-    }
-    profileUpdateData.profile_img = publicUrl;
+    await sharp(file.filepath).resize(300, 300).toFile(tempPath);
+    // Upload to Supabase bucket "protecture/profileimage" and get the URL.
+    processedProfileUrl = await uploadFileToSupabase(
+      tempPath,
+      tempPath,
+      originalName,
+      userId,
+      'protecture/profileimage'
+    );
   }
 
-  // Process header image file if provided.
+  // Process header image (if provided) to obtain the public URL.
+  let processedHeaderUrl = null;
   if (files.header_img) {
-    const file = files.header_img;
-    const filePath = file.filepath;
-    const originalFilename = file.originalFilename;
-    const publicUrl = await uploadFileToSupabase(
-      filePath,
-      filePath,
-      originalFilename,
-      userId,
-      "protecture/headerimage"
+    const file = Array.isArray(files.header_img)
+      ? files.header_img[0]
+      : files.header_img;
+    const originalName = file.originalFilename || file.newFilename;
+    // Resize header image to 1200x400.
+    const tempPath = path.join(
+      os.tmpdir(),
+      `resized_header_${Date.now()}${path.extname(originalName)}`
     );
-    if (!publicUrl) {
-      return res.status(500).json({ error: 'Error uploading header image' });
-    }
-    profileUpdateData.header_img = publicUrl;
+    await sharp(file.filepath).resize(1200, 400).toFile(tempPath);
+    // Upload to Supabase bucket "protecture/headerimage" and get the URL.
+    processedHeaderUrl = await uploadFileToSupabase(
+      tempPath,
+      tempPath,
+      originalName,
+      userId,
+      'protecture/headerimage'
+    );
   }
 
   try {
-    // Update the user record if needed (e.g., username, if ever provided)
-    if (fields.username) {
-      await prisma.user.update({
-        where: { id: parseInt(userId, 10) },
-        data: { username: Array.isArray(fields.username) ? fields.username[0] : fields.username },
-      });
-    }
-
-    // Upsert the profile record.
-    await prisma.userProfile.upsert({
-      where: { userId: parseInt(userId, 10) },
-      update: profileUpdateData,
-      create: { ...profileUpdateData, userId: parseInt(userId, 10) },
+    console.log("Updating user with:", {
+      name: nameValue,
+      profileURL: processedProfileUrl,
+      headerURL: processedHeaderUrl,
+    });
+    console.log("Updating profile with:", {
+      name: nameValue,
+      profile_img: processedProfileUrl,
+      header_img: processedHeaderUrl,
     });
 
-    // Create a notification about the profile update.
-    await prisma.notification.create({
-      data: {
-        userId: parseInt(userId, 10),
-        actionUserId: parseInt(userId, 10),
-        type: 'PROFILE_UPDATE',
-        message: 'You have updated your profile.',
+    // Build the update object for the `user` table.
+    const userUpdateData = {
+      name: nameValue,
+      ...(processedProfileUrl ? { profileURL: processedProfileUrl } : {}),
+      ...(processedHeaderUrl ? { headerURL: processedHeaderUrl } : {}),
+    };
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: userUpdateData,
+    });
+
+    // Build the update object for the `userProfile` table.
+    const userProfileUpdateData = {
+      name: nameValue,
+      ...(processedProfileUrl ? { profile_img: processedProfileUrl } : {}),
+      ...(processedHeaderUrl ? { header_img: processedHeaderUrl } : {}),
+    };
+
+    await prisma.userProfile.upsert({
+      where: { userId },
+      update: userProfileUpdateData,
+      create: {
+        userId,
+        name: nameValue,
+        profile_img: processedProfileUrl,
+        header_img: processedHeaderUrl,
       },
     });
 
-    return res.status(200).json({ message: 'Profile updated successfully' });
+    return res.status(200).json({ message: "Profile updated successfully" });
   } catch (error) {
-    console.error('Error updating profile:', error);
-    return res.status(500).json({ error: 'Failed to update profile' });
+    console.error("Error updating profile:", error);
+    return res.status(500).json({ error: "Failed to update profile" });
   }
 }

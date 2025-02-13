@@ -1,4 +1,3 @@
-// modal-editprofile.js
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
@@ -8,14 +7,27 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
   const headerInputRef = useRef(null);
 
   const [name, setName] = useState('');
-  const [profileImage, setProfileImage] = useState('');
-  const [headerImage, setHeaderImage] = useState('');
-
-  const [tempProfileImage, setTempProfileImage] = useState('');
-  const [tempHeaderImage, setTempHeaderImage] = useState('');
+  // Store file objects if the user chooses new images.
+  const [profileFile, setProfileFile] = useState(null);
+  const [headerFile, setHeaderFile] = useState(null);
+  // Use preview URLs for display.
+  const [profilePreview, setProfilePreview] = useState('');
+  const [headerPreview, setHeaderPreview] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && currentProfileData) {
+      setName(currentProfileData.name || '');
+      setProfilePreview(currentProfileData.profile_img || '');
+      setHeaderPreview(currentProfileData.header_img || '');
+      // Reset file objects when opening the modal.
+      setProfileFile(null);
+      setHeaderFile(null);
+      setErrorMessage('');
+    }
+  }, [isOpen, currentProfileData]);
 
   useEffect(() => {
     const handleEsc = (event) => {
@@ -25,80 +37,33 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  useEffect(() => {
-    if (isOpen && currentProfileData) {
-      setName(currentProfileData.name || '');
-      setProfileImage(currentProfileData.profile_img || '');
-      setHeaderImage(currentProfileData.header_img || '');
-      setTempProfileImage(currentProfileData.profile_img || '');
-      setTempHeaderImage(currentProfileData.header_img || '');
-      setErrorMessage('');
-    }
-  }, [isOpen, currentProfileData]);
-
   const handleProfileFileClick = () => profileInputRef.current.click();
   const handleHeaderFileClick = () => headerInputRef.current.click();
 
-  const uploadImage = async (file, endpoint) => {
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Image upload failed');
-      }
-
-      const data = await response.json();
-      return data.fileUrl;
-    } catch (error) {
-      setErrorMessage(error.message || 'Failed to upload image.');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Accept any image file (the input uses accept="image/*")
-  const handleFileChange = async (event, type) => {
-    const file = event.target.files[0];
+  const handleFileChange = (e, type) => {
+    const file = e.target.files[0];
     if (!file) return;
-
-    try {
-      const endpoint = type === 'profile'
-        ? '/api/user/uploadProfileImage'
-        : '/api/user/uploadHeaderImage';
-      const fileUrl = await uploadImage(file, endpoint);
-      if (type === 'profile') setTempProfileImage(fileUrl);
-      else setTempHeaderImage(fileUrl);
-    } catch (error) {
-      // Error message is already set in uploadImage.
+    const previewUrl = URL.createObjectURL(file);
+    if (type === 'profile') {
+      setProfileFile(file);
+      setProfilePreview(previewUrl);
+    } else if (type === 'header') {
+      setHeaderFile(file);
+      setHeaderPreview(previewUrl);
     }
   };
 
   const handleSave = async () => {
     setLoading(true);
     setErrorMessage('');
-
-    // Build a FormData object so that the endpoint always receives multipart/form-data.
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append(
-      "profile_img",
-      tempProfileImage || profileImage || currentProfileData?.profile_img || ''
-    );
-    formData.append(
-      "header_img",
-      tempHeaderImage || headerImage || currentProfileData?.header_img || ''
-    );
-
     try {
+      const formData = new FormData();
+      // Always include the name.
+      formData.append('name', name);
+      // Append files only if the user selected a new image.
+      if (profileFile) formData.append('profile_img', profileFile);
+      if (headerFile) formData.append('header_img', headerFile);
+
       const response = await fetch('/api/user/editProfile', {
         method: 'PUT',
         body: formData,
@@ -106,20 +71,16 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
+        throw new Error(errorData.error || 'Profile update failed');
       }
-      
-      // Update the profile data on the parent
+
+      // Update the parent component with the new data.
       onProfileUpdate({
         name,
-        profile_img: tempProfileImage || profileImage,
-        header_img: tempHeaderImage || headerImage,
+        profile_img: profilePreview,
+        header_img: headerPreview,
       });
-      setProfileImage(tempProfileImage || profileImage);
-      setHeaderImage(tempHeaderImage || headerImage);
-      setTempProfileImage('');
-      setTempHeaderImage('');
-      
+
       setShowSuccessModal(true);
       setTimeout(() => {
         setShowSuccessModal(false);
@@ -161,23 +122,37 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
             <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
           </button>
         </div>
-
-        <hr className="border-t border-black" style={{ borderWidth: '0.5px', width: 'calc(100%+50px)', margin: '0 -25px' }} />
+        <hr
+          className="border-t border-black"
+          style={{ borderWidth: '0.5px', width: 'calc(100%+50px)', margin: '0 -25px' }}
+        />
 
         {/* Profile Picture Section */}
         <div className="mb-12">
           <div className="flex justify-between items-center mb-4">
             <p className="text-[18px] mt-5 text-black font-bold">Profile Picture</p>
-            <button onClick={handleProfileFileClick} className="mt-5 text-[#22C55E] font-bold">Edit</button>
+            <button onClick={handleProfileFileClick} className="mt-5 text-[#22C55E] font-bold">
+              Edit
+            </button>
           </div>
-          <div className="flex flex-col items-center mt-10 mb-8" onClick={handleProfileFileClick} style={{ cursor: 'pointer' }}>
-            {(tempProfileImage || profileImage) ? (
-              <Image src={tempProfileImage || profileImage} alt="Profile" width={100} height={100} className="rounded-full border-4 border-white" />
+          <div
+            className="flex flex-col items-center mt-10 mb-8"
+            onClick={handleProfileFileClick}
+            style={{ cursor: 'pointer' }}
+          >
+            {profilePreview ? (
+              <Image
+                src={profilePreview}
+                alt="Profile"
+                width={100}
+                height={100}
+                className="rounded-full border-4 border-white"
+              />
             ) : (
               <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
             )}
             <span className="text-gray-500 mt-2">
-              {(tempProfileImage || profileImage) ? "Change Image" : "Add Image"}
+              {profilePreview ? 'Change Image' : 'Add Image'}
             </span>
           </div>
           <input
@@ -189,20 +164,26 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
           />
         </div>
 
-        {/* Header Profile Section */}
+        {/* Header Picture Section */}
         <div className="mb-12">
           <div className="flex justify-between items-center mb-4">
             <p className="text-[18px] text-black font-bold">Header Profile</p>
-            <button onClick={handleHeaderFileClick} className="text-[#22C55E] font-bold">Edit</button>
+            <button onClick={handleHeaderFileClick} className="text-[#22C55E] font-bold">
+              Edit
+            </button>
           </div>
-          <div className="flex flex-col items-center mt-10 mb-8" onClick={handleHeaderFileClick} style={{ cursor: 'pointer' }}>
-            {(tempHeaderImage || headerImage) ? (
-              <Image src={tempHeaderImage || headerImage} alt="Header" width={300} height={100} className="rounded-md" />
+          <div
+            className="flex flex-col items-center mt-10 mb-8"
+            onClick={handleHeaderFileClick}
+            style={{ cursor: 'pointer' }}
+          >
+            {headerPreview ? (
+              <Image src={headerPreview} alt="Header" width={300} height={100} className="rounded-md" />
             ) : (
               <Image src="/svg/addimage.svg" alt="Add Image" width={25} height={25} />
             )}
             <span className="text-gray-500 mt-2">
-              {(tempHeaderImage || headerImage) ? "Change Image" : "Add Image"}
+              {headerPreview ? 'Change Image' : 'Add Image'}
             </span>
           </div>
           <input
@@ -232,7 +213,9 @@ export default function EditProfileModal({ isOpen, onClose, currentProfileData, 
         <button
           onClick={handleSave}
           disabled={loading}
-          className={`bg-[#22C55E] text-white font-semibold rounded-[5px] w-full h-[38px] ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`bg-[#22C55E] text-white font-semibold rounded-[5px] w-full h-[38px] ${
+            loading ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           {loading ? 'Saving...' : 'Save'}
         </button>
