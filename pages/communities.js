@@ -130,7 +130,7 @@ export default function Communities({ openCreateCommunityModal }) {
                     <button
                       onClick={() => joinCommunity(community.id)}
                       disabled={joinLoading[community.id]}
-                      className="border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200"
+                      className="bg-white border border-[#22C55E] text-[#22C55E] font-semibold text-[13px] px-3 py-1 rounded-[6px] hover:bg-[#22C55E] hover:text-white transition-colors duration-200"
                     >
                       {joinLoading[community.id] ? "Joining..." : "Join"}
                     </button>
