@@ -90,7 +90,8 @@ export default function Communities({ openCreateCommunityModal }) {
         <div className="space-y-2">
           {[...Array(5)].map((_, idx) => (
             <div key={idx} className="flex items-center justify-between px-2 py-1">
-              <Skeleton width="60px" height="10px" borderRadius="6px" />
+              <Skeleton width="100px" height="16px" borderRadius="6px" />
+              <Skeleton width="60px" height="28px" borderRadius="6px" />
             </div>
           ))}
         </div>
