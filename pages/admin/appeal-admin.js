@@ -101,7 +101,7 @@ export default function AppealAdmin() {
                           className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
                           onClick={() => handleUpdateAppeal(appeal.id, "rejected")}
                         >
-                          Reject
+                          Cancel
                         </button>
                         <button
                           className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition"
