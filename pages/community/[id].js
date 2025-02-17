@@ -11,6 +11,7 @@ import axios from 'axios';
 import Chatbot from '@/components/ui/chatbot';
 import { useRouter } from 'next/router';
 import CommunityPostContainer from './communitypostcontainer';
+import ModalMembers from '../modal-members';
 
 export default function CommunityHome() {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
@@ -22,6 +23,7 @@ export default function CommunityHome() {
   const [userPostCount, setUserPostCount] = useState(0);
   const router = useRouter();
   const { id } = router.query;
+  const [isMembersModalOpen, setMembersModalOpen] = useState(false);
 
   // Fetch current user's profile
   const fetchUserData = async () => {
@@ -70,17 +72,13 @@ export default function CommunityHome() {
   }, [id]);
 
   // Function to actually leave the community:
-  // It calls the updated leave API (which updates the membership status to "left")
-  // and then redirects the user to the index page.
   const handleConfirmLeave = async () => {
-    console.log("Leaving Community...");
     try {
       await axios.post(
         '/api/community/leave',
         { communityId: Number(id) },
         { headers: { 'Content-Type': 'application/json' } }
       );
-      // After a successful leave, redirect to the index page.
       router.push('/');
     } catch (error) {
       console.error("Error leaving community:", error.response?.data || error.message);
@@ -251,11 +249,16 @@ export default function CommunityHome() {
               <h2 className="font-semibold text-[18px] text-black">
                 {communityData ? `p/${communityData.name}` : <Skeleton width="150px" height="25px" />}
               </h2>
-              <span className="text-[16px] text-gray-600 font-bold">
-                {communityData && communityData.members
-                  ? `Members: ${communityData.members.filter(m => m.status === "joined").length}`
-                  : <Skeleton width="80px" height="20px" />}
-              </span>
+              {communityData && communityData.members ? (
+                <span
+                  onClick={() => setMembersModalOpen(true)}
+                  className="cursor-pointer text-[16px] text-gray-600 font-bold"
+                >
+                  Members: {communityData.members.filter(m => m.status === "joined").length}
+                </span>
+              ) : (
+                <Skeleton width="80px" height="20px" />
+              )}
             </div>
             <hr className="border-t border-black w-full mb-3" />
             <ul className="space-y-2">
@@ -284,6 +287,15 @@ export default function CommunityHome() {
         </div>
         <Chatbot />
       </div>
+
+      {/* Members Modal */}
+      {communityData && communityData.members && (
+        <ModalMembers
+          isOpen={isMembersModalOpen}
+          onClose={() => setMembersModalOpen(false)}
+          members={communityData.members.filter((m) => m.status === 'joined')}
+        />
+      )}
 
       {/* Leave Community Confirmation Modal */}
       {isLeaveModalOpen && (

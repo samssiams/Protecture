@@ -1,4 +1,4 @@
-// admin-appeal.js
+// admin-appeal api (admin-appeal.js)
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -9,7 +9,6 @@ export default async function handler(req, res) {
     if (!username || !msg) {
       return res.status(400).json({ error: "Missing username or message" });
     }
-    // Find the user by username
     const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -29,7 +28,6 @@ export default async function handler(req, res) {
     }
   } else if (req.method === "GET") {
     try {
-      // Fetch only appeals with "pending" status
       const appeals = await prisma.appealRequest.findMany({
         where: { status: "pending" },
         include: {
@@ -51,12 +49,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Invalid status" });
     }
     try {
-      // Update the appeal's status
-      const appeal = await prisma.appealRequest.update({
+      const appealRecord = await prisma.appealRequest.findUnique({
+        where: { id: Number(id) },
+      });
+      if (!appealRecord) {
+        return res.status(404).json({ error: "Appeal not found" });
+      }
+      const updatedAppeal = await prisma.appealRequest.update({
         where: { id: Number(id) },
         data: { status },
       });
-      return res.status(200).json(appeal);
+      if (status === "accepted") {
+        await prisma.user.update({
+          where: { id: appealRecord.userId },
+          data: { suspendedUntil: null },
+        });
+      }
+      return res.status(200).json(updatedAppeal);
     } catch (error) {
       console.error("Error updating appeal", error);
       return res.status(500).json({ error: "Internal server error" });

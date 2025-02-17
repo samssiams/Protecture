@@ -1,3 +1,4 @@
+// appeal-admin ui
 import Navbar from "../../components/ui/navbar-admin";
 import Tabs from "./tabs";
 import { useState, useEffect } from "react";
@@ -6,6 +7,9 @@ export default function AppealAdmin() {
   const [appeals, setAppeals] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedAppealId, setSelectedAppealId] = useState(null);
 
   const fetchAppeals = async () => {
     setLoading(true);
@@ -37,6 +41,42 @@ export default function AppealAdmin() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const confirmAccept = (id) => {
+    setSelectedAppealId(id);
+    setShowAcceptModal(true);
+  };
+
+  const confirmCancel = (id) => {
+    setSelectedAppealId(id);
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmAccept = () => {
+    if (selectedAppealId) {
+      handleUpdateAppeal(selectedAppealId, "accepted");
+    }
+    setShowAcceptModal(false);
+    setSelectedAppealId(null);
+  };
+
+  const handleConfirmCancel = () => {
+    if (selectedAppealId) {
+      handleUpdateAppeal(selectedAppealId, "rejected");
+    }
+    setShowCancelModal(false);
+    setSelectedAppealId(null);
+  };
+
+  const handleCancelAccept = () => {
+    setShowAcceptModal(false);
+    setSelectedAppealId(null);
+  };
+
+  const handleCancelCancel = () => {
+    setShowCancelModal(false);
+    setSelectedAppealId(null);
   };
 
   const filteredAppeals = appeals.filter((appeal) =>
@@ -99,13 +139,13 @@ export default function AppealAdmin() {
                       <div className="flex space-x-4">
                         <button
                           className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
-                          onClick={() => handleUpdateAppeal(appeal.id, "rejected")}
+                          onClick={() => confirmCancel(appeal.id)}
                         >
                           Cancel
                         </button>
                         <button
                           className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition"
-                          onClick={() => handleUpdateAppeal(appeal.id, "accepted")}
+                          onClick={() => confirmAccept(appeal.id)}
                         >
                           Accept
                         </button>
@@ -120,6 +160,58 @@ export default function AppealAdmin() {
           </div>
         </div>
       </div>
+      {showAcceptModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-bold text-green-600 mb-4">
+              Confirm Appeal Acceptance
+            </h2>
+            <p className="text-black">
+              Are you sure you want to accept this appeal?
+            </p>
+            <div className="flex justify-end space-x-4 mt-4">
+              <button
+                onClick={handleCancelAccept}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
+                No
+              </button>
+              <button
+                onClick={handleConfirmAccept}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCancelModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className="text-lg font-bold text-red-600 mb-4">
+              Confirm Appeal Cancellation
+            </h2>
+            <p className="text-black">
+              Are you sure you want to cancel (reject) this appeal?
+            </p>
+            <div className="flex justify-end space-x-4 mt-4">
+              <button
+                onClick={handleCancelCancel}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
+                No
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

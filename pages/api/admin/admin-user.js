@@ -1,3 +1,4 @@
+// admin-user api (admin-user.js)
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -5,15 +6,13 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === "GET") {
     try {
-      // Fetch all users, including their suspension status
       const users = await prisma.user.findMany({
         select: {
           id: true,
           username: true,
-          suspendedUntil: true, // Include suspension status
+          suspendedUntil: true,
         },
       });
-
       res.status(200).json(users);
     } catch (error) {
       console.error("Error fetching users:", error);

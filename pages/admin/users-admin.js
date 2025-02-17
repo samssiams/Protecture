@@ -1,5 +1,6 @@
+// users-admin ui
 import Navbar from "../../components/ui/navbar-admin";
-import Tabs from "./tabs"; // Import the Tabs component
+import Tabs from "./tabs";
 import { useEffect, useState } from "react";
 
 export default function UsersAdmin() {
@@ -15,7 +16,6 @@ export default function UsersAdmin() {
   const [loading, setLoading] = useState(false);
   const limit = 5;
 
-  // Fetch users and set their suspension status
   useEffect(() => {
     setLoading(true);
     fetch("/api/admin/admin-user")
@@ -24,7 +24,6 @@ export default function UsersAdmin() {
         setUsers(data);
         setFilteredUsers(data);
 
-        // Store suspension status from API response
         const suspensions = {};
         data.forEach((user) => {
           if (user.suspendedUntil && new Date(user.suspendedUntil) > new Date()) {
@@ -33,9 +32,6 @@ export default function UsersAdmin() {
         });
         setSuspendedUsers(suspensions);
 
-      
-
-        // Prioritize suspended users at the top
         const sortedUsers = [...data].sort((a, b) =>
           suspensions[b.id] ? -1 : 1
         );
@@ -48,7 +44,6 @@ export default function UsersAdmin() {
       });
   }, []);
 
-  // Real-time suspension timer update every second
   useEffect(() => {
     const interval = setInterval(() => {
       setSuspendedUsers((prev) => {
@@ -64,7 +59,6 @@ export default function UsersAdmin() {
     return () => clearInterval(interval);
   }, []);
 
-  // Handle search input change
   const handleSearchChange = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -75,14 +69,12 @@ export default function UsersAdmin() {
 
     setFilteredUsers(filtered);
 
-    // Sort filtered users to keep suspended ones at the top
     const sortedUsers = filtered.sort((a, b) =>
       suspendedUsers[b.id] ? -1 : 1
     );
     setVisibleUsers(showAllUsers ? sortedUsers : sortedUsers.slice(0, limit));
   };
 
-  // Handle "View All" click (Load all users)
   const handleSeeAll = () => {
     setShowAllUsers(true);
     setLoading(true);
@@ -94,13 +86,11 @@ export default function UsersAdmin() {
     }, 500);
   };
 
-  // Show confirmation modal
   const handleSuspendClick = (userId) => {
     setSelectedUserId(userId);
     setShowConfirmModal(true);
   };
 
-  // Handle suspending a user
   const suspendUser = () => {
     fetch("/api/admin/suspend-user", {
       method: "POST",
@@ -123,7 +113,6 @@ export default function UsersAdmin() {
       .catch((err) => console.error("Error suspending user:", err));
   };
 
-  // Handle unsuspending a user
   const unsuspendUser = (userId) => {
     fetch("/api/admin/unsuspend-user", {
       method: "POST",
@@ -141,7 +130,6 @@ export default function UsersAdmin() {
       .catch((err) => console.error("Error unsuspending user:", err));
   };
 
-  // Calculate real-time remaining suspension time
   const calculateRemainingTime = (endTime) => {
     const now = new Date();
     const remainingTime = endTime - now;
@@ -162,7 +150,6 @@ export default function UsersAdmin() {
     <div className="min-h-screen bg-[#F5FDF4]">
       <Navbar />
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -190,12 +177,10 @@ export default function UsersAdmin() {
         </div>
       )}
 
-      {/* Page Content */}
       <div className="pt-24 px-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Tabs />
 
-          {/* Search Bar */}
           <div className="mb-6">
             <input
               type="text"
@@ -206,10 +191,10 @@ export default function UsersAdmin() {
             />
           </div>
 
-          {/* Users List */}
-          <div className="bg-white p-6 rounded-lg relative"
-          style={{
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+          <div
+            className="bg-white p-6 rounded-lg relative"
+            style={{
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
             <div className="flex justify-between items-center mb-6">
