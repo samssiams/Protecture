@@ -284,7 +284,11 @@ export default function Login() {
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg text-red-500 font-semibold text-center">Account Suspended</h2>
+            <h2 className="text-lg font-semibold text-center text-red-500">
+              {errorMessage.toLowerCase().includes("suspended")
+                ? "Account Suspended"
+                : "Invalid Account"}
+            </h2>
             <p className="mt-4 text-center">{errorMessage}</p>
             <div className="mt-6 flex justify-center">
               {errorMessage.toLowerCase().includes("suspended") ? (

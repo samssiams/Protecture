@@ -27,10 +27,7 @@ export const authOptions = {
         // Find the user (case-insensitive)
         const user = await prisma.user.findFirst({
           where: {
-            username: {
-              equals: username,
-              mode: "insensitive",
-            },
+            username: { equals: username, mode: "insensitive" },
           },
           include: { profile: true },
         });
@@ -43,8 +40,8 @@ export const authOptions = {
           throw new Error("Invalid username or password.");
         }
 
-        // Check if the account is suspended
         const currentTime = new Date();
+        // For credential-based logins, suspend by throwing an error if needed
         if (user.suspendedUntil && user.suspendedUntil > currentTime) {
           throw new Error(
             `Your account is suspended until ${new Date(user.suspendedUntil).toLocaleString()}.`
@@ -57,10 +54,8 @@ export const authOptions = {
           throw new Error("Invalid username or password.");
         }
 
-        // Normalize role to lowercase for consistency
         const normalizedRole = user.role ? user.role.toLowerCase() : "user";
 
-        // Return user object with role
         return {
           id: user.id,
           username: user.username,
@@ -70,7 +65,6 @@ export const authOptions = {
         };
       },
     }),
-
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -92,7 +86,7 @@ export const authOptions = {
         token.id = user.id;
         token.username = user.username;
         token.email = user.email;
-        token.role = user.role; // Include role in token
+        token.role = user.role;
         token.profileImg = user.profileImg;
       }
 
@@ -122,7 +116,7 @@ export const authOptions = {
                   },
                 },
               });
-              isUnique = true; // Break loop if creation succeeds
+              isUnique = true;
             } catch (error) {
               if (
                 error.code === "P2002" &&
@@ -137,20 +131,17 @@ export const authOptions = {
         }
 
         const currentTime = new Date();
+        // Instead of throwing an error for suspended accounts, mark the token with suspension details.
         if (userRecord.suspendedUntil && userRecord.suspendedUntil > currentTime) {
-          throw new Error(
-            `Your account is suspended until ${new Date(
-              userRecord.suspendedUntil
-            ).toLocaleString()}.`
-          );
+          token.suspended = true;
+          token.suspendedUntil = userRecord.suspendedUntil;
         }
 
         const normalizedRole = userRecord.role ? userRecord.role.toLowerCase() : "user";
-
         token.id = userRecord.id;
         token.username = userRecord.username;
         token.email = userRecord.email;
-        token.role = normalizedRole; // Include normalized role from database
+        token.role = normalizedRole;
         token.profileImg =
           userRecord.profile?.profile_img || profile.picture || null;
       }
@@ -164,32 +155,38 @@ export const authOptions = {
           where: { id: token.id },
         });
 
+        // Instead of throwing an error for suspended accounts,
+        // attach suspension info to the session.
         if (user?.suspendedUntil && user.suspendedUntil > new Date()) {
-          throw new Error(
-            `Your account is suspended until ${new Date(
-              user.suspendedUntil
-            ).toLocaleString()}.`
-          );
+          session.user = {
+            id: token.id,
+            username: token.username || token.email?.split("@")[0],
+            email: token.email,
+            role: token.role,
+            profileImg: token.profileImg,
+            isSuspended: true,
+            suspendedUntil: user.suspendedUntil,
+          };
+        } else {
+          session.user = {
+            id: token.id,
+            username: token.username || token.email?.split("@")[0],
+            email: token.email,
+            role: token.role,
+            profileImg: token.profileImg,
+          };
         }
-
-        session.user = {
-          id: token.id,
-          username: token.username || token.email?.split("@")[0],
-          email: token.email,
-          role: token.role,
-          profileImg: token.profileImg,
-        };
       }
       return session;
     },
 
     async redirect({ url, baseUrl, token }) {
       if (token?.role === "admin") {
-        return routes.admin.users; // Redirect to admin users page
+        return routes.admin.users;
       } else if (token?.role === "user") {
-        return routes.pages.home; // Redirect to user home page
+        return routes.pages.home;
       }
-      return baseUrl; // Fallback
+      return baseUrl;
     },
   },
 

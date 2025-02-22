@@ -1,4 +1,4 @@
-// users-admin ui
+// users-admin.js
 import Navbar from "../../components/ui/navbar-admin";
 import Tabs from "./tabs";
 import { useEffect, useState } from "react";
@@ -21,6 +21,11 @@ export default function UsersAdmin() {
     fetch("/api/admin/admin-user")
       .then((res) => res.json())
       .then((data) => {
+        // Ensure data is an array; if not, log error and use an empty array.
+        if (!Array.isArray(data)) {
+          console.error("Expected an array but received:", data);
+          data = [];
+        }
         setUsers(data);
         setFilteredUsers(data);
 
@@ -194,7 +199,8 @@ export default function UsersAdmin() {
           <div
             className="bg-white p-6 rounded-lg relative"
             style={{
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
             <div className="flex justify-between items-center mb-6">
