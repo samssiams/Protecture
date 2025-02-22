@@ -1,9 +1,8 @@
-// pages/api/post/getcomments.js
+// pages/api/getcomment.js
+import { prisma } from "../../../lib/prisma";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -12,7 +11,6 @@ export default async function handler(req, res) {
   }
 
   const { postId } = req.query;
-
   if (!postId) {
     console.error("[ERROR] Missing postId.");
     return res.status(400).json({ error: "Post ID is required" });
@@ -37,10 +35,8 @@ export default async function handler(req, res) {
     });
 
     const responseComments = comments.map((comment) => {
-      // Use the profile image URL from the database (public URL from Supabase)
       const profileImageUrl =
         comment.user?.profile?.profile_img || "/images/default-avatar.png";
-
       return {
         id: comment.id,
         text: comment.comment_text,
@@ -56,7 +52,5 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("[ERROR] Error fetching comments:", error);
     return res.status(500).json({ error: "Internal server error" });
-  } finally {
-    await prisma.$disconnect();
   }
 }

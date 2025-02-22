@@ -1,9 +1,8 @@
 // pages/api/post/addcomment.js
+import { prisma } from "../../../lib/prisma";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -12,7 +11,6 @@ export default async function handler(req, res) {
   }
 
   const { postId, commentText } = req.body;
-
   if (!postId || !commentText.trim()) {
     console.error("[ERROR] Missing postId or commentText.");
     return res.status(400).json({ error: "Post ID and comment text are required" });
@@ -20,7 +18,6 @@ export default async function handler(req, res) {
 
   try {
     const session = await getServerSession(req, res, authOptions);
-
     if (!session || !session.user) {
       console.error("[ERROR] Unauthorized access. No session or user found.");
       return res.status(401).json({ error: "Unauthorized" });
@@ -40,15 +37,12 @@ export default async function handler(req, res) {
           select: {
             id: true,
             username: true,
-            profile: {
-              select: { profile_img: true },
-            },
+            profile: { select: { profile_img: true } },
           },
         },
       },
     });
 
-    // Use the profile image URL as stored in the database (from Supabase)
     const profileImageUrl =
       newComment.user?.profile?.profile_img || "/images/default-avatar.png";
 
@@ -69,7 +63,5 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Post not found" });
     }
     return res.status(500).json({ error: "Internal server error" });
-  } finally {
-    await prisma.$disconnect();
   }
 }

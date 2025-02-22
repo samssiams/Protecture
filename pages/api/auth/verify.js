@@ -31,11 +31,13 @@ export default async function handler(req, res) {
 
       console.log("Stored OTP:", storedOtp.otp, "Provided OTP:", otp);
 
-      if (storedOtp.otp !== otp) {
+      // Convert both OTP values to trimmed strings for a reliable comparison
+      if (storedOtp.otp.trim() !== otp.toString().trim()) {
         console.error("Invalid OTP provided.");
         return res.status(400).json({ error: "Invalid OTP." });
       }
 
+      // Check if OTP has expired
       if (new Date() > new Date(storedOtp.expiresAt)) {
         console.error("OTP has expired for email:", email);
         return res.status(400).json({ error: "OTP has expired. Please request a new one." });
@@ -71,10 +73,10 @@ export default async function handler(req, res) {
           });
           console.log("User and profile created successfully:", newUser);
           isUnique = true; // Break loop if creation succeeds
+
           // Clean up OTP records
           console.log("Deleting OTP records for email:", email);
           await prisma.otp.deleteMany({ where: { email } });
-
           console.log("OTP records deleted successfully.");
           return res.status(201).json({ message: "User created successfully.", user: newUser });
         } catch (error) {
