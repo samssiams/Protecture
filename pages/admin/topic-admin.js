@@ -11,6 +11,11 @@ export default function TopicAdmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // New state for confirmation modal
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedCommunity, setSelectedCommunity] = useState(null);
+  const [pendingAction, setPendingAction] = useState("");
+
   const fetchPendingCommunities = async () => {
     setLoading(true);
     try {
@@ -31,6 +36,13 @@ export default function TopicAdmin() {
       fetchPendingCommunities();
     }
   }, [status]);
+
+  // Open modal for confirmation
+  const openConfirmModal = (community, action) => {
+    setSelectedCommunity(community);
+    setPendingAction(action);
+    setShowConfirmModal(true);
+  };
 
   const handleManageCommunity = async (communityId, action) => {
     try {
@@ -135,13 +147,13 @@ export default function TopicAdmin() {
                       </div>
                       <div className="flex space-x-4">
                         <button
-                          onClick={() => handleManageCommunity(community.id, "REJECT")}
+                          onClick={() => openConfirmModal(community, "REJECT")}
                           className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
                         >
                           Reject
                         </button>
                         <button
-                          onClick={() => handleManageCommunity(community.id, "APPROVE")}
+                          onClick={() => openConfirmModal(community, "APPROVE")}
                           className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600 transition"
                         >
                           Approve
@@ -157,6 +169,48 @@ export default function TopicAdmin() {
           </div>
         </div>
       </div>
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h2 className={`text-lg font-bold mb-4 ${pendingAction === "APPROVE" ? "text-green-500" : "text-red-500"}`}>
+              Confirm {pendingAction === "APPROVE" ? "Approval" : "Rejection"}
+            </h2>
+            <p className="mb-4 text-black">
+              {pendingAction === "APPROVE"
+                ? "Are you sure you want to approve this community?"
+                : "Are you sure you want to reject this community?"}
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setSelectedCommunity(null);
+                  setPendingAction("");
+                }}
+                className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  handleManageCommunity(selectedCommunity.id, pendingAction);
+                  setShowConfirmModal(false);
+                  setSelectedCommunity(null);
+                  setPendingAction("");
+                }}
+                className={`px-4 py-2 rounded-lg font-bold transition ${
+                  pendingAction === "APPROVE"
+                    ? "bg-green-500 text-white hover:bg-green-600"
+                    : "bg-red-500 text-white hover:bg-red-600"
+                }`}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

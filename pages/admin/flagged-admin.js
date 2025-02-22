@@ -98,6 +98,7 @@ export default function FlaggedAdmin() {
       );
 
       setModalData(null);
+      setModalAction(null);
     } catch (error) {
       console.error(
         `Error ${modalAction === "suspend" ? "suspending post" : "rejecting report"}:`,
@@ -214,24 +215,41 @@ export default function FlaggedAdmin() {
         </div>
       </div>
 
+      {/* Confirmation Modal */}
       {modalData && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg text-center shadow-lg">
-            <h3 className="text-black font-bold mb-4">
+            <h3
+              className={`text-lg font-bold mb-4 text-left ${
+                modalAction === "suspend" ? "text-yellow-500" : "text-red-500"
+              }`}
+            >
+              {modalAction === "suspend"
+                ? "Confirm Suspend Post"
+                : "Confirm Rejection"}
+            </h3>
+            <p className="mb-4 text-black">
               {modalAction === "suspend"
                 ? "Are you sure you want to suspend this post?"
                 : "Are you sure you want to reject this report?"}
-            </h3>
+            </p>
             <div className="flex justify-center space-x-4">
               <button
                 onClick={handleConfirmAction}
-                className="bg-green-500 text-white px-4 py-2 rounded-md font-bold hover:bg-green-600"
+                className={`px-4 py-2 rounded-md font-bold transition ${
+                  modalAction === "suspend"
+                    ? "bg-yellow-500 text-white hover:bg-yellow-600"
+                    : "bg-red-500 text-white hover:bg-red-600"
+                }`}
               >
                 Yes
               </button>
               <button
-                onClick={() => setModalData(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-600"
+                onClick={() => {
+                  setModalData(null);
+                  setModalAction(null);
+                }}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-600 transition"
               >
                 Cancel
               </button>
