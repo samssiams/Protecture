@@ -1,9 +1,7 @@
 // pages/api/post/addcomment.js
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
-
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

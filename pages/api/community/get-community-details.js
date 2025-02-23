@@ -1,6 +1,6 @@
 // pages/api/community/retrieve-community-details.js
 
-import prisma from "@/lib/prisma"; // Adjust the path based on your project structure
+import prisma from "../../../lib/prisma";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req, res) {

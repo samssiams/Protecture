@@ -2,9 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
-import { PrismaClient } from "@prisma/client";
+import prisma from "../../../lib/prisma";
 
-const prisma = new PrismaClient();
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from "../../../lib/prisma";
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../auth/[...nextauth]';
 import formidable from 'formidable';
@@ -8,7 +8,6 @@ import os from 'os';
 import sharp from 'sharp';
 import { uploadFileToSupabase } from '../../../lib/supabaseHelper';
 
-const prisma = new PrismaClient();
 
 export const config = {
   api: {

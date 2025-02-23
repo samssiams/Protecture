@@ -5,7 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import routes from "@/routes";
-import prisma from "@/lib/prisma"; // Shared Prisma client
+import prisma from "../../../lib/prisma";
 
 export const authOptions = {
   providers: [
