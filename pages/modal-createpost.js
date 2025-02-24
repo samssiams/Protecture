@@ -1,7 +1,5 @@
-// components/modal-createpost.js
-
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import NextImage from "next/image"; // Renamed to avoid conflict with native Image
 import { motion } from "framer-motion";
 import axios from "axios";
 import { useRouter } from "next/router";
@@ -17,7 +15,6 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
   const router = useRouter();
 
   useEffect(() => {
-    // Update the cooldown timer every second
     if (cooldownEndTime) {
       const interval = setInterval(() => {
         const timeLeft = cooldownEndTime - Date.now();
@@ -26,15 +23,52 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
           clearInterval(interval);
         }
       }, 1000);
-
-      return () => clearInterval(interval); // Cleanup on unmount
+      return () => clearInterval(interval);
     }
   }, [cooldownEndTime]);
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new window.Image(); // Use native Image constructor
+        img.onload = function () {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0);
+
+          // Watermark text properties
+          const watermarkText = userData?.username || "username";
+          const fontSize = 28;
+          ctx.font = `${fontSize}px poppins`;
+          ctx.textBaseline = "bottom";
+
+          // Create a glow effect by using a white shadow
+          ctx.fillStyle = "white";
+          ctx.shadowColor = "white";
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+
+          // Padding from bottom and left
+          const bottomPadding = 20;
+          const leftPadding = 40;
+
+          // Draw the watermark text
+          ctx.fillText(watermarkText, leftPadding, canvas.height - bottomPadding);
+
+          // Convert canvas back to a file and update state
+          canvas.toBlob((blob) => {
+            const watermarkedFile = new File([blob], file.name, { type: file.type });
+            setSelectedImage(watermarkedFile);
+          }, file.type);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -43,14 +77,11 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
   };
 
   const bannedWords = [
-    // English Profanity
     "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
     "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
     "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
     "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
     "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
-  
-    // Tagalog Profanity
     "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
     "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
     "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
@@ -96,9 +127,7 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
 
     try {
       const response = await axios.post("/api/post/createpost", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (response.status === 201) {
@@ -108,8 +137,8 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
       }
     } catch (err) {
       if (err.response && err.response.status === 429) {
-        const retryAfter = err.response.headers["retry-after"] || 300; // Default to 5 minutes
-        setCooldownEndTime(Date.now() + retryAfter * 1000); // Set cooldown time
+        const retryAfter = err.response.headers["retry-after"] || 300;
+        setCooldownEndTime(Date.now() + retryAfter * 1000);
         setError("You have exceeded the post limit. Please wait before posting again.");
       } else {
         setError("Failed to create post. Please try again.");
@@ -123,10 +152,8 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
     if (!cooldownEndTime) return null;
     const timeLeft = cooldownEndTime - Date.now();
     if (timeLeft <= 0) return null;
-
     const minutes = Math.floor(timeLeft / 60000);
     const seconds = Math.floor((timeLeft % 60000) / 1000);
-
     return `${minutes} minute${minutes !== 1 ? "s" : ""} and ${seconds} second${seconds !== 1 ? "s" : ""}`;
   };
 
@@ -140,26 +167,19 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
         exit={{ scale: 0.8 }}
         transition={{ duration: 0.2 }}
         className="bg-white rounded-[5px] shadow-lg p-5 relative modal-container"
-        style={{
-          width: "500px",
-          minHeight: "200px",
-          border: "1px solid black",
-        }}
+        style={{ width: "500px", minHeight: "200px", border: "1px solid black" }}
       >
         <div className="flex justify-between items-center">
           <h2 className="text-[24px] font-semibold text-black mb-0 -mt-4">Create a Post</h2>
           <button onClick={onClose} className="focus:outline-none flex items-center mb-4">
-            <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
+            <NextImage src="/svg/eks.svg" alt="Close" width={15} height={15} />
           </button>
         </div>
 
-        <hr
-          className="border-t border-black"
-          style={{ borderWidth: ".05px", width: "calc(100% + 40px)", margin: "0 -20px" }}
-        />
+        <hr className="border-t border-black" style={{ borderWidth: ".05px", width: "calc(100%+40px)", margin: "0 -20px" }} />
 
         <div className="flex items-center mt-4 mb-4">
-          <Image
+          <NextImage
             src={userData?.profileImg || "/images/user.png"}
             alt="Profile Image"
             width={40}
@@ -167,7 +187,7 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
             className="rounded-full"
           />
           <div className="ml-3">
-            <p className="text-black font-semibold text-[16px]">{userData?.name || "Anonymous"}</p>
+            <p className="text-black font-semibold text-[18px]">{userData?.name || "Anonymous"}</p>
           </div>
         </div>
 
@@ -196,7 +216,7 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
             <option value="Traditional">Traditional</option>
             <option value="Bungalow">Bungalow</option>
           </select>
-          <Image
+          <NextImage
             src="/svg/drop.svg"
             alt="Dropdown Icon"
             width={12}
@@ -208,19 +228,11 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
         <div
           className="w-full h-[150px] bg-gray-800 flex flex-col items-center justify-center rounded cursor-pointer overflow-hidden"
           onClick={triggerFileInput}
-          style={{
-            position: "relative",
-          }}
+          style={{ position: "relative" }}
         >
-          <input
-            id="fileInput"
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
+          <input id="fileInput" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
           {selectedImage ? (
-            <Image
+            <NextImage
               src={URL.createObjectURL(selectedImage)}
               alt="Selected"
               layout="fill"
@@ -229,23 +241,25 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
             />
           ) : (
             <>
-              <Image src="/svg/addimagewhite.svg" alt="Upload Icon" width={20} height={20} />
+              <NextImage src="/svg/addimagewhite.svg" alt="Upload Icon" width={20} height={20} />
               <span className="text-gray-300 mt-2">Add Image</span>
             </>
           )}
         </div>
 
-        {error && (
-          <p className="text-red-500 text-center mt-3">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-center mt-3">{error}</p>}
         {cooldownEndTime && (
-          <p className="text-yellow-500 text-center mt-2">
-            You can post again in {formatTimeLeft()}.
-          </p>
+          <p className="text-yellow-500 text-center mt-2">You can post again in {formatTimeLeft()}.</p>
         )}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-[5px]">
-            <p className="text-white text-[18px] font-semibold">Posting...</p>
+            <div className="flex items-center space-x-2">
+              <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span className="text-white text-[18px] font-semibold">Posting...</span>
+            </div>
           </div>
         )}
 

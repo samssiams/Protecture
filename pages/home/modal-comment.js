@@ -41,9 +41,20 @@ export default function CommentModal({
   const { data: session } = useSession();
   const currentUser = session?.user;
 
-  // Define banned words (you can adjust as needed)
+  // Full banned words list from modal createpost
   const bannedWords = [
-    "fuck", "shit", "damn", "bitch", "asshole" // etc.
+    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
+    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
+    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
+    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
+    "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
+    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
+    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
+    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
+    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
+    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
+    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
+    "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
   ];
 
   const containsProfanity = (text) => {
@@ -314,6 +325,7 @@ export default function CommentModal({
           )}
         </div>
 
+        {/* Updated section: warning text is placed below the input box */}
         <div className="flex items-center space-x-3 mb-4 px-4">
           <Image
             src={currentUser?.profileImg || "/images/user.png"}
@@ -322,50 +334,52 @@ export default function CommentModal({
             height={40}
             className="rounded-full"
           />
-          <div className="relative flex-grow">
-            <input
-              type="text"
-              value={commentText}
-              onChange={handleCommentChange}
-              ref={commentInputRef}
-              className="w-full h-[41px] rounded-[5px] p-2 bg-[#F4F3F3] text-black"
-              placeholder="Write something..."
-              style={{
-                borderRadius: "5px",
-                borderColor: "#787070",
-                borderWidth: "1px",
-                outline: "none",
-              }}
-            />
+          <div className="flex-grow relative">
+            <div className="relative">
+              <input
+                type="text"
+                value={commentText}
+                onChange={handleCommentChange}
+                ref={commentInputRef}
+                className="w-full h-[41px] rounded-[5px] p-2 bg-[#F4F3F3] text-black"
+                placeholder="Write something..."
+                style={{
+                  borderRadius: "5px",
+                  borderColor: "#787070",
+                  borderWidth: "1px",
+                  outline: "none",
+                }}
+              />
+              <motion.div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
+                <motion.button
+                  onClick={handleCommentSubmit}
+                  whileHover={{ scale: 1.1 }}
+                  className="focus:outline-none"
+                >
+                  <Image
+                    src="/svg/addcomment.svg"
+                    alt="Add Comment"
+                    width={22}
+                    height={22}
+                  />
+                </motion.button>
+                {showSuccessPopover && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="absolute bottom-[150%] right-0 bg-black text-white text-xs font-medium px-2 py-1 rounded shadow-md"
+                  >
+                    Comment added!
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
             {warning && (
-              <p className="text-red-500 text-bold absolute top-[-20px] left-2 mt-1">
+              <p className="text-red-500 text-bold mt-1 ml-1">
                 {warning}
               </p>
             )}
-            <motion.div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
-              <motion.button
-                onClick={handleCommentSubmit}
-                whileHover={{ scale: 1.1 }}
-                className="focus:outline-none"
-              >
-                <Image
-                  src="/svg/addcomment.svg"
-                  alt="Add Comment"
-                  width={22}
-                  height={22}
-                />
-              </motion.button>
-              {showSuccessPopover && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute bottom-[150%] right-0 bg-black text-white text-xs font-medium px-2 py-1 rounded shadow-md"
-                >
-                  Comment added!
-                </motion.div>
-              )}
-            </motion.div>
           </div>
         </div>
       </motion.div>
