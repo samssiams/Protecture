@@ -137,9 +137,10 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
       }
     } catch (err) {
       if (err.response && err.response.status === 429) {
+        // Set cooldown to 5 minutes (300 seconds)
         const retryAfter = err.response.headers["retry-after"] || 300;
         setCooldownEndTime(Date.now() + retryAfter * 1000);
-        setError("You have exceeded the post limit. Please wait before posting again.");
+        setError("You have exceeded the post limit. Please wait for 5 minutes before posting again.");
       } else {
         setError("Failed to create post. Please try again.");
       }

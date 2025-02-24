@@ -1,5 +1,3 @@
-// pages/api/post/createpost.js
-
 import fs from "fs";
 import path from "path";
 import prisma from "../../../lib/prisma";
@@ -18,7 +16,6 @@ export const config = {
 // Utility function to parse form data
 export function parseFormData(req) {
   const form = formidable({ multiples: true, keepExtensions: true });
-
   return new Promise((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) {
@@ -43,14 +40,14 @@ export default async function handler(req, res) {
       const userId = session.user.id;
 
       // Rate limiting: Check the user's recent posts
-      const postLimitTimeWindow = 2 * 60 * 1000; // 2 minutes in milliseconds
+      const postLimitTimeWindow = 5 * 60 * 1000; // 5 minutes in milliseconds
       const now = new Date();
 
       const recentPostsCount = await prisma.post.count({
         where: {
           user_id: userId,
           created_at: {
-            gte: new Date(now - postLimitTimeWindow), // Posts created within the last 2 minutes
+            gte: new Date(now - postLimitTimeWindow), // Posts created within the last 5 minutes
           },
         },
       });
@@ -58,7 +55,7 @@ export default async function handler(req, res) {
       if (recentPostsCount >= 3) {
         return res
           .status(429)
-          .json({ message: "You can only post up to 3 times within 2 minutes. Please wait and try again." });
+          .json({ message: "You have exceeded the post limit. Please wait for 5 minutes before posting again." });
       }
 
       // Parse the form data
