@@ -1,5 +1,3 @@
-// pages/community/home.js
-
 import Link from 'next/link';
 import Navbar from '@/components/ui/navbar';
 import Image from 'next/image';
@@ -17,6 +15,7 @@ export default function CommunityHome() {
   const [isPostModalOpen, setPostModalOpen] = useState(false);
   const [isCreateCommunityModalOpen, setCreateCommunityModalOpen] = useState(false);
   const [isLeaveModalOpen, setLeaveModalOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [communityData, setCommunityData] = useState(null);
@@ -73,16 +72,19 @@ export default function CommunityHome() {
 
   // Function to actually leave the community:
   const handleConfirmLeave = async () => {
+    setIsLeaving(true);
     try {
       await axios.post(
         '/api/community/leave',
         { communityId: Number(id) },
         { headers: { 'Content-Type': 'application/json' } }
       );
+      // Navigate back to the index page after leaving.
       router.push('/');
     } catch (error) {
       console.error("Error leaving community:", error.response?.data || error.message);
     } finally {
+      setIsLeaving(false);
       setLeaveModalOpen(false);
     }
   };
@@ -309,14 +311,16 @@ export default function CommunityHome() {
               <button
                 onClick={() => setLeaveModalOpen(false)}
                 className="px-4 py-2 bg-gray-600 font-bold rounded hover:bg-gray-500"
+                disabled={isLeaving}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmLeave}
                 className="px-4 py-2 bg-red-500 text-white font-bold rounded hover:bg-red-600"
+                disabled={isLeaving}
               >
-                Leave Community
+                {isLeaving ? "Leaving..." : "Leave Community"}
               </button>
             </div>
           </div>

@@ -1,4 +1,3 @@
-// pages/api/community/get-community.js
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 import prisma from "../../../lib/prisma";
@@ -15,9 +14,7 @@ export default async function handler(req, res) {
     // Fetch approved communities
     const communities = await prisma.community.findMany({
       where: { status: "APPROVE" },
-      include: {
-        members: true,
-      },
+      include: { members: true },
       orderBy: { createdAt: "desc" },
     });
     // Get the current user
@@ -27,7 +24,9 @@ export default async function handler(req, res) {
     const formatted = communities.map((community) => ({
       id: community.id,
       name: community.name,
-      joined: community.members.some((member) => member.userId === user.id),
+      joined: community.members.some(
+        (member) => member.userId === user.id && member.status === "joined"
+      ),
     }));
     return res.status(200).json(formatted);
   } catch (error) {

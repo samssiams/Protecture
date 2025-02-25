@@ -1,4 +1,3 @@
-// pages/communities.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
@@ -11,11 +10,10 @@ export default function Communities({ openCreateCommunityModal }) {
   const [communities, setCommunities] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Object to hold loading state for individual join actions
   const [joinLoading, setJoinLoading] = useState({});
   const router = useRouter();
 
-  // Fetch the approved communities
+  // Fetch approved communities
   const fetchCommunities = async () => {
     try {
       setLoading(true);
@@ -31,17 +29,28 @@ export default function Communities({ openCreateCommunityModal }) {
     }
   };
 
+  // Initial fetch on mount
   useEffect(() => {
     fetchCommunities();
   }, []);
 
-  // Function to join a community and then redirect.
+  // Re-fetch communities on route change (e.g., when returning from community home)
+  useEffect(() => {
+    const handleRouteChange = () => {
+      fetchCommunities();
+    };
+    router.events.on("routeChangeComplete", handleRouteChange);
+    return () => {
+      router.events.off("routeChangeComplete", handleRouteChange);
+    };
+  }, [router.events]);
+
+  // Join a community and then redirect to its home
   const joinCommunity = async (communityId) => {
     try {
       setJoinLoading((prev) => ({ ...prev, [communityId]: true }));
       const response = await axios.post("/api/community/join", { communityId });
       if (response.status === 200) {
-        // After a successful join, redirect to the community page.
         router.push(routes.community.home.replace("[id]", communityId));
       }
     } catch (err) {
@@ -57,8 +66,7 @@ export default function Communities({ openCreateCommunityModal }) {
       style={{
         width: "316px",
         height: "288px",
-        boxShadow:
-          "0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
         overflowY: "auto",
       }}
     >
