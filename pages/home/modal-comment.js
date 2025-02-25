@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import CommentView from "./commentview";
 import { useSession } from "next-auth/react";
 
-// Skeleton for an individual comment item
 function CommentSkeleton() {
   return (
     <div className="flex items-start mb-4 animate-pulse">
@@ -36,12 +35,13 @@ export default function CommentModal({
   const [updatedComments, setUpdatedComments] = useState(comments);
   const [warning, setWarning] = useState(null);
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [voteState, setVoteState] = useState(post?.userVote);
+  const [counter, setCounter] = useState(post?.counter || 0);
   const commentInputRef = useRef(null);
   const modalRef = useRef(null);
   const { data: session } = useSession();
   const currentUser = session?.user;
 
-  // Full banned words list from modal createpost
   const bannedWords = [
     "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
     "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
@@ -87,8 +87,10 @@ export default function CommentModal({
   useEffect(() => {
     if (isOpen) {
       fetchComments();
+      setVoteState(post?.userVote);
+      setCounter(post?.counter || 0);
     }
-  }, [isOpen, fetchComments]);
+  }, [isOpen, fetchComments, post]);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
@@ -97,7 +99,6 @@ export default function CommentModal({
     };
   }, [isOpen]);
 
-  // Example ownership check (adjust as needed)
   const checkPostOwnership = useCallback(async () => {
     try {
       const response = await fetch("/api/post/downloadimage", {
@@ -219,6 +220,27 @@ export default function CommentModal({
     window.open(post?.image_url, "_blank");
   };
 
+  const handleVote = async (action) => {
+    try {
+      const requestBody = { postId: post.id, action };
+      const response = await fetch("/api/post/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+      if (response.ok) {
+        const updatedPost = await response.json();
+        setVoteState(updatedPost.userVote);
+        setCounter(updatedPost.counter);
+      } else {
+        const errorData = await response.json();
+        console.error("Error in vote request:", errorData);
+      }
+    } catch (error) {
+      console.error("Error in vote request:", error);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -270,21 +292,41 @@ export default function CommentModal({
 
         <div className="flex justify-between items-center mb-8 px-4">
           <div className="flex items-center space-x-2">
-            <button>
+            <button
+              onClick={() => handleVote("DOWNVOTE")}
+              className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
+            >
               <Image
                 src="/svg/downvote.svg"
                 alt="Downvote"
                 width={21}
                 height={21}
+                style={{
+                  filter:
+                    voteState === "DOWNVOTE"
+                      ? "invert(28%) sepia(73%) saturate(2574%) hue-rotate(335deg) brightness(88%) contrast(89%)"
+                      : "none",
+                  transition: "filter 0.2s ease-in-out",
+                }}
               />
             </button>
-            <span className="text-black">{post?.counter || 0}</span>
-            <button>
+            <span className="text-black">{counter}</span>
+            <button
+              onClick={() => handleVote("UPVOTE")}
+              className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
+            >
               <Image
                 src="/svg/upvote.svg"
                 alt="Upvote"
                 width={21}
                 height={21}
+                style={{
+                  filter:
+                    voteState === "UPVOTE"
+                      ? "invert(53%) sepia(81%) saturate(575%) hue-rotate(107deg) brightness(91%) contrast(92%)"
+                      : "none",
+                  transition: "filter 0.2s ease-in-out",
+                }}
               />
             </button>
           </div>
@@ -325,7 +367,6 @@ export default function CommentModal({
           )}
         </div>
 
-        {/* Updated section: warning text is placed below the input box */}
         <div className="flex items-center space-x-3 mb-4 px-4">
           <Image
             src={currentUser?.profileImg || "/images/user.png"}
