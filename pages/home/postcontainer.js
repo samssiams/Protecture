@@ -1,12 +1,13 @@
 // /home/profile/postcontainer.js
 import Image from "next/image";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 
+// A skeleton loader component that mimics a post container
 function PostSkeleton() {
   return (
     <div
@@ -152,31 +153,6 @@ function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handl
       console.error("Error in vote request:", error);
     }
   };
-
-  // Realtime polling for vote updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetch(`/api/post/getposts`)
-        .then((res) => res.json())
-        .then((data) => {
-          setPosts((prevPosts) =>
-            prevPosts.map((post) => {
-              const updatedPost = data.find((p) => p.id === post.id);
-              return updatedPost ? updatedPost : post;
-            })
-          );
-          setVotedPosts(() => {
-            const newVotes = {};
-            data.forEach((updatedPost) => {
-              newVotes[updatedPost.id] = updatedPost.userVote;
-            });
-            return newVotes;
-          });
-        })
-        .catch((err) => console.error("Polling error:", err));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
