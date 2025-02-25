@@ -1,3 +1,4 @@
+// /home/modal-comment.js
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -241,6 +242,23 @@ export default function CommentModal({
     }
   };
 
+  // Realtime polling for updated vote count on this post
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetch(`/api/post/getposts`)
+        .then((res) => res.json())
+        .then((data) => {
+          const updatedPost = data.find((p) => p.id === post.id);
+          if (updatedPost) {
+            setVoteState(updatedPost.userVote);
+            setCounter(updatedPost.counter);
+          }
+        })
+        .catch((err) => console.error("Polling error:", err));
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [post]);
+
   if (!isOpen) return null;
 
   return (
@@ -332,12 +350,7 @@ export default function CommentModal({
           </div>
           <div className="flex items-center space-x-2">
             <button>
-              <Image
-                src="/svg/comments.svg"
-                alt="Comments"
-                width={21}
-                height={21}
-              />
+              <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
             </button>
             <span className="text-black">{updatedComments?.length || 0}</span>
           </div>
