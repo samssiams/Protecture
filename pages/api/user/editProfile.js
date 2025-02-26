@@ -1,13 +1,12 @@
 // pages/api/user/editprofile.js
 import prisma from "../../../lib/prisma";
-import formidable from 'formidable';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '../auth/[...nextauth]';
-import path from 'path';
-import os from 'os';
-import sharp from 'sharp';
-import { uploadFileToSupabase } from '../../../lib/supabaseHelper';
-
+import formidable from "formidable";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
+import path from "path";
+import os from "os";
+import sharp from "sharp";
+import { uploadFileToSupabase } from "../../../lib/supabaseHelper";
 
 export const config = {
   api: {
@@ -30,25 +29,26 @@ const parseForm = (req) =>
   });
 
 export default async function handler(req, res) {
-  if (req.method !== 'PUT') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (req.method !== "PUT") {
+    return res.status(405).json({ error: "Method Not Allowed" });
   }
 
   // Validate the session.
   const session = await getServerSession(req, res, authOptions);
   if (!session || !session.user || !session.user.id) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return res.status(401).json({ error: "Unauthorized" });
   }
   const userId = parseInt(session.user.id, 10);
 
-  let fields = {}, files = {};
+  let fields = {},
+    files = {};
   try {
     // We expect multipart/form-data.
     const parsed = await parseForm(req);
     fields = parsed.fields;
     files = parsed.files;
   } catch (error) {
-    return res.status(400).json({ error: 'Error parsing form data' });
+    return res.status(400).json({ error: "Error parsing form data" });
   }
 
   // Extract name (ensuring it's a string).
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
       tempPath,
       originalName,
       userId,
-      'protecture/profileimage'
+      "protecture/profileimage"
     );
   }
 
@@ -97,22 +97,11 @@ export default async function handler(req, res) {
       tempPath,
       originalName,
       userId,
-      'protecture/headerimage'
+      "protecture/headerimage"
     );
   }
 
   try {
-    console.log("Updating user with:", {
-      name: nameValue,
-      profileURL: processedProfileUrl,
-      headerURL: processedHeaderUrl,
-    });
-    console.log("Updating profile with:", {
-      name: nameValue,
-      profile_img: processedProfileUrl,
-      header_img: processedHeaderUrl,
-    });
-
     // Build the update object for the `user` table.
     const userUpdateData = {
       name: nameValue,
@@ -142,6 +131,18 @@ export default async function handler(req, res) {
         header_img: processedHeaderUrl,
       },
     });
+
+    // Notification logic similar to createpost: notify when name, profile image, or header image is updated.
+    if (nameValue || processedProfileUrl || processedHeaderUrl) {
+      await prisma.notification.create({
+        data: {
+          userId: session.user.id,
+          actionUserId: session.user.id,
+          type: "PROFILE_UPDATE",
+          message: "You have updated your profile",
+        },
+      });
+    }
 
     return res.status(200).json({ message: "Profile updated successfully" });
   } catch (error) {
