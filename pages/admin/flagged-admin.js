@@ -105,9 +105,7 @@ export default function FlaggedAdmin() {
       setModalAction(null);
     } catch (error) {
       console.error(
-        `Error ${
-          modalAction === "suspend" ? "suspending post" : "rejecting report"
-        }:`,
+        `Error ${modalAction === "suspend" ? "suspending post" : "rejecting report"}:`,
         error
       );
     }
@@ -292,13 +290,22 @@ export default function FlaggedAdmin() {
       {/* Post Preview Modal */}
       {modalData && modalAction === "view" && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg text-center shadow-lg max-w-md w-full">
+          <div
+            className="bg-white p-6 rounded-lg text-center max-w-md w-full"
+            style={{
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
             <h3 className="text-lg font-bold mb-4 text-black">Post Preview</h3>
             {loadingPreview ? (
-               <div className="text-black">Loading preview...</div>
+              <div className="animate-pulse space-y-4">
+                <div className="w-full h-48 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+              </div>
             ) : postPreview ? (
               <div className="text-left">
-                {/* Adjust fields to match your schema: "image_url" and "description" */}
                 {postPreview.image_url && (
                   <img
                     src={postPreview.image_url}
@@ -318,7 +325,7 @@ export default function FlaggedAdmin() {
                   setModalAction(null);
                   setPostPreview(null);
                 }}
-                className="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-600 transition"
+                className="bg-gray-500 text-white px-4 py-2 mt-2 rounded-md font-bold hover:bg-gray-600 transition"
               >
                 Close
               </button>
