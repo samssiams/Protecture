@@ -112,15 +112,19 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
   };
 
   const handlePost = async () => {
+    // Check if all required fields are filled
+    if (!description.trim() || !category || !selectedImage) {
+      setError("You need to fill in all required fields");
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     const formData = new FormData();
     formData.append("description", description);
     formData.append("category_id", category);
-    if (selectedImage) {
-      formData.append("image", selectedImage);
-    }
+    formData.append("image", selectedImage);
     if (communityId) {
       formData.append("community_id", communityId);
     }
@@ -133,16 +137,15 @@ export default function CreatePostModal({ isOpen, onClose, userData, communityId
       if (response.status === 201) {
         router.reload();
       } else {
-        setError("Failed to create post. Please try again.");
+        setError("You need to fill in all required fields: post text, category, and image.");
       }
     } catch (err) {
       if (err.response && err.response.status === 429) {
-        // Set cooldown to 5 minutes (300 seconds)
         const retryAfter = err.response.headers["retry-after"] || 300;
         setCooldownEndTime(Date.now() + retryAfter * 1000);
         setError("You have exceeded the post limit. Please wait for 5 minutes before posting again.");
       } else {
-        setError("Failed to create post. Please try again.");
+        setError("You need to fill in all required fields: post text, category, and image.");
       }
     } finally {
       setLoading(false);

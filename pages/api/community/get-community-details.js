@@ -1,7 +1,7 @@
 // pages/api/community/retrieve-community-details.js
-
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]";
 import prisma from "../../../lib/prisma";
-import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(req, res) {
   if (req.method === "GET") {
