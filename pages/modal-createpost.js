@@ -136,7 +136,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
 
       // Call the perturb image API (which returns the perturbed image URL)
       const perturbResponse = await axios.post(
-        "https://fgsm-api-1.onrender.com/api/perturbed-image",
+        "https://fgsm-api.onrender.com/api/perturbed-image",
         perturbFormData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
