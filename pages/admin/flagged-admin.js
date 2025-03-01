@@ -9,11 +9,17 @@ export default function FlaggedAdmin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllReports, setShowAllReports] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [modalData, setModalData] = useState(null);
   const [modalAction, setModalAction] = useState(null);
+
+  // For the post preview
+  const [postPreview, setPostPreview] = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+
   const limit = 5;
 
-  // Fetch reports from API
+  // 1. Fetch reports from API on mount
   useEffect(() => {
     setLoading(true);
     fetch("/api/admin/admin-flagged")
@@ -24,7 +30,6 @@ export default function FlaggedAdmin() {
           setLoading(false);
           return;
         }
-        // API returns only pending reports, so we simply use the results.
         const pendingReports = data.reports;
         setReports(pendingReports);
         setFilteredReports(pendingReports);
@@ -37,7 +42,7 @@ export default function FlaggedAdmin() {
       });
   }, []);
 
-  // Handle search input change
+  // 2. Handle search
   const handleSearchChange = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -52,7 +57,7 @@ export default function FlaggedAdmin() {
     setVisibleReports(showAllReports ? filtered : filtered.slice(0, limit));
   };
 
-  // Handle "View All" click
+  // 3. Handle "View All" button
   const handleSeeAll = () => {
     setShowAllReports(true);
     setLoading(true);
@@ -62,7 +67,7 @@ export default function FlaggedAdmin() {
     }, 500);
   };
 
-  // Handle confirmation modal action
+  // 4. Handle confirmation modal actions (suspend or reject)
   const handleConfirmAction = async () => {
     if (!modalData) return;
 
@@ -77,7 +82,6 @@ export default function FlaggedAdmin() {
       });
 
       const result = await response.json();
-
       if (!response.ok) {
         throw new Error(result.message || "Action failed");
       }
@@ -86,15 +90,15 @@ export default function FlaggedAdmin() {
         `${modalAction === "suspend" ? "Post suspended" : "Report rejected"} successfully.`
       );
 
-      // Remove the processed report from UI
+      // Remove the processed report from the UI
       setReports((prevReports) =>
-        prevReports.filter((report) => report.reportId !== modalData.reportId)
+        prevReports.filter((r) => r.reportId !== modalData.reportId)
       );
       setFilteredReports((prevFiltered) =>
-        prevFiltered.filter((report) => report.reportId !== modalData.reportId)
+        prevFiltered.filter((r) => r.reportId !== modalData.reportId)
       );
       setVisibleReports((prevVisible) =>
-        prevVisible.filter((report) => report.reportId !== modalData.reportId)
+        prevVisible.filter((r) => r.reportId !== modalData.reportId)
       );
 
       setModalData(null);
@@ -105,6 +109,27 @@ export default function FlaggedAdmin() {
         error
       );
     }
+  };
+
+  // 5. Handle "View" to fetch and display a single post by ID
+  const handleViewPost = (report) => {
+    if (!report.postId) return;
+
+    setModalData(report);
+    setModalAction("view");
+    setLoadingPreview(true);
+
+    // Call our getPostById endpoint
+    fetch(`/api/post/getPostById?postId=${report.postId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setPostPreview(data.post); // data.post has image_url and description
+        setLoadingPreview(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching post preview:", err);
+        setLoadingPreview(false);
+      });
   };
 
   return (
@@ -194,6 +219,12 @@ export default function FlaggedAdmin() {
                         Suspend Post
                       </button>
                       <button
+                        onClick={() => handleViewPost(report)}
+                        className="bg-green-500 text-white font-bold px-4 py-2 rounded-md hover:bg-green-600"
+                      >
+                        View
+                      </button>
+                      <button
                         onClick={() => {
                           setModalData(report);
                           setModalAction("reject");
@@ -207,16 +238,14 @@ export default function FlaggedAdmin() {
                 ))}
               </div>
             ) : (
-              <p className="text-gray-500 text-left">
-                No flagged reports found.
-              </p>
+              <p className="text-gray-500 text-left">No flagged reports found.</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* Confirmation Modal */}
-      {modalData && (
+      {/* Confirmation Modal (Suspend or Reject) */}
+      {modalData && modalAction !== "view" && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg text-center shadow-lg">
             <h3
@@ -252,6 +281,53 @@ export default function FlaggedAdmin() {
                 className="bg-gray-500 text-white px-4 py-2 rounded-md font-bold hover:bg-gray-600 transition"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Post Preview Modal */}
+      {modalData && modalAction === "view" && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div
+            className="bg-white p-6 rounded-lg text-center max-w-md w-full"
+            style={{
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <h3 className="text-lg font-bold mb-4 text-black">Post Preview</h3>
+            {loadingPreview ? (
+              <div className="animate-pulse space-y-4">
+                <div className="w-full h-48 bg-gray-300 rounded"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+              </div>
+            ) : postPreview ? (
+              <div className="text-left">
+                {postPreview.image_url && (
+                  <img
+                    src={postPreview.image_url}
+                    alt="Post preview"
+                    className="mb-4 w-full h-auto rounded"
+                  />
+                )}
+                <p className="text-gray-700">{postPreview.description}</p>
+              </div>
+            ) : (
+              <p className="text-gray-500">No preview available.</p>
+            )}
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  setModalData(null);
+                  setModalAction(null);
+                  setPostPreview(null);
+                }}
+                className="bg-gray-500 text-white px-4 py-2 mt-2 rounded-md font-bold hover:bg-gray-600 transition"
+              >
+                Close
               </button>
             </div>
           </div>
