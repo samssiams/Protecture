@@ -134,7 +134,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
       perturbFormData.append("perturbation_level", perturbationLevel);
 
       // Call the perturb image API using fetch
-      const perturbRes = await fetch("http://192.168.254.105:8000/api/perturbed-image", {
+      const perturbRes = await fetch("https://fgsm-api.onrender.com/api/perturbed-image", {
         method: "POST",
         body: perturbFormData,
       });
