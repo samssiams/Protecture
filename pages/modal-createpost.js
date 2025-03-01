@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
-import axios from "axios";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 
@@ -134,22 +133,22 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
       perturbFormData.append("file", selectedImage);
       perturbFormData.append("perturbation_level", perturbationLevel);
 
-      // Call the perturb image API (which returns the perturbed image URL)
-      const perturbResponse = await axios.post(
-        "https://fgsm-api.onrender.com/api/perturbed-image",
-        perturbFormData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
-      
-      if (perturbResponse.status !== 201 || !perturbResponse.data.image_url) {
+      // Call the perturb image API using fetch
+      const perturbRes = await fetch("http://192.168.254.105:8000/api/perturbed-image", {
+        method: "POST",
+        body: perturbFormData,
+      });
+      const perturbData = await perturbRes.json();
+
+      if (perturbRes.status !== 201 || !perturbData.image_url) {
         setError("Failed to process image.");
         setLoading(false);
         return;
       }
       
-      const imageUrl = perturbResponse.data.image_url;
+      const imageUrl = perturbData.image_url;
       
-      // Prepare payload for the create post API using the additional fields
+      // Prepare payload for the create post API
       const postPayload = {
         description,
         category_id: category,
@@ -159,10 +158,14 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         postPayload.community_id = communityId;
       }
       
-      // Call the create post API
-      const postResponse = await axios.post("/api/post/createpost", postPayload);
+      // Call the create post API using fetch
+      const postRes = await fetch("/api/post/createpost", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postPayload),
+      });
       
-      if (postResponse.status === 201) {
+      if (postRes.status === 201) {
         router.reload();
       } else {
         setError("Failed to create post. Please try again.");
