@@ -214,7 +214,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         </div>
         <div className="mb-1">
           <textarea
-            className="w-full h-[80px] px-3 text-black text-[14px] resize-none focus:outline-none placeholder-gray-500"
+            className="w-full h-[80px] px-3 text-black text-[15px] resize-none focus:outline-none placeholder-gray-500"
             placeholder="What will you post?"
             style={{ backgroundColor: "transparent", border: "none" }}
             value={description}
@@ -232,8 +232,9 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
                 value="LOW"
                 checked={perturbationLevel === "LOW"}
                 onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
               />
-              LOW
+              Low
             </label>
             <label className="text-black">
               <input
@@ -242,8 +243,9 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
                 value="MEDIUM"
                 checked={perturbationLevel === "MEDIUM"}
                 onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
               />
-              MEDIUM
+              Medium
             </label>
             <label className="text-black">
               <input
@@ -252,8 +254,9 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
                 value="HIGH"
                 checked={perturbationLevel === "HIGH"}
                 onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
               />
-              HIGH
+              High
             </label>
           </div>
         </div>
