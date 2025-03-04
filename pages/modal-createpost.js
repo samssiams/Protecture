@@ -309,7 +309,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         )}
         <button
           onClick={handleSubmit}
-          className="w-full h-[40px] bg-blue-500 text-white font-semibold rounded mt-4"
+          className="w-full h-[40px] bg-green-500 text-white font-semibold rounded mt-4"
           disabled={loading || !!cooldownEndTime}
         >
           {loading ? "Processing..." : "Submit"}
