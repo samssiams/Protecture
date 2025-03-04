@@ -209,7 +209,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         <div className="flex items-center mt-4 mb-4">
           <NextImage src={userData?.profileImg || "/images/user.png"} alt="Profile Image" width={40} height={40} className="rounded-full" />
           <div className="ml-3">
-            <p className="text-black font-semibold text-[18px]">{userData?.name || "Anonymous"}</p>
+            <p className="text-black font-semibold text-[18px]">{userData?.username}</p>
           </div>
         </div>
         <div className="mb-1">
