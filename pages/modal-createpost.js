@@ -273,6 +273,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             <option value="Victorian">Victorian</option>
             <option value="Traditional">Traditional</option>
             <option value="Bungalow">Bungalow</option>
+            <option value="Other">Others</option>
           </select>
           <NextImage src="/svg/drop.svg" alt="Dropdown Icon" width={12} height={12} className="absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
         </div>
