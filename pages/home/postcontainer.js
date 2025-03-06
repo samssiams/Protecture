@@ -222,13 +222,19 @@ function PostContainer({
                 </span>
               </div>
               <div className="ml-auto">
-                {isCurrentUser && (
-                  <button
-                    className="bg-green-500 text-white px-3 py-1 rounded"
-                    onClick={() => handleArchive(post.id)}
-                  >
-                    {activeTab === "Archived" ? "Unarchive" : "Archive"}
+                {post.user?.id !== session?.user?.id && (
+                  <button onClick={(e) => handleModalToggle(e, post)}>
+                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
                   </button>
+                )}
+                {post.user?.id === session?.user?.id &&
+                  router.pathname === "/home/profile" && (
+                    <button
+                      className="bg-green-500 text-white px-3 py-1 rounded"
+                      onClick={() => handleArchive(post.id)}
+                    >
+                      {activeTab === "Archived" ? "Unarchive" : "Archive"}
+                    </button>
                 )}
               </div>
             </div>
