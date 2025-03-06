@@ -13,13 +13,17 @@ export default async function handler(req, res) {
     if (!session) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    const userId = session.user.id;
-    // Use the archived flag from the query (default is false)
+
+    // If a userId is provided in the query, use that; otherwise, default to the current user's id.
+    const requestedUserId = req.query.userId
+      ? parseInt(req.query.userId, 10)
+      : parseInt(session.user.id, 10);
+
     const archivedFlag = req.query.archived === "true";
 
     const posts = await prisma.post.findMany({
       where: {
-        user_id: userId,
+        user_id: requestedUserId,
         archived: archivedFlag,
       },
       include: {
@@ -27,6 +31,7 @@ export default async function handler(req, res) {
           include: {
             user: {
               select: {
+                id: true,
                 username: true,
                 profile: { select: { profile_img: true } },
               },
@@ -35,16 +40,18 @@ export default async function handler(req, res) {
         },
         user: {
           select: {
+            id: true,
             username: true,
             profile: { select: { profile_img: true, name: true } },
           },
         },
         upvotes: {
-          where: { user_id: userId },
+          // upvotes are still filtered for the current session user
+          where: { user_id: parseInt(session.user.id, 10) },
           select: { id: true },
         },
         downvotes: {
-          where: { user_id: userId },
+          where: { user_id: parseInt(session.user.id, 10) },
           select: { id: true },
         },
       },

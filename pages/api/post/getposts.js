@@ -16,7 +16,6 @@ export default async function handler(req, res) {
     const userId = session.user.id;
     const { countOnly } = req.query;
 
-    // If countOnly is true, count the posts created by the logged-in user that are not archived.
     if (countOnly === "true") {
       const postCount = await prisma.post.count({
         where: { user_id: userId, archived: false },
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ count: postCount });
     }
 
-    // Otherwise, fetch all posts (from all users) that are not archived.
     const posts = await prisma.post.findMany({
       where: { archived: false },
       include: {
@@ -32,6 +30,7 @@ export default async function handler(req, res) {
           include: {
             user: {
               select: {
+                id: true,
                 username: true,
                 profile: { select: { profile_img: true } },
               },
@@ -40,6 +39,7 @@ export default async function handler(req, res) {
         },
         user: {
           select: {
+            id: true,
             username: true,
             profile: { select: { profile_img: true, name: true } },
           },

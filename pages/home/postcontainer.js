@@ -7,7 +7,6 @@ import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 
-// A skeleton loader component that mimics a post container
 function PostSkeleton() {
   return (
     <div
@@ -44,14 +43,20 @@ function PostSkeleton() {
   );
 }
 
-function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handleArchive }) {
+function PostContainer({
+  selectedCategory,
+  posts: initialPosts,
+  activeTab,
+  handleArchive,
+  isCurrentUser,
+}) {
   const [posts, setPosts] = useState(initialPosts || []);
   const [votedPosts, setVotedPosts] = useState({});
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [isLoading, setIsLoading] = useState(initialPosts ? false : true);
+  const [isLoading, setIsLoading] = useState(!initialPosts);
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -201,19 +206,9 @@ function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handl
               <div className="ml-4">
                 <h3
                   className="font-bold text-black cursor-pointer"
-                  onClick={async () => {
+                  onClick={() => {
                     const userId = post.user?.id;
-                    try {
-                      const response = await fetch(`/api/user/getUser?userId=${userId}`);
-                      if (response.ok) {
-                        const userData = await response.json();
-                        console.log("Fetched user data:", userData);
-                      } else {
-                        console.error("Failed to fetch user data");
-                      }
-                    } catch (error) {
-                      console.error("Error fetching user data:", error);
-                    }
+                    router.push(`/home/profile?userId=${userId}`);
                   }}
                 >
                   {post.user?.profile?.name || post.user?.username}
@@ -227,16 +222,12 @@ function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handl
                 </span>
               </div>
               <div className="ml-auto">
-                {router.pathname === "/home/profile" ? (
+                {isCurrentUser && (
                   <button
                     className="bg-green-500 text-white px-3 py-1 rounded"
                     onClick={() => handleArchive(post.id)}
                   >
                     {activeTab === "Archived" ? "Unarchive" : "Archive"}
-                  </button>
-                ) : (
-                  <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
                   </button>
                 )}
               </div>
@@ -299,7 +290,12 @@ function PostContainer({ selectedCategory, posts: initialPosts, activeTab, handl
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
-                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+                  <Image
+                    src="/svg/comments.svg"
+                    alt="Comments"
+                    width={21}
+                    height={21}
+                  />
                 </button>
                 <span className="text-black">{post.comments.length}</span>
               </div>
