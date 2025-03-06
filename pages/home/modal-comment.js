@@ -260,7 +260,15 @@ export default function CommentModal({
         transition={{ duration: 0.2 }}
         ref={modalRef}
       >
-        <div className="flex justify-start items-center mb-4 px-2">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-5 focus:outline-none"
+        >
+          <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
+        </button>
+
+        <div className="flex justify-start items-center px-2">
           {isPostOwner && (
             <h2
               className="text-[#2FA44E] font-bold italic text-[20px] underline cursor-pointer"
@@ -272,7 +280,7 @@ export default function CommentModal({
         </div>
 
         <div
-          className="relative mb-8 rounded-lg overflow-hidden"
+          className="relative mt-10 mb-8 rounded-lg overflow-hidden"
           style={{ width: "100%", height: "400px" }}
         >
           {post?.image_url ? (
@@ -417,9 +425,7 @@ export default function CommentModal({
               </motion.div>
             </div>
             {warning && (
-              <p className="text-red-500 text-bold mt-1 ml-1">
-                {warning}
-              </p>
+              <p className="text-red-500 text-bold mt-1 ml-1">{warning}</p>
             )}
           </div>
         </div>
