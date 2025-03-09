@@ -1,4 +1,3 @@
-// pages/api/user/profile.js
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
@@ -18,11 +17,11 @@ export default async function handler(req, res) {
     // If a userId is provided via query, use that; otherwise, default to the current user's id.
     const requestedUserId = req.query.userId
       ? parseInt(req.query.userId, 10)
-      : parseInt(session.user.id, 10);
+      : parseInt(session.user.id, 10);  
 
     const user = await prisma.user.findUnique({
       where: { id: requestedUserId },
-      include: { profile: true },
+      include: { profile: true, posts: true },  // Include posts to count
     });
 
     if (!user) {
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
         (user.profile && user.profile.header_img) ||
         user.headerURL ||
         "/images/default-header.png",
-      posts: (user.profile && user.profile.posts) || 0,
+      posts: user.posts.length || 0, // Properly count posts
       followers: (user.profile && user.profile.followers) || 0,
       following: (user.profile && user.profile.following) || 0,
     };

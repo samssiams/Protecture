@@ -145,16 +145,17 @@ export default function Profile() {
 
   const fetchUserPostCount = async () => {
     try {
-      const query = userId ? `?countOnly=true&userId=${userId}` : `?countOnly=true`;
-      const response = await axios.get(`/api/post/getposts${query}`);
+      const query = userId ? `?userId=${userId}` : ``;
+      const response = await axios.get(`/api/user/profile${query}`);
+      
       if (response.status === 200) {
-        setUserPostCount(response.data.count);
+        setUserPostCount(response.data.posts);  // Use correct post count
       }
     } catch (error) {
       console.error("Failed to fetch post count:", error);
     }
   };
-
+  
   const handleProfileUpdate = (updatedData) => {
     setUserData((prevData) => ({ ...prevData, ...updatedData }));
   };
