@@ -17,11 +17,15 @@ export default async function handler(req, res) {
     // If a userId is provided via query, use that; otherwise, default to the current user's id.
     const requestedUserId = req.query.userId
       ? parseInt(req.query.userId, 10)
-      : parseInt(session.user.id, 10);  
+      : parseInt(session.user.id, 10);
 
+    // Filter posts so that only non-archived posts are included
     const user = await prisma.user.findUnique({
       where: { id: requestedUserId },
-      include: { profile: true, posts: true },  // Include posts to count
+      include: { 
+        profile: true, 
+        posts: { where: { archived: false } } 
+      },
     });
 
     if (!user) {
@@ -39,7 +43,7 @@ export default async function handler(req, res) {
         (user.profile && user.profile.header_img) ||
         user.headerURL ||
         "/images/default-header.png",
-      posts: user.posts.length || 0, // Properly count posts
+      posts: user.posts.length, // Now counts only non-archived posts
       followers: (user.profile && user.profile.followers) || 0,
       following: (user.profile && user.profile.following) || 0,
     };
