@@ -3,6 +3,7 @@ import NextImage from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
+import { Info } from "lucide-react";
 
 export default function CreatePostModal({ isOpen, onClose, communityId }) {
   const { data: session } = useSession();
@@ -17,6 +18,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
   const [cooldownEndTime, setCooldownEndTime] = useState(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   useEffect(() => {
     if (cooldownEndTime) {
@@ -223,7 +225,21 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         </div>
         {warning && <p className="text-red-500 font-regular text-center mt-2 mb-2">{warning}</p>}
         <div className="mb-4">
-          <p className="text-black font-semibold mb-2">Select Perturbation Level:</p>
+          <div className="flex items-center mb-2">
+            <p className="text-black font-semibold">Select Perturbation Level:</p>
+            <span className="relative ml-2">
+              <Info
+                className="cursor-pointer stroke-black/75"
+                onClick={() => setTooltipVisible(!tooltipVisible)}
+                size={16}
+              />
+              {tooltipVisible && (
+                <div className="absolute left-0 mt-2 w-64 p-2 bg-gray-700 text-white text-xs rounded shadow-lg z-10">
+                  Perturbation applies controlled pixel variations to your image, making it progressively blurred based on the chosen level. It also acts as a safeguard against AI capture
+                </div>
+              )}
+            </span>
+          </div>
           <div className="flex space-x-4">
             <label className="text-black">
               <input

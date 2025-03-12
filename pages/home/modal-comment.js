@@ -279,16 +279,14 @@ export default function CommentModal({
           )}
         </div>
 
-        <div
-          className="relative mt-10 mb-8 rounded-lg overflow-hidden"
-          style={{ width: "100%", height: "400px" }}
-        >
+        <div className="relative mt-10 mb-8 rounded-lg overflow-hidden">
           {post?.image_url ? (
             <Image
               src={post.image_url}
               alt="Uploaded Image"
-              layout="fill"
-              objectFit="cover"
+              layout="intrinsic" // or "responsive" if you prefer
+              width={post?.imageWidth || 800}   // replace with actual width if available
+              height={post?.imageHeight || 600}   // replace with actual height if available
               className="rounded-lg"
             />
           ) : (
