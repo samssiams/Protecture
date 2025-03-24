@@ -92,7 +92,7 @@ export default function Communities({ openCreateCommunityModal }) {
           className="mr-2"
           style={{ marginLeft: "-5px" }}
         />
-        <span className="text-black text-[17px] font-light">Create a community</span>
+        <span className="text-black text-[17px] font-light">Add community</span>
       </div>
 
       {loading ? (
