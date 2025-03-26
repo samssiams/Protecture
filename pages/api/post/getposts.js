@@ -16,15 +16,24 @@ export default async function handler(req, res) {
     const userId = session.user.id;
     const { countOnly } = req.query;
 
+    // When countOnly is true, include the filter for posts not in CommunityPost
     if (countOnly === "true") {
       const postCount = await prisma.post.count({
-        where: { user_id: userId, archived: false },
+        where: { 
+          user_id: userId,
+          archived: false,
+          communityPosts: { none: {} }
+        },
       });
       return res.status(200).json({ count: postCount });
     }
 
+    // Fetch posts that are not in CommunityPost using the `none` operator.
     const posts = await prisma.post.findMany({
-      where: { archived: false },
+      where: {
+        archived: false,
+        communityPosts: { none: {} }
+      },
       include: {
         comments: {
           include: {
