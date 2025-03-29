@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       const now = new Date();
       const recentPostsCount = await prisma.post.count({
         where: {
-          user_id: userId,
+          user: { id: userId },
           created_at: {
             gte: new Date(now - postLimitTimeWindow),
           },
@@ -24,23 +24,26 @@ export default async function handler(req, res) {
       });
       if (recentPostsCount >= 3) {
         return res.status(429).json({
-          message: "You have exceeded the post limit. Please wait for 5 minutes before posting again.",
+          message:
+            "You have exceeded the post limit. Please wait for 5 minutes before posting again.",
         });
       }
 
-      // Expecting JSON payload with description, category_id, image_url and optionally community_id.
+      // Expecting JSON payload with description, category_id, optional image_url and optionally community_id.
       const { description, category_id, image_url, community_id } = req.body;
-      if (!description || !category_id || !image_url) {
-        return res.status(400).json({ message: "Description, category and image_url are required." });
+      if (!description || !category_id) {
+        return res
+          .status(400)
+          .json({ message: "Description and category are required." });
       }
 
       // Create the new post
       const newPost = await prisma.post.create({
         data: {
-          user_id: userId,
           description,
-          image_url,
           category_id,
+          image_url: image_url || null, // Set to null if no image is provided.
+          user: { connect: { id: userId } }, // Connect the post to the user.
         },
       });
 

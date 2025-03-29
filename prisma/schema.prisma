@@ -93,7 +93,7 @@ model Post {
   id            Int            @id @default(autoincrement())
   user_id       Int
   category_id   String
-  image_url     String
+  image_url     String?
   description   String
   created_at    DateTime       @default(now())
   counter       Int            @default(0)

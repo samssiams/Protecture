@@ -22,18 +22,33 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
 
       {/* Description Skeleton */}
-      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
 
       {/* Image Skeleton */}
-      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
 
       {/* Footer Skeleton */}
       <div className="flex items-center justify-between">
@@ -131,7 +146,9 @@ function CommunityPostContainer({ communityId }) {
           [postId]: prevVotes[postId] === action ? null : action,
         }));
         setPosts((prevPosts) =>
-          prevPosts.map((post) => (post.id === updatedPost.id ? updatedPost : post))
+          prevPosts.map((post) =>
+            post.id === updatedPost.id ? updatedPost : post
+          )
         );
       } else {
         const errorData = await response.json();
@@ -151,9 +168,7 @@ function CommunityPostContainer({ communityId }) {
       });
       if (response.ok) {
         alert("Post archived successfully!");
-        setPosts((prevPosts) =>
-          prevPosts.filter((post) => post.id !== postId)
-        );
+        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
       } else {
         const errorData = await response.json();
         console.error("Error archiving post:", errorData.message);
@@ -197,7 +212,10 @@ function CommunityPostContainer({ communityId }) {
           >
             <div className="flex items-center mb-4">
               <Image
-                src={post.user?.profile?.profile_img || "/images/default-profile.png"}
+                src={
+                  post.user?.profile?.profile_img ||
+                  "/images/default-profile.png"
+                }
                 alt="Profile"
                 width={40}
                 height={40}
@@ -209,7 +227,9 @@ function CommunityPostContainer({ communityId }) {
                   onClick={async () => {
                     const userId = post.user?.id;
                     try {
-                      const response = await fetch(`/api/user/getUser?userId=${userId}`);
+                      const response = await fetch(
+                        `/api/user/getUser?userId=${userId}`
+                      );
                       if (response.ok) {
                         const userData = await response.json();
                         // Optionally handle the user data here
@@ -233,7 +253,12 @@ function CommunityPostContainer({ communityId }) {
               </div>
               <div className="ml-auto">
                 <button onClick={(e) => handleModalToggle(e, post)}>
-                  <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                  <Image
+                    src="/svg/dots.svg"
+                    alt="Options"
+                    width={4}
+                    height={16}
+                  />
                 </button>
               </div>
             </div>
@@ -243,18 +268,20 @@ function CommunityPostContainer({ communityId }) {
               {post.category_id}
             </span>
 
-            <div
-              className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
-              onClick={() => handleCommentModalToggle(post)}
-            >
-              <Image
-                src={post.image_url}
-                alt="Post Image"
-                width={444}
-                height={300}
-                className="object-cover h-[250px] w-[656px] rounded-lg"
-              />
-            </div>
+            {post.image_url && (
+              <div
+                className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
+                onClick={() => handleCommentModalToggle(post)}
+              >
+                <Image
+                  src={post.image_url}
+                  alt="Post Image"
+                  width={444}
+                  height={300}
+                  className="object-cover h-[250px] w-[656px] rounded-lg"
+                />
+              </div>
+            )}
 
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
@@ -299,7 +326,12 @@ function CommunityPostContainer({ communityId }) {
 
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
-                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+                  <Image
+                    src="/svg/comments.svg"
+                    alt="Comments"
+                    width={21}
+                    height={21}
+                  />
                 </button>
                 <span className="text-black">{post.comments.length}</span>
               </div>
@@ -321,7 +353,8 @@ function CommunityPostContainer({ communityId }) {
               />
             )}
 
-            {showModal && selectedPost?.id === post.id &&
+            {showModal &&
+              selectedPost?.id === post.id &&
               // Render ModalDots via a portal so its position is relative to the viewport
               createPortal(
                 <ModalDots
@@ -332,8 +365,7 @@ function CommunityPostContainer({ communityId }) {
                   reporterId={session?.user?.id}
                 />,
                 document.body
-              )
-            }
+              )}
           </div>
         );
       })}

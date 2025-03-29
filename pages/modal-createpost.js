@@ -13,7 +13,6 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [perturbationLevel, setPerturbationLevel] = useState("LOW");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
@@ -57,10 +56,16 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
           ctx.shadowOffsetY = 0;
           const bottomPadding = 20;
           const leftPadding = 40;
-          ctx.fillText(watermarkText, leftPadding, canvas.height - bottomPadding);
+          ctx.fillText(
+            watermarkText,
+            leftPadding,
+            canvas.height - bottomPadding
+          );
           // Convert canvas to a File
           canvas.toBlob((blob) => {
-            const watermarkedFile = new File([blob], file.name, { type: file.type });
+            const watermarkedFile = new File([blob], file.name, {
+              type: file.type,
+            });
             setSelectedImage(watermarkedFile);
           }, file.type);
         };
@@ -75,34 +80,106 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
   };
 
   const bannedWords = [
-    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard",
-    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag",
-    "nigger", "motherfucker", "cock", "pussy", "retard", "douche",
-    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
-    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak",
-    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu",
-    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste",
-    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago",
-    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
-    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
+    "fuck",
+    "fucking",
+    "shit",
+    "damn",
+    "bitch",
+    "asshole",
+    "bastard",
+    "dick",
+    "cunt",
+    "piss",
+    "crap",
+    "slut",
+    "whore",
+    "prick",
+    "fag",
+    "nigger",
+    "motherfucker",
+    "cock",
+    "pussy",
+    "retard",
+    "douche",
+    "bullshit",
+    "arsehole",
+    "wanker",
+    "tosser",
+    "bloody",
+    "bugger",
+    "fvck",
+    "fck",
+    "fcking",
+    "mf",
+    "dfq",
+    "dick",
+    "pussy",
+    "MotherFucker",
+    "putangina",
+    "gago",
+    "tanga",
+    "bobo",
+    "ulol",
+    "lintik",
+    "hinayupak",
+    "hayop",
+    "siraulo",
+    "tarantado",
+    "bwisit",
+    "tite",
+    "pakyu",
+    "pakyew",
+    "leche",
+    "punyeta",
+    "inutil",
+    "unggoy",
+    "peste",
+    "gunggong",
+    "salot",
+    "walanghiya",
+    "ampota",
+    "syet",
+    "gago",
+    "putcha",
+    "punyemas",
+    "hudas",
+    "diyablo",
+    "g@go",
+    "8080",
+    "kingina",
+    "kupal",
+    "t4nga",
+    "b0b0",
+    "inutil",
+    "pakyu",
+    "shet",
+    "t4nga",
+    "obob",
+    "bob0",
+    "kinangina",
+    "tangina",
+    "hayuf",
+    "hayf",
+    "inamo",
+    "namo",
   ];
 
   const containsProfanity = (text) => {
-    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
+    const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
     return regex.test(text);
   };
 
   const sanitizeText = (text) => {
-    const regex = new RegExp(`\\b(${bannedWords.join('|')})\\b`, "gi");
+    const regex = new RegExp(`\\b(${bannedWords.join("|")})\\b`, "gi");
     return text.replace(regex, (match) => "*".repeat(match.length));
   };
 
   const handleDescriptionChange = (e) => {
     const inputText = e.target.value;
     if (containsProfanity(inputText)) {
-      setWarning("Your text contains inappropriate language. It will be filtered.");
+      setWarning(
+        "Your text contains inappropriate language. It will be filtered."
+      );
     } else {
       setWarning(null);
     }
@@ -118,11 +195,6 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
       setLoading(false);
       return;
     }
-    if (!selectedImage) {
-      setError("Please select an image first.");
-      setLoading(false);
-      return;
-    }
     if (!category) {
       setError("Please select a category.");
       setLoading(false);
@@ -130,43 +202,52 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
     }
 
     try {
-      // Create FormData for the perturb image API (only file and perturbation level)
-      const perturbFormData = new FormData();
-      perturbFormData.append("file", selectedImage);
-      perturbFormData.append("perturbation_level", perturbationLevel);
+      let imageUrl = null;
+      // Only process the image if one was selected
+      if (selectedImage) {
+        // Create FormData for the perturb image API (always using a MEDIUM level)
+        const perturbFormData = new FormData();
+        perturbFormData.append("file", selectedImage);
+        perturbFormData.append("perturbation_level", "LOW");
 
-      // Call the perturb image API using fetch
-      const perturbRes = await fetch("https://fgsm-api.onrender.com/api/perturbed-image", {
-        method: "POST",
-        body: perturbFormData,
-      });
-      const perturbData = await perturbRes.json();
+        // Call the perturb image API using fetch
+        const perturbRes = await fetch(
+          "https://fgsm-api.onrender.com/api/perturbed-image",
+          {
+            method: "POST",
+            body: perturbFormData,
+          }
+        );
+        const perturbData = await perturbRes.json();
 
-      if (perturbRes.status !== 201 || !perturbData.image_url) {
-        setError("Failed to process image.");
-        setLoading(false);
-        return;
+        if (perturbRes.status !== 201 || !perturbData.image_url) {
+          setError("Failed to process image.");
+          setLoading(false);
+          return;
+        }
+
+        imageUrl = perturbData.image_url;
       }
-      
-      const imageUrl = perturbData.image_url;
-      
+
       // Prepare payload for the create post API
       const postPayload = {
         description,
         category_id: category,
-        image_url: imageUrl,
       };
+      if (imageUrl) {
+        postPayload.image_url = imageUrl;
+      }
       if (communityId) {
         postPayload.community_id = communityId;
       }
-      
+
       // Call the create post API using fetch
       const postRes = await fetch("/api/post/createpost", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(postPayload),
       });
-      
+
       if (postRes.status === 201) {
         router.reload();
       } else {
@@ -186,7 +267,9 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
     if (timeLeft <= 0) return null;
     const minutes = Math.floor(timeLeft / 60000);
     const seconds = Math.floor((timeLeft % 60000) / 1000);
-    return `${minutes} minute${minutes !== 1 ? "s" : ""} and ${seconds} second${seconds !== 1 ? "s" : ""}`;
+    return `${minutes} minute${minutes !== 1 ? "s" : ""} and ${seconds} second${
+      seconds !== 1 ? "s" : ""
+    }`;
   };
 
   if (!isOpen) return null;
@@ -199,19 +282,43 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         exit={{ scale: 0.8 }}
         transition={{ duration: 0.2 }}
         className="bg-white rounded-[5px] shadow-lg p-5 relative modal-container"
-        style={{ width: "500px", minHeight: "200px", border: "1px solid black" }}
+        style={{
+          width: "500px",
+          minHeight: "200px",
+          border: "1px solid black",
+        }}
       >
         <div className="flex justify-between items-center">
-          <h2 className="text-[24px] font-semibold text-black mb-0 -mt-4">Create a Post</h2>
-          <button onClick={onClose} className="focus:outline-none flex items-center mb-4">
+          <h2 className="text-[24px] font-semibold text-black mb-0 -mt-4">
+            Create a Post
+          </h2>
+          <button
+            onClick={onClose}
+            className="focus:outline-none flex items-center mb-4"
+          >
             <NextImage src="/svg/eks.svg" alt="Close" width={15} height={15} />
           </button>
         </div>
-        <hr className="border-t border-black" style={{ borderWidth: ".05px", width: "calc(100%+40px)", margin: "0 -20px" }} />
+        <hr
+          className="border-t border-black"
+          style={{
+            borderWidth: ".05px",
+            width: "calc(100%+40px)",
+            margin: "0 -20px",
+          }}
+        />
         <div className="flex items-center mt-4 mb-4">
-          <NextImage src={userData?.profileImg || "/images/user.png"} alt="Profile Image" width={40} height={40} className="rounded-full" />
+          <NextImage
+            src={userData?.profileImg || "/images/user.png"}
+            alt="Profile Image"
+            width={40}
+            height={40}
+            className="rounded-full"
+          />
           <div className="ml-3">
-            <p className="text-black font-semibold text-[18px]">{userData?.username}</p>
+            <p className="text-black font-semibold text-[18px]">
+              {userData?.username}
+            </p>
           </div>
         </div>
         <div className="mb-1">
@@ -223,59 +330,11 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             onChange={handleDescriptionChange}
           />
         </div>
-        {warning && <p className="text-red-500 font-regular text-center mt-2 mb-2">{warning}</p>}
-        <div className="mb-4">
-          <div className="flex items-center mb-2">
-            <p className="text-black font-semibold">Select Perturbation Level:</p>
-            <span className="relative ml-2">
-              <Info
-                className="cursor-pointer stroke-black/75"
-                onClick={() => setTooltipVisible(!tooltipVisible)}
-                size={16}
-              />
-              {tooltipVisible && (
-                <div className="absolute left-0 mt-2 w-64 p-2 bg-gray-700 text-white text-xs rounded shadow-lg z-10">
-                  Perturbation applies controlled pixel variations to your image, making it progressively blurred based on the chosen level. It also acts as a safeguard against AI capture
-                </div>
-              )}
-            </span>
-          </div>
-          <div className="flex space-x-4">
-            <label className="text-black">
-              <input
-                type="radio"
-                name="perturbation"
-                value="LOW"
-                checked={perturbationLevel === "LOW"}
-                onChange={(e) => setPerturbationLevel(e.target.value)}
-                className="mr-1"
-              />
-              Low
-            </label>
-            <label className="text-black">
-              <input
-                type="radio"
-                name="perturbation"
-                value="MEDIUM"
-                checked={perturbationLevel === "MEDIUM"}
-                onChange={(e) => setPerturbationLevel(e.target.value)}
-                className="mr-1"
-              />
-              Medium
-            </label>
-            <label className="text-black">
-              <input
-                type="radio"
-                name="perturbation"
-                value="HIGH"
-                checked={perturbationLevel === "HIGH"}
-                onChange={(e) => setPerturbationLevel(e.target.value)}
-                className="mr-1"
-              />
-              High
-            </label>
-          </div>
-        </div>
+        {warning && (
+          <p className="text-red-500 font-regular text-center mt-2 mb-2">
+            {warning}
+          </p>
+        )}
         <div className="relative mb-4">
           <select
             className="w-full h-[40px] px-3 rounded-[4px] bg-[#F4F3F3] text-black appearance-none"
@@ -291,14 +350,26 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             <option value="Bungalow">Bungalow</option>
             <option value="Other">Others</option>
           </select>
-          <NextImage src="/svg/drop.svg" alt="Dropdown Icon" width={12} height={12} className="absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none" />
+          <NextImage
+            src="/svg/drop.svg"
+            alt="Dropdown Icon"
+            width={12}
+            height={12}
+            className="absolute top-1/2 right-3 transform -translate-y-1/2 pointer-events-none"
+          />
         </div>
         <div
           className="w-full h-[150px] bg-gray-800 flex flex-col items-center justify-center rounded cursor-pointer overflow-hidden"
           onClick={triggerFileInput}
           style={{ position: "relative" }}
         >
-          <input id="fileInput" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <input
+            id="fileInput"
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
           {selectedImage ? (
             <NextImage
               src={URL.createObjectURL(selectedImage)}
@@ -309,21 +380,48 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             />
           ) : (
             <>
-              <NextImage src="/svg/addimagewhite.svg" alt="Upload Icon" width={20} height={20} />
+              <NextImage
+                src="/svg/addimagewhite.svg"
+                alt="Upload Icon"
+                width={20}
+                height={20}
+              />
               <span className="text-gray-300 mt-2">Add Image</span>
             </>
           )}
         </div>
         {error && <p className="text-red-500 text-center mt-3">{error}</p>}
-        {cooldownEndTime && <p className="text-yellow-500 text-center mt-2">You can post again in {formatTimeLeft()}.</p>}
+        {cooldownEndTime && (
+          <p className="text-yellow-500 text-center mt-2">
+            You can post again in {formatTimeLeft()}.
+          </p>
+        )}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-[5px]">
             <div className="flex items-center space-x-2">
-              <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              <svg
+                className="animate-spin h-6 w-6 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                ></path>
               </svg>
-              <span className="text-white text-[18px] font-semibold">Processing...</span>
+              <span className="text-white text-[18px] font-semibold">
+                Processing...
+              </span>
             </div>
           </div>
         )}

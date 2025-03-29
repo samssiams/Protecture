@@ -43,18 +43,88 @@ export default function CommentModal({
   const currentUser = session?.user;
 
   const bannedWords = [
-    "fuck", "fucking", "shit", "damn", "bitch", "asshole", "bastard", 
-    "dick", "cunt", "piss", "crap", "slut", "whore", "prick", "fag", 
-    "nigger", "motherfucker", "cock", "pussy", "retard", "douche", 
-    "bullshit", "arsehole", "wanker", "tosser", "bloody", "bugger",
-    "fvck", "fck", "fcking", "mf", "dfq", "dick", "pussy", "MotherFucker",
-    "putangina", "gago", "tanga", "bobo", "ulol", "lintik", "hinayupak", 
-    "hayop", "siraulo", "tarantado", "bwisit", "tite", "pakyu", 
-    "pakyew", "leche", "punyeta", "inutil", "unggoy", "peste", 
-    "gunggong", "salot", "walanghiya", "ampota", "syet", "gago", 
-    "putcha", "punyemas", "hudas", "diyablo", "g@go", "8080", "kingina", "kupal",
-    "t4nga", "b0b0", "inutil", "pakyu", "shet", "t4nga", "obob", "bob0",
-    "kinangina", "tangina", "hayuf", "hayf", "inamo", "namo"
+    "fuck",
+    "fucking",
+    "shit",
+    "damn",
+    "bitch",
+    "asshole",
+    "bastard",
+    "dick",
+    "cunt",
+    "piss",
+    "crap",
+    "slut",
+    "whore",
+    "prick",
+    "fag",
+    "nigger",
+    "motherfucker",
+    "cock",
+    "pussy",
+    "retard",
+    "douche",
+    "bullshit",
+    "arsehole",
+    "wanker",
+    "tosser",
+    "bloody",
+    "bugger",
+    "fvck",
+    "fck",
+    "fcking",
+    "mf",
+    "dfq",
+    "dick",
+    "pussy",
+    "MotherFucker",
+    "putangina",
+    "gago",
+    "tanga",
+    "bobo",
+    "ulol",
+    "lintik",
+    "hinayupak",
+    "hayop",
+    "siraulo",
+    "tarantado",
+    "bwisit",
+    "tite",
+    "pakyu",
+    "pakyew",
+    "leche",
+    "punyeta",
+    "inutil",
+    "unggoy",
+    "peste",
+    "gunggong",
+    "salot",
+    "walanghiya",
+    "ampota",
+    "syet",
+    "gago",
+    "putcha",
+    "punyemas",
+    "hudas",
+    "diyablo",
+    "g@go",
+    "8080",
+    "kingina",
+    "kupal",
+    "t4nga",
+    "b0b0",
+    "inutil",
+    "pakyu",
+    "shet",
+    "t4nga",
+    "obob",
+    "bob0",
+    "kinangina",
+    "tangina",
+    "hayuf",
+    "hayf",
+    "inamo",
+    "namo",
   ];
 
   const containsProfanity = (text) => {
@@ -143,7 +213,9 @@ export default function CommentModal({
   const handleCommentChange = (e) => {
     const inputText = e.target.value;
     if (containsProfanity(inputText)) {
-      setWarning("Your comment contains inappropriate language. It will be filtered.");
+      setWarning(
+        "Your comment contains inappropriate language. It will be filtered."
+      );
     } else {
       setWarning(null);
     }
@@ -153,7 +225,9 @@ export default function CommentModal({
   const handleCommentSubmit = async () => {
     if (!commentText.trim()) return;
     try {
-      const url = editingCommentId ? "/api/post/editcomment" : "/api/post/addcomment";
+      const url = editingCommentId
+        ? "/api/post/editcomment"
+        : "/api/post/addcomment";
       const method = editingCommentId ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -175,7 +249,10 @@ export default function CommentModal({
             )
           );
         } else {
-          setUpdatedComments((prevComments) => [updatedComment, ...prevComments]);
+          setUpdatedComments((prevComments) => [
+            updatedComment,
+            ...prevComments,
+          ]);
         }
         setCommentText("");
         setEditingCommentId(null);
@@ -269,7 +346,7 @@ export default function CommentModal({
         </button>
 
         <div className="flex justify-start items-center px-2">
-          {isPostOwner && (
+          {isPostOwner && post?.image_url && (
             <h2
               className="text-[#2FA44E] font-bold italic text-[20px] underline cursor-pointer"
               onClick={handleImageDownload}
@@ -284,15 +361,18 @@ export default function CommentModal({
             <Image
               src={post.image_url}
               alt="Uploaded Image"
-              layout="intrinsic" // or "responsive" if you prefer
-              width={post?.imageWidth || 800}   // replace with actual width if available
-              height={post?.imageHeight || 600}   // replace with actual height if available
+              layout="intrinsic"
+              width={post?.imageWidth || 800}
+              height={post?.imageHeight || 600}
               className="rounded-lg"
             />
           ) : (
-            <span className="text-white text-xl font-bold italic">
-              Uploaded Image
-            </span>
+            <div className="p-4 rounded-lg">
+              <p className="text-[#4A4A4A] mb-4 pl-2">{post?.description}</p>
+              <p className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
+                {post?.category_id}
+              </p>
+            </div>
           )}
         </div>
 

@@ -20,14 +20,29 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -197,7 +212,10 @@ function PostContainer({
           >
             <div className="flex items-center mb-4">
               <Image
-                src={post.user?.profile?.profile_img || "/images/default-profile.png"}
+                src={
+                  post.user?.profile?.profile_img ||
+                  "/images/default-profile.png"
+                }
                 alt="Profile"
                 width={40}
                 height={40}
@@ -224,7 +242,12 @@ function PostContainer({
               <div className="ml-auto">
                 {post.user?.id !== session?.user?.id && (
                   <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                    <Image
+                      src="/svg/dots.svg"
+                      alt="Options"
+                      width={4}
+                      height={16}
+                    />
                   </button>
                 )}
                 {post.user?.id === session?.user?.id &&
@@ -235,25 +258,27 @@ function PostContainer({
                     >
                       {activeTab === "Archived" ? "Unarchive" : "Archive"}
                     </button>
-                )}
+                  )}
               </div>
             </div>
             <p className="text-[#4A4A4A] mb-4">{post.description}</p>
             <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
               {post.category_id}
             </span>
-            <div
-              className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
-              onClick={() => handleCommentModalToggle(post)}
-            >
-              <Image
-                src={post.image_url}
-                alt="Post Image"
-                width={444}
-                height={300}
-                className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
-              />
-            </div>
+            {post.image_url && (
+              <div
+                className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
+                onClick={() => handleCommentModalToggle(post)}
+              >
+                <Image
+                  src={post.image_url}
+                  alt="Post Image"
+                  width={444}
+                  height={300}
+                  className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
+                />
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
                 <button
