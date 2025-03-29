@@ -29,21 +29,27 @@ export default async function handler(req, res) {
         });
       }
 
-      // Expecting JSON payload with description, category_id, optional image_url and optionally community_id.
+      // Expecting JSON payload with:
+      // description (required),
+      // category_id (optional),
+      // image_url (optional),
+      // community_id (optional).
       const { description, category_id, image_url, community_id } = req.body;
-      if (!description || !category_id) {
-        return res
-          .status(400)
-          .json({ message: "Description and category are required." });
+
+      if (!description) {
+        return res.status(400).json({ message: "Description is required." });
       }
 
       // Create the new post
       const newPost = await prisma.post.create({
         data: {
           description,
-          category_id,
-          image_url: image_url || null, // Set to null if no image is provided.
-          user: { connect: { id: userId } }, // Connect the post to the user.
+          // If category_id is provided, use it; otherwise store null.
+          category_id: category_id || null,
+          // If no image, store null
+          image_url: image_url || null,
+          // Connect the post to the user
+          user: { connect: { id: userId } },
         },
       });
 

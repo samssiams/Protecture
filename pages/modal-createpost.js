@@ -13,6 +13,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
   const [selectedImage, setSelectedImage] = useState(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
+  const [perturbationLevel, setPerturbationLevel] = useState("MEDIUM");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
@@ -195,20 +196,15 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
       setLoading(false);
       return;
     }
-    if (!category) {
-      setError("Please select a category.");
-      setLoading(false);
-      return;
-    }
 
     try {
       let imageUrl = null;
       // Only process the image if one was selected
       if (selectedImage) {
-        // Create FormData for the perturb image API (always using a MEDIUM level)
+        // Create FormData for the perturb image API (using the selected perturbation level)
         const perturbFormData = new FormData();
         perturbFormData.append("file", selectedImage);
-        perturbFormData.append("perturbation_level", "LOW");
+        perturbFormData.append("perturbation_level", perturbationLevel);
 
         // Call the perturb image API using fetch
         const perturbRes = await fetch(
@@ -225,18 +221,21 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
           setLoading(false);
           return;
         }
-
         imageUrl = perturbData.image_url;
       }
 
       // Prepare payload for the create post API
       const postPayload = {
         description,
-        category_id: category,
       };
       if (imageUrl) {
         postPayload.image_url = imageUrl;
       }
+      // Only add category if it’s not empty
+      if (category) {
+        postPayload.category_id = category;
+      }
+      // If a community is specified, include it
       if (communityId) {
         postPayload.community_id = communityId;
       }
@@ -335,6 +334,63 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             {warning}
           </p>
         )}
+        {/* Perturbation Level Selection */}
+        <div className="mb-4">
+          <div className="flex items-center mb-2">
+            <p className="text-black font-semibold">
+              Select Perturbation Level:
+            </p>
+            <span className="relative ml-2">
+              <Info
+                className="cursor-pointer stroke-black/75"
+                onClick={() => setTooltipVisible(!tooltipVisible)}
+                size={16}
+              />
+              {tooltipVisible && (
+                <div className="absolute left-0 mt-2 w-64 p-2 bg-gray-700 text-white text-xs rounded shadow-lg z-10">
+                  Perturbation applies controlled pixel variations to your
+                  image, making it progressively blurred based on the chosen
+                  level. It also acts as a safeguard against AI capture.
+                </div>
+              )}
+            </span>
+          </div>
+          <div className="flex space-x-4">
+            <label className="text-black">
+              <input
+                type="radio"
+                name="perturbation"
+                value="LOW"
+                checked={perturbationLevel === "LOW"}
+                onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
+              />
+              Low
+            </label>
+            <label className="text-black">
+              <input
+                type="radio"
+                name="perturbation"
+                value="MEDIUM"
+                checked={perturbationLevel === "MEDIUM"}
+                onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
+              />
+              Medium
+            </label>
+            <label className="text-black">
+              <input
+                type="radio"
+                name="perturbation"
+                value="HIGH"
+                checked={perturbationLevel === "HIGH"}
+                onChange={(e) => setPerturbationLevel(e.target.value)}
+                className="mr-1"
+              />
+              High
+            </label>
+          </div>
+        </div>
         <div className="relative mb-4">
           <select
             className="w-full h-[40px] px-3 rounded-[4px] bg-[#F4F3F3] text-black appearance-none"
@@ -342,7 +398,7 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
-            <option value="">Select the house style category</option>
+            <option value="">No Category</option>
             <option value="Modern">Modern</option>
             <option value="Contemporary">Contemporary</option>
             <option value="Victorian">Victorian</option>

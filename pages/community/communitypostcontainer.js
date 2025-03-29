@@ -86,7 +86,6 @@ function CommunityPostContainer({ communityId }) {
         if (response.ok) {
           const data = await response.json();
           setPosts(data);
-
           const initialVotes = data.reduce((acc, post) => {
             if (post.userVote) {
               acc[post.id] = post.userVote;
@@ -156,25 +155,6 @@ function CommunityPostContainer({ communityId }) {
       }
     } catch (error) {
       console.error("Error in vote request:", error);
-    }
-  };
-
-  const handleArchive = async (postId) => {
-    try {
-      const response = await fetch("/api/post/archive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postId }),
-      });
-      if (response.ok) {
-        alert("Post archived successfully!");
-        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-      } else {
-        const errorData = await response.json();
-        console.error("Error archiving post:", errorData.message);
-      }
-    } catch (error) {
-      console.error("Error archiving post:", error);
     }
   };
 
@@ -263,10 +243,12 @@ function CommunityPostContainer({ communityId }) {
               </div>
             </div>
 
-            <p className="text-[#4A4A4A] mb-4">{post.description}</p>
-            <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
-              {post.category_id}
-            </span>
+            <p className="text-[#4A4A4A] mb-4 break-all">{post.description}</p>
+            {post.category_id && (
+              <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
+                {post.category_id}
+              </span>
+            )}
 
             {post.image_url && (
               <div
@@ -278,7 +260,7 @@ function CommunityPostContainer({ communityId }) {
                   alt="Post Image"
                   width={444}
                   height={300}
-                  className="object-cover h-[250px] w-[656px] rounded-lg"
+                  className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
                 />
               </div>
             )}
@@ -323,7 +305,6 @@ function CommunityPostContainer({ communityId }) {
                   />
                 </button>
               </div>
-
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
                   <Image

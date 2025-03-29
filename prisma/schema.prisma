@@ -92,7 +92,7 @@ model UserProfile {
 model Post {
   id            Int            @id @default(autoincrement())
   user_id       Int
-  category_id   String
+  category_id   String?
   image_url     String?
   description   String
   created_at    DateTime       @default(now())

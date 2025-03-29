@@ -369,9 +369,11 @@ export default function CommentModal({
           ) : (
             <div className="p-4 rounded-lg">
               <p className="text-[#4A4A4A] mb-4 pl-2">{post?.description}</p>
-              <p className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
-                {post?.category_id}
-              </p>
+              {post?.category_id && (
+                <p className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
+                  {post?.category_id}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -417,7 +419,7 @@ export default function CommentModal({
             </button>
           </div>
           <div className="flex items-center space-x-2">
-            <button>
+            <button onClick={() => handleCommentModalToggle(post)}>
               <Image
                 src="/svg/comments.svg"
                 alt="Comments"

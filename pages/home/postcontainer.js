@@ -1,4 +1,3 @@
-// /home/profile/postcontainer.js
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -261,10 +260,12 @@ function PostContainer({
                   )}
               </div>
             </div>
-            <p className="text-[#4A4A4A] mb-4">{post.description}</p>
-            <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
-              {post.category_id}
-            </span>
+            <p className="text-[#4A4A4A] mb-4 break-all">{post.description}</p>
+            {post.category_id && (
+              <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
+                {post.category_id}
+              </span>
+            )}
             {post.image_url && (
               <div
                 className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
