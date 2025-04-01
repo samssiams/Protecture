@@ -20,14 +20,29 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -45,15 +60,16 @@ function PostSkeleton() {
 
 function CommunityPostContainer({ communityId }) {
   const [posts, setPosts] = useState([]);
+  const [votedPosts, setVotedPosts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [votedPosts, setVotedPosts] = useState({});
   const { data: session } = useSession();
   const router = useRouter();
 
+  // Initial fetch for community posts
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -82,6 +98,39 @@ function CommunityPostContainer({ communityId }) {
 
     if (communityId) {
       fetchPosts();
+    }
+  }, [communityId]);
+
+  // Poll for updated community posts every 10 seconds
+  useEffect(() => {
+    if (communityId) {
+      const fetchUpdatedCommunityPosts = async () => {
+        try {
+          const query = `?communityId=${communityId}`;
+          const response = await fetch(`/api/post/getcommunityposts${query}`);
+          if (response.ok) {
+            const data = await response.json();
+            setPosts(data);
+            const initialVotes = data.reduce((acc, post) => {
+              if (post.userVote) {
+                acc[post.id] = post.userVote;
+              }
+              return acc;
+            }, {});
+            setVotedPosts(initialVotes);
+          } else {
+            console.error("Error fetching community posts during polling");
+          }
+        } catch (error) {
+          console.error(
+            "Error fetching community posts during polling:",
+            error
+          );
+        }
+      };
+
+      const intervalId = setInterval(fetchUpdatedCommunityPosts, 10000);
+      return () => clearInterval(intervalId);
     }
   }, [communityId]);
 
@@ -183,10 +232,11 @@ function CommunityPostContainer({ communityId }) {
                   onClick={async () => {
                     const userId = post.user?.id;
                     try {
-                      const response = await fetch(`/api/user/getUser?userId=${userId}`);
+                      const response = await fetch(
+                        `/api/user/getUser?userId=${userId}`
+                      );
                       if (response.ok) {
                         const userData = await response.json();
-                        // Optionally handle the user data here
                       } else {
                         console.error("Failed to fetch user data");
                       }
@@ -228,14 +278,12 @@ function CommunityPostContainer({ communityId }) {
                 )}
               </div>
             </div>
-
             <p className="text-[#4A4A4A] mb-4 break-all">{post.description}</p>
             {post.category_id && (
               <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
                 {post.category_id}
               </span>
             )}
-
             {post.image_url && (
               <div
                 className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
@@ -250,9 +298,8 @@ function CommunityPostContainer({ communityId }) {
                 />
               </div>
             )}
-
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center space-x-2">
                 <button
                   onClick={() => handleVote(post.id, "DOWNVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
@@ -271,7 +318,7 @@ function CommunityPostContainer({ communityId }) {
                     }}
                   />
                 </button>
-                <span className="text-black">{post.comments.length}</span>
+                <span className="text-black">{post.counter}</span>
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
@@ -303,7 +350,6 @@ function CommunityPostContainer({ communityId }) {
                 <span className="text-black">{post.comments.length}</span>
               </div>
             </div>
-
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
                 isOpen={showCommentModal}
@@ -319,7 +365,6 @@ function CommunityPostContainer({ communityId }) {
                 }
               />
             )}
-
             {showModal &&
               selectedPost?.id === post.id &&
               createPortal(
