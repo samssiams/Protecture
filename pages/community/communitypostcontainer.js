@@ -20,14 +20,29 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -107,7 +122,10 @@ function CommunityPostContainer({ communityId }) {
             console.error("Error fetching community posts during polling");
           }
         } catch (error) {
-          console.error("Error fetching community posts during polling:", error);
+          console.error(
+            "Error fetching community posts during polling:",
+            error
+          );
         }
       };
 
@@ -185,6 +203,9 @@ function CommunityPostContainer({ communityId }) {
   return (
     <div>
       {posts.map((post) => {
+        // Log the user id of each post
+        console.log("Post user id:", post.user?.id);
+
         const voteState = votedPosts[post.id];
         return (
           <div
@@ -218,6 +239,7 @@ function CommunityPostContainer({ communityId }) {
                       );
                       if (response.ok) {
                         const userData = await response.json();
+                        // Use userData as needed
                       } else {
                         console.error("Failed to fetch user data");
                       }
@@ -272,7 +294,10 @@ function CommunityPostContainer({ communityId }) {
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-center space-x-2">
                 <button
-                  onClick={() => handleVote(post.id, "DOWNVOTE")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVote(post.id, "DOWNVOTE");
+                  }}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
                 >
                   <Image
@@ -291,7 +316,10 @@ function CommunityPostContainer({ communityId }) {
                 </button>
                 <span className="text-black">{post.counter}</span>
                 <button
-                  onClick={() => handleVote(post.id, "UPVOTE")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVote(post.id, "UPVOTE");
+                  }}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
                 >
                   <Image

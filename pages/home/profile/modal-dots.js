@@ -38,8 +38,7 @@ export default function DotsMenu({ isOpen, onClose, position, postId, reporterId
           height: '46px',
           left: position.left - 135, // Adjusted position for better alignment
           top: position.top - 15,
-          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.15), inset 0 2px 6px rgba(0, 0, 0, 0.1)',
-          filter: 'drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2))',
+          boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
           borderWidth: '1px',
         }}
         initial={{ opacity: 0, scale: 0.8 }}

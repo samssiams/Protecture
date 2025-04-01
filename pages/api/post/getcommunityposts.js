@@ -7,8 +7,6 @@ export default async function handler(req, res) {
     try {
       // Get the session to identify the logged-in user
       const session = await getServerSession(req, res, authOptions);
-
-
       const userId = session.user.id;
 
       // Extract query parameters
@@ -59,6 +57,7 @@ export default async function handler(req, res) {
               },
               user: {
                 select: {
+                  id: true, // Added user id here
                   username: true,
                   profile: {
                     select: {
@@ -91,10 +90,11 @@ export default async function handler(req, res) {
         },
       });
 
-      // Map the communityPosts to include the voting state for the current user
+      // Map the communityPosts to include the voting state for the current user and the poster's id
       const postsWithVoteState = communityPosts.map((communityPost) => ({
         ...communityPost.post,
         community: communityPost.community.name,
+        userId: communityPost.post.user.id, // Add the user id of the poster
         comments: communityPost.post.comments.map((comment) => ({
           id: comment.id,
           userImage: comment.user.profile?.profile_img || "/images/user.svg",
@@ -102,14 +102,15 @@ export default async function handler(req, res) {
           text: comment.comment_text,
           timestamp: comment.created_at,
         })), // Transform comments to include user details
-        userVote: communityPost.post.upvotes.length > 0
-          ? "UPVOTE"
-          : communityPost.post.downvotes.length > 0
-          ? "DOWNVOTE"
-          : null, // Determine the user's vote state
+        userVote:
+          communityPost.post.upvotes.length > 0
+            ? "UPVOTE"
+            : communityPost.post.downvotes.length > 0
+            ? "DOWNVOTE"
+            : null, // Determine the user's vote state
       }));
 
-      return res.status(200).json(postsWithVoteState); // Return community posts to the client
+      return res.status(200).json(postsWithVoteState);
     } catch (error) {
       console.error("Error fetching community posts:", error);
       return res.status(500).json({ message: "Internal Server Error" });
