@@ -20,29 +20,14 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
+          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton
-        width="100%"
-        height="16px"
-        borderRadius="6px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton
-        width="100%"
-        height="250px"
-        borderRadius="15px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -122,10 +107,7 @@ function CommunityPostContainer({ communityId }) {
             console.error("Error fetching community posts during polling");
           }
         } catch (error) {
-          console.error(
-            "Error fetching community posts during polling:",
-            error
-          );
+          console.error("Error fetching community posts during polling:", error);
         }
       };
 
@@ -135,8 +117,7 @@ function CommunityPostContainer({ communityId }) {
   }, [communityId]);
 
   const handleModalToggle = (event, post) => {
-    const dotsButton = event.currentTarget;
-    const rect = dotsButton.getBoundingClientRect();
+    const rect = event.currentTarget.getBoundingClientRect();
     const position = {
       left: rect.left + window.scrollX,
       top: rect.bottom + window.scrollY + 5,
@@ -266,16 +247,6 @@ function CommunityPostContainer({ communityId }) {
                     />
                   </button>
                 )}
-                {post.user?.id === session?.user?.id && (
-                  <button disabled className="opacity-50 cursor-not-allowed">
-                    <Image
-                      src="/svg/dots.svg"
-                      alt="Options"
-                      width={4}
-                      height={16}
-                    />
-                  </button>
-                )}
               </div>
             </div>
             <p className="text-[#4A4A4A] mb-4 break-all">{post.description}</p>
@@ -367,6 +338,7 @@ function CommunityPostContainer({ communityId }) {
             )}
             {showModal &&
               selectedPost?.id === post.id &&
+              post.user?.id !== session?.user?.id &&
               createPortal(
                 <ModalDots
                   isOpen={showModal}

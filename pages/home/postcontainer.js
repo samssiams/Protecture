@@ -20,29 +20,14 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
+          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton
-        width="100%"
-        height="16px"
-        borderRadius="6px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton
-        width="100%"
-        height="250px"
-        borderRadius="15px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -381,15 +366,17 @@ function PostContainer({
                 }
               />
             )}
-            {showModal && selectedPost?.id === post.id && (
-              <ModalDots
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                position={modalPosition}
-                postId={selectedPost?.id}
-                reporterId={session?.user?.id}
-              />
-            )}
+            {showModal &&
+              selectedPost?.id === post.id &&
+              post.user?.id !== session?.user?.id && (
+                <ModalDots
+                  isOpen={showModal}
+                  onClose={() => setShowModal(false)}
+                  position={modalPosition}
+                  postId={selectedPost?.id}
+                  reporterId={session?.user?.id}
+                />
+              )}
           </div>
         );
       })}
