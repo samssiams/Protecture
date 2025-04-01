@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
+import { createPortal } from "react-dom";
 
 function PostSkeleton() {
   return (
@@ -19,14 +20,29 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -59,6 +75,7 @@ function PostContainer({
   const { data: session } = useSession();
   const router = useRouter();
 
+  // Initial fetch if no posts provided
   useEffect(() => {
     if (!initialPosts) {
       const fetchPosts = async () => {
@@ -92,12 +109,14 @@ function PostContainer({
     }
   }, [router.pathname, initialPosts]);
 
+  // Update posts if initialPosts prop changes
   useEffect(() => {
     if (initialPosts) {
       setPosts(initialPosts);
     }
   }, [initialPosts]);
 
+  // Disable right-click on images
   useEffect(() => {
     const disableRightClick = (event) => {
       if (event.target.tagName === "IMG") {
@@ -109,6 +128,36 @@ function PostContainer({
       document.removeEventListener("contextmenu", disableRightClick);
     };
   }, []);
+
+  // Poll for updates every 10 seconds to refresh data
+  useEffect(() => {
+    const fetchUpdatedPosts = async () => {
+      try {
+        const currentPath = router.pathname;
+        const query =
+          currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
+        const response = await fetch(`/api/post/getposts${query}`);
+        if (response.ok) {
+          const data = await response.json();
+          setPosts(data);
+          const initialVotes = data.reduce((acc, post) => {
+            if (post.userVote) {
+              acc[post.id] = post.userVote;
+            }
+            return acc;
+          }, {});
+          setVotedPosts(initialVotes);
+        } else {
+          console.error("Error fetching posts during polling");
+        }
+      } catch (error) {
+        console.error("Error fetching posts during polling:", error);
+      }
+    };
+
+    const intervalId = setInterval(fetchUpdatedPosts, 10000);
+    return () => clearInterval(intervalId);
+  }, [router.pathname]);
 
   const handleModalToggle = (event, post) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -265,8 +314,8 @@ function PostContainer({
                 />
               </div>
             )}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-center space-x-2">
                 <button
                   onClick={() => handleVote(post.id, "DOWNVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
@@ -285,7 +334,7 @@ function PostContainer({
                     }}
                   />
                 </button>
-                <span className="text-black">{post.comments.length}</span>
+                <span className="text-black">{post.counter}</span>
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"

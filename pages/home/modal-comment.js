@@ -325,11 +325,12 @@ export default function CommentModal({
       <motion.div
         className="bg-white rounded-[5px] shadow-lg p-4 w-[800px] relative"
         style={{
-          borderRadius: "5px",
-          overflow: "hidden",
-          border: "2px solid black",
+          borderRadius: "1rem",
+          border: "2px solid rgba(0, 0, 0, 0.65)",
           boxShadow:
             "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+          height: "700px",
+          overflowY: "auto",
         }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -344,7 +345,6 @@ export default function CommentModal({
         >
           <Image src="/svg/eks.svg" alt="Close" width={15} height={15} />
         </button>
-
         <div className="flex justify-start items-center px-2">
           {isPostOwner && post?.image_url && (
             <h2
@@ -355,7 +355,6 @@ export default function CommentModal({
             </h2>
           )}
         </div>
-
         <div className="relative mt-10 mb-8 rounded-lg overflow-hidden">
           {post?.image_url ? (
             <Image
@@ -377,7 +376,6 @@ export default function CommentModal({
             </div>
           )}
         </div>
-
         <div className="flex justify-between items-center mb-8 px-4">
           <div className="flex items-center space-x-2">
             <button
@@ -430,9 +428,7 @@ export default function CommentModal({
             <span className="text-black">{updatedComments?.length || 0}</span>
           </div>
         </div>
-
         <hr className="border-gray-300 w-full mb-8" />
-
         <div
           className="custom-scrollbar px-4"
           style={{
@@ -454,7 +450,6 @@ export default function CommentModal({
             />
           )}
         </div>
-
         <div className="flex items-center space-x-3 mb-4 px-4">
           <Image
             src={currentUser?.profileImg || "/images/user.png"}
