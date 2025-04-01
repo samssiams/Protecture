@@ -19,29 +19,14 @@ function PostSkeleton() {
       <div className="flex items-center mb-4">
         <Skeleton width="40px" height="40px" borderRadius="50%" />
         <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
+          <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
           <Skeleton width="20%" height="12px" borderRadius="6px" />
         </div>
         <Skeleton width="20px" height="20px" borderRadius="6px" />
       </div>
-      <Skeleton
-        width="100%"
-        height="16px"
-        borderRadius="6px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
       <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton
-        width="100%"
-        height="250px"
-        borderRadius="15px"
-        className="mb-4"
-      />
+      <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -300,7 +285,7 @@ function PostContainer({
                     }}
                   />
                 </button>
-                <span className="text-black">{post.counter}</span>
+                <span className="text-black">{post.comments.length}</span>
                 <button
                   onClick={() => handleVote(post.id, "UPVOTE")}
                   className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
