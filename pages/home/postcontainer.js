@@ -155,8 +155,9 @@ function PostContainer({
     return () => clearInterval(intervalId);
   }, [router.pathname]);
 
-  // Toggle modal regardless of user id
+  // Open modal and stop event propagation to avoid closing it
   const handleModalToggle = (event, post) => {
+    event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
     const position = {
       left: rect.left + window.scrollX,
@@ -164,7 +165,7 @@ function PostContainer({
     };
     setSelectedPost(post);
     setModalPosition(position);
-    setShowModal((prev) => !prev);
+    setShowModal(true);
   };
 
   const handleCommentModalToggle = (post) => {
@@ -384,13 +385,17 @@ function PostContainer({
                 }
               />
             )}
-            <ModalDots
-              isOpen={showModal}
-              onClose={() => setShowModal(false)}
-              position={modalPosition}
-              postId={selectedPost?.id}
-              reporterId={session?.user?.id}
-            />
+            {showModal && selectedPost?.id === post.id && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <ModalDots
+                  isOpen={showModal}
+                  onClose={() => setShowModal(false)}
+                  position={modalPosition}
+                  postId={selectedPost?.id}
+                  reporterId={session?.user?.id}
+                />
+              </div>
+            )}
           </div>
         );
       })}
