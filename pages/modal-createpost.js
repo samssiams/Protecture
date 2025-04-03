@@ -199,14 +199,12 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
 
     try {
       let imageUrl = null;
-      // Only process the image if one was selected
       if (selectedImage) {
-        // Create FormData for the perturb image API (using the selected perturbation level)
+        // [Image processing code remains unchanged]
         const perturbFormData = new FormData();
         perturbFormData.append("file", selectedImage);
         perturbFormData.append("perturbation_level", perturbationLevel);
 
-        // Call the perturb image API using fetch
         const perturbRes = await fetch(
           "https://fgsm-api.onrender.com/api/perturbed-image",
           {
@@ -224,23 +222,11 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
         imageUrl = perturbData.image_url;
       }
 
-      // Prepare payload for the create post API
-      const postPayload = {
-        description,
-      };
-      if (imageUrl) {
-        postPayload.image_url = imageUrl;
-      }
-      // Only add category if it’s not empty
-      if (category) {
-        postPayload.category_id = category;
-      }
-      // If a community is specified, include it
-      if (communityId) {
-        postPayload.community_id = communityId;
-      }
+      const postPayload = { description };
+      if (imageUrl) postPayload.image_url = imageUrl;
+      if (category) postPayload.category_id = category;
+      if (communityId) postPayload.community_id = communityId;
 
-      // Call the create post API using fetch
       const postRes = await fetch("/api/post/createpost", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,6 +235,11 @@ export default function CreatePostModal({ isOpen, onClose, communityId }) {
 
       if (postRes.status === 201) {
         router.reload();
+      } else if (postRes.status === 429) {
+        const data = await postRes.json();
+        setError(data.message);
+        // Set cooldown for 5 minutes (adjust if necessary)
+        setCooldownEndTime(Date.now() + 5 * 60 * 1000);
       } else {
         setError("Failed to create post. Please try again.");
       }
