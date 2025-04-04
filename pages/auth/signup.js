@@ -59,7 +59,7 @@ export default function Signup() {
     }
 
     if (password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters long.");
+      setErrorMessage("Password should be 8 characters with at least one special character [@#$%^&+=])");
       setIsErrorModalOpen(true);
       return;
     }
