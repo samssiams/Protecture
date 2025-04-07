@@ -390,11 +390,11 @@ export default function Login() {
               Message us
             </h2>
             <p className="mt-2 text-sm text-gray-600 flex flex-col items-start gap-1">
-              Account Suspension Reason:{" "}
+            <span className="font-bold">Account Suspension Reason:</span>{" "}
               {isReportLoading ? (
                 <span className="inline-block w-32 h-4 bg-gray-300 rounded animate-pulse"></span>
               ) : (
-                reportReason || "None"
+                <span className="italic font-normal">{reportReason || "None"}</span>
               )}
             </p>
             <textarea
