@@ -58,8 +58,13 @@ export default function Signup() {
       return;
     }
 
-    if (password.length < 8) {
-      setErrorMessage("Password should be 8 characters with at least one special character [@#$%^&+=])");
+    // Define a regex to check for at least one special character.
+    const specialCharRegex = /[@#$%^&+=!]/;
+
+    if (password.length < 8 || !specialCharRegex.test(password)) {
+      setErrorMessage(
+        "Password must be at least 8 characters and include at least one special character [@#$%^&+=!]."
+      );
       setIsErrorModalOpen(true);
       return;
     }
@@ -83,7 +88,10 @@ export default function Signup() {
         setIsOtpModalOpen(true);
       }
     } catch (error) {
-      console.error("Error during signup:", error.response?.data || error.message);
+      console.error(
+        "Error during signup:",
+        error.response?.data || error.message
+      );
       setErrorMessage(
         error.response?.data?.error || "Error during signup. Please try again."
       );

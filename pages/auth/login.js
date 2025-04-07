@@ -1,4 +1,4 @@
-// pages/auth/login.js (or wherever your login component is)
+// pages/auth/login.js
 import { useState, useEffect } from "react";
 import { Chakra_Petch } from "next/font/google";
 import { useRouter } from "next/router";
@@ -23,24 +23,52 @@ export default function Login() {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [appealMessage, setAppealMessage] = useState("");
   const [isLoginActive, setIsLoginActive] = useState(true);
+  const [reportReason, setReportReason] = useState("");
+  const [isReportLoading, setIsReportLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setIsLoginActive(true);
   }, []);
 
-  // Toggle password visibility
+  useEffect(() => {
+    async function fetchReportReason() {
+      if (!username) {
+        setReportReason("");
+        return;
+      }
+      setIsReportLoading(true);
+      try {
+        const res = await fetch(
+          `/api/user/get-report-reason?username=${encodeURIComponent(username)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setReportReason(data.reason);
+        } else {
+          setReportReason("");
+        }
+      } catch (error) {
+        console.error("Error fetching report reason:", error);
+        setReportReason("");
+      } finally {
+        setIsReportLoading(false);
+      }
+    }
+    if (isAppealModalOpen) {
+      fetchReportReason();
+    }
+  }, [isAppealModalOpen, username]);
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // Navigate to SignUp page
   const navigateToSignUp = () => {
     setIsLoginActive(false);
     router.push(routes.auth.signup);
   };
 
-  // Handle Login
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMessage("");
@@ -74,14 +102,15 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setErrorMessage("An error occurred while trying to log in. Please try again.");
+      setErrorMessage(
+        "An error occurred while trying to log in. Please try again."
+      );
       setIsModalOpen(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Google Signup/Login
   const handleGoogleAuth = async () => {
     try {
       const response = await signIn("google", {
@@ -95,23 +124,22 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Google authentication failed:", error);
-      setErrorMessage("An error occurred during Google authentication. Please try again.");
+      setErrorMessage(
+        "An error occurred during Google authentication. Please try again."
+      );
       setIsModalOpen(true);
     }
   };
 
-  // Close error modal
   const closeModal = () => {
     setIsModalOpen(false);
   };
 
-  // Open appeal modal (close error modal first)
   const openAppealModal = () => {
     setIsModalOpen(false);
     setIsAppealModalOpen(true);
   };
 
-  // Handle appeal submission: call the API and show confirmation on success
   const handleAppealSubmit = async () => {
     try {
       const response = await fetch("/api/admin/admin-appeal", {
@@ -131,7 +159,6 @@ export default function Login() {
     }
   };
 
-  // Cancel the appeal
   const handleAppealCancel = () => {
     setIsAppealModalOpen(false);
     setAppealMessage("");
@@ -156,25 +183,45 @@ export default function Login() {
           <div className="flex justify-between items-center mb-4">
             <p className="text-sm font-light text-black">Already registered?</p>
             <div className="flex items-center space-x-2">
-              <p className={`text-sm font-bold ${isLoginActive ? "text-green-600" : "text-black"}`}>
+              <p
+                className={`text-sm font-bold ${
+                  isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
                 Log In
               </p>
               <button type="button" onClick={navigateToSignUp}>
-                <Image src="/svg/signup_switch.svg" alt="Toggle Sign Up and Log In" width={24} height={24} />
+                <Image
+                  src="/svg/signup_switch.svg"
+                  alt="Toggle Sign Up and Log In"
+                  width={24}
+                  height={24}
+                />
               </button>
-              <p className={`text-sm font-bold ${!isLoginActive ? "text-green-600" : "text-black"}`}>
+              <p
+                className={`text-sm font-bold ${
+                  !isLoginActive ? "text-green-600" : "text-black"
+                }`}
+              >
                 Sign Up
               </p>
             </div>
           </div>
 
-          {/* Google Authentication Button */}
           <Button
             className="bg-white text-black border border-gray-300 flex items-center justify-center font-normal w-full hover:bg-white mb-4"
             onClick={handleGoogleAuth}
           >
-            <Image src="/svg/google_login.svg" alt="Google Icon" width={20} height={20} className="mr-2" />
-            <span className="text-black text-[18px] font-bold">Continue with Google</span>
+            <Image
+              src="/svg/google_login.svg"
+              alt="Google Icon"
+              width={20}
+              height={20}
+              className="mr-2"
+            />
+            <span className="text-black text-[18px] font-bold">
+              Continue with Google
+            </span>
           </Button>
 
           <div className="flex items-center justify-between my-4">
@@ -183,7 +230,6 @@ export default function Login() {
             <div className="w-full h-px bg-gray-300"></div>
           </div>
 
-          {/* Regular Login Form */}
           <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block text-black text-sm mb-2">Username</label>
@@ -213,7 +259,11 @@ export default function Login() {
                   onClick={togglePasswordVisibility}
                 >
                   <Image
-                    src={showPassword ? "/svg/password_on.svg" : "/svg/password_off.svg"}
+                    src={
+                      showPassword
+                        ? "/svg/password_on.svg"
+                        : "/svg/password_off.svg"
+                    }
                     alt="Toggle Password Visibility"
                     width={24}
                     height={24}
@@ -223,7 +273,9 @@ export default function Login() {
             </div>
             <Button
               type="submit"
-              className={`w-full flex items-center justify-center ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`w-full flex items-center justify-center ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -234,7 +286,14 @@ export default function Login() {
                     fill="none"
                     viewBox="0 0 24 24"
                   >
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
                     <path
                       className="opacity-75"
                       fill="currentColor"
@@ -250,37 +309,60 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Right Section */}
         <div className="bg-gradient-to-r from-green-400 to-blue-500 p-8 text-white md:w-96 relative flex flex-col justify-center items-center min-h-[500px]">
           <h2 className="text-2xl font-bold mb-4 mt-[-30px] text-center">
             Join the Community
           </h2>
           <ul className="space-y-4">
             <li className="flex items-center space-x-2">
-              <Image src="/svg/community_login.svg" alt="Community Icon" width={24} height={24} />
+              <Image
+                src="/svg/community_login.svg"
+                alt="Community Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Share it with other architects</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/post_login.svg" alt="Post Icon" width={24} height={24} />
+              <Image
+                src="/svg/post_login.svg"
+                alt="Post Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Feel free to post your work</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/handshake_login.svg" alt="Handshake Icon" width={24} height={24} />
+              <Image
+                src="/svg/handshake_login.svg"
+                alt="Handshake Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Find and build a healthy community</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/security_login.svg" alt="Security Icon" width={24} height={24} />
+              <Image
+                src="/svg/security_login.svg"
+                alt="Security Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">Protection against AI exploitation</p>
             </li>
             <li className="flex items-center space-x-2">
-              <Image src="/svg/archi_login.svg" alt="Architecture Icon" width={24} height={24} />
+              <Image
+                src="/svg/archi_login.svg"
+                alt="Architecture Icon"
+                width={24}
+                height={24}
+              />
               <p className="font-light">A web dedicated to Architecture</p>
             </li>
           </ul>
         </div>
       </div>
 
-      {/* Error Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
@@ -292,7 +374,7 @@ export default function Login() {
             <p className="mt-4 text-center">{errorMessage}</p>
             <div className="mt-6 flex justify-center">
               {errorMessage.toLowerCase().includes("suspended") ? (
-                <Button onClick={openAppealModal}>Appeal</Button>
+                <Button onClick={openAppealModal}>View</Button>
               ) : (
                 <Button onClick={closeModal}>Close</Button>
               )}
@@ -301,11 +383,20 @@ export default function Login() {
         </div>
       )}
 
-      {/* Appeal Modal */}
       {isAppealModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg text-[#22C55E] font-semibold text-center">Message us</h2>
+            <h2 className="text-lg text-[#22C55E] font-semibold text-center">
+              Message us
+            </h2>
+            <p className="mt-2 text-sm text-gray-600 flex flex-col items-start gap-1">
+              Account Suspension Reason:{" "}
+              {isReportLoading ? (
+                <span className="inline-block w-32 h-4 bg-gray-300 rounded animate-pulse"></span>
+              ) : (
+                reportReason || "None"
+              )}
+            </p>
             <textarea
               value={appealMessage}
               onChange={(e) => setAppealMessage(e.target.value)}
@@ -330,7 +421,6 @@ export default function Login() {
         </div>
       )}
 
-      {/* Confirmation Modal */}
       {isConfirmationModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center text-black z-50 bg-black bg-opacity-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-80">
