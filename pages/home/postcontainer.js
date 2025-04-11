@@ -7,56 +7,14 @@ import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 import { createPortal } from "react-dom";
 
-function PostSkeleton() {
-  return (
-    <div
-      className="bg-white rounded-[15px] shadow-lg p-5 mb-4 animate-pulse"
-      style={{
-        width: "656px",
-        boxShadow:
-          "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
-      }}
-    >
-      <div className="flex items-center mb-4">
-        <Skeleton width="40px" height="40px" borderRadius="50%" />
-        <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
-          <Skeleton width="20%" height="12px" borderRadius="6px" />
-        </div>
-        <Skeleton width="20px" height="20px" borderRadius="6px" />
-      </div>
-      <Skeleton
-        width="100%"
-        height="16px"
-        borderRadius="6px"
-        className="mb-4"
-      />
-      <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton
-        width="100%"
-        height="250px"
-        borderRadius="15px"
-        className="mb-4"
-      />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-          <Skeleton width="30px" height="16px" borderRadius="6px" />
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-          <Skeleton width="30px" height="16px" borderRadius="6px" />
-        </div>
-      </div>
-    </div>
-  );
-}
+// Function to truncate text to 30 words
+const truncateDescription = (text, wordLimit = 30) => {
+  const words = text.split(" ");
+  if (words.length > wordLimit) {
+    return words.slice(0, wordLimit).join(" ") + "...";
+  }
+  return text;
+};
 
 function PostContainer({
   selectedCategory,
@@ -243,10 +201,7 @@ function PostContainer({
           >
             <div className="flex items-center mb-4">
               <Image
-                src={
-                  post.user?.profile?.profile_img ||
-                  "/images/default-profile.png"
-                }
+                src={post.user?.profile?.profile_img || "/images/default-profile.png"}
                 alt="Profile"
                 width={40}
                 height={40}
@@ -273,26 +228,22 @@ function PostContainer({
               <div className="ml-auto">
                 {post.user?.id !== session?.user?.id && (
                   <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image
-                      src="/svg/dots.svg"
-                      alt="Options"
-                      width={4}
-                      height={16}
-                    />
+                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
                   </button>
                 )}
-                {post.user?.id === session?.user?.id &&
-                  router.pathname === "/home/profile" && (
-                    <button
-                      className="bg-green-500 text-white px-3 py-1 rounded"
-                      onClick={() => handleArchive(post.id)}
-                    >
-                      {activeTab === "Archived" ? "Unarchive" : "Archive"}
-                    </button>
-                  )}
+                {post.user?.id === session?.user?.id && router.pathname === "/home/profile" && (
+                  <button
+                    className="bg-green-500 text-white px-3 py-1 rounded"
+                    onClick={() => handleArchive(post.id)}
+                  >
+                    {activeTab === "Archived" ? "Unarchive" : "Archive"}
+                  </button>
+                )}
               </div>
             </div>
-            <p className="text-[#4A4A4A] mb-4 break-all">{post.description}</p>
+            <p className="text-[#4A4A4A] mb-4 break-all">
+              {truncateDescription(post.description)}
+            </p>
             {post.category_id && (
               <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
                 {post.category_id}
