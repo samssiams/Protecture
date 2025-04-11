@@ -4,7 +4,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
-import Skeleton from "@/components/ui/skeleton";
+import Skeleton from "@/components/ui/skeleton"; // Correct import for Skeleton
 import { createPortal } from "react-dom";
 
 // Function to truncate text to 30 words
@@ -14,6 +14,57 @@ const truncateDescription = (text, wordLimit = 30) => {
     return words.slice(0, wordLimit).join(" ") + "...";
   }
   return text;
+};
+
+const PostSkeleton = () => {
+  return (
+    <div
+      className="bg-white rounded-[15px] shadow-lg p-5 mb-4 animate-pulse"
+      style={{
+        width: "656px",
+        boxShadow:
+          "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+      }}
+    >
+      <div className="flex items-center mb-4">
+        <Skeleton width="40px" height="40px" borderRadius="50%" />
+        <div className="ml-4 flex-1">
+          <Skeleton
+            width="30%"
+            height="16px"
+            borderRadius="6px"
+            className="mb-2"
+          />
+          <Skeleton width="20%" height="12px" borderRadius="6px" />
+        </div>
+        <Skeleton width="20px" height="20px" borderRadius="6px" />
+      </div>
+      <Skeleton
+        width="100%"
+        height="16px"
+        borderRadius="6px"
+        className="mb-4"
+      />
+      <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
+      <Skeleton
+        width="100%"
+        height="250px"
+        borderRadius="15px"
+        className="mb-4"
+      />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+        </div>
+        <div className="flex items-center space-x-2">
+          <Skeleton width="21px" height="21px" borderRadius="50%" />
+          <Skeleton width="30px" height="16px" borderRadius="6px" />
+        </div>
+      </div>
+    </div>
+  );
 };
 
 function PostContainer({
