@@ -10,11 +10,19 @@ import { createPortal } from "react-dom";
 // Function to truncate text to 30 words
 const truncateDescription = (text, wordLimit = 30) => {
   const words = text.split(" ");
+  
   if (words.length > wordLimit) {
-    return words.slice(0, wordLimit).join(" ") + "...";
+    return words.slice(0, wordLimit).join(" ") + "... **See more**";
   }
-  return text;
+  
+  // If the text doesn't exceed the word limit, ensure it ends with a period.
+  const trimmedText = text.trim();
+  if (!/[.!?]$/.test(trimmedText)) {
+    return trimmedText + ".";
+  }
+  return trimmedText;
 };
+
 
 const PostSkeleton = () => {
   return (
