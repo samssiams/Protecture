@@ -7,7 +7,7 @@ import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 import { createPortal } from "react-dom";
 
-// Function to truncate text to 30 words and return an object with the truncated text and a flag
+// Truncate text to 30 words and return an object with the truncated text and a flag
 const truncateDescription = (text, wordLimit = 30) => {
   const words = text.trim().split(/\s+/);
   if (words.length > wordLimit) {
@@ -86,6 +86,10 @@ function PostContainer({
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
   const [isLoading, setIsLoading] = useState(!initialPosts);
+
+  // Track which posts have expanded text (for "See more")
+  const [expandedPosts, setExpandedPosts] = useState({});
+
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -214,6 +218,13 @@ function PostContainer({
     }
   };
 
+  const handleToggleExpand = (postId) => {
+    setExpandedPosts((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
+  };
+
   const filteredPosts = selectedCategory
     ? posts.filter((post) => post.category_id === selectedCategory)
     : posts;
@@ -240,6 +251,10 @@ function PostContainer({
     <div>
       {filteredPosts.map((post) => {
         const voteState = votedPosts[post.id];
+        const { text, isTruncated } = truncateDescription(post.description);
+        const hasImage = !!post.image_url;
+        const isExpanded = expandedPosts[post.id];
+
         return (
           <div
             key={post.id}
@@ -292,31 +307,46 @@ function PostContainer({
                 )}
               </div>
             </div>
+
             <p className="text-[#4A4A4A] mb-4 break-all">
-              {(() => {
-                const { text, isTruncated } = truncateDescription(post.description);
-                if (isTruncated) {
-                  return (
-                    <>
-                      {text}...{" "}
-                      <span
-                        className="font-bold text-[#4A4A4A] cursor-pointer hover:underline"
-                        onClick={() => handleCommentModalToggle(post)}
-                      >
-                        See more
-                      </span>
-                    </>
-                  );
-                }
-                return text;
-              })()}
+              {isExpanded ? (
+                (() => {
+                  const fullText = post.description.trim();
+                  return /[.!?]$/.test(fullText) ? fullText : fullText + ".";
+                })()
+              ) : isTruncated ? (
+                hasImage ? (
+                  <>
+                    {text}...
+                    <span
+                      className="font-bold text-[#4A4A4A] cursor-pointer hover:underline ml-1"
+                      onClick={() => handleToggleExpand(post.id)}
+                    >
+                      See more
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {text}...
+                    <span
+                      className="font-bold text-[#4A4A4A] cursor-pointer hover:underline ml-1"
+                      onClick={() => handleCommentModalToggle(post)}
+                    >
+                      See more
+                    </span>
+                  </>
+                )
+              ) : (
+                text
+              )}
             </p>
+
             {post.category_id && (
               <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
                 {post.category_id}
               </span>
             )}
-            {post.image_url && (
+            {hasImage && (
               <div
                 className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
                 onClick={() => handleCommentModalToggle(post)}
@@ -330,6 +360,7 @@ function PostContainer({
                 />
               </div>
             )}
+
             <div className="flex items-center justify-between">
               <div className="flex items-center justify-center space-x-2">
                 <button
@@ -388,6 +419,7 @@ function PostContainer({
                 <span className="text-black">{post.comments.length}</span>
               </div>
             </div>
+
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
                 isOpen={showCommentModal}
