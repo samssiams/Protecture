@@ -1,28 +1,25 @@
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
-import Skeleton from "@/components/ui/skeleton"; // Correct import for Skeleton
+import Skeleton from "@/components/ui/skeleton";
 import { createPortal } from "react-dom";
 
-// Function to truncate text to 30 words
+// Function to truncate text to 30 words and return an object with the truncated text and a flag
 const truncateDescription = (text, wordLimit = 30) => {
-  const words = text.split(" ");
-  
+  const words = text.trim().split(/\s+/);
   if (words.length > wordLimit) {
-    return words.slice(0, wordLimit).join(" ") + "... **See more**";
+    const truncatedText = words.slice(0, wordLimit).join(" ");
+    return { text: truncatedText, isTruncated: true };
   }
-  
-  // If the text doesn't exceed the word limit, ensure it ends with a period.
   const trimmedText = text.trim();
   if (!/[.!?]$/.test(trimmedText)) {
-    return trimmedText + ".";
+    return { text: trimmedText + ".", isTruncated: false };
   }
-  return trimmedText;
+  return { text: trimmedText, isTruncated: false };
 };
-
 
 const PostSkeleton = () => {
   return (
@@ -92,7 +89,6 @@ function PostContainer({
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Initial fetch if no posts provided
   useEffect(() => {
     if (!initialPosts) {
       const fetchPosts = async () => {
@@ -124,14 +120,12 @@ function PostContainer({
     }
   }, [router.pathname, initialPosts]);
 
-  // Update posts if initialPosts prop changes
   useEffect(() => {
     if (initialPosts) {
       setPosts(initialPosts);
     }
   }, [initialPosts]);
 
-  // Disable right-click on images
   useEffect(() => {
     const disableRightClick = (event) => {
       if (event.target.tagName === "IMG") {
@@ -144,7 +138,6 @@ function PostContainer({
     };
   }, []);
 
-  // Poll for updates every 10 seconds to refresh data
   useEffect(() => {
     const fetchUpdatedPosts = async () => {
       try {
@@ -172,7 +165,6 @@ function PostContainer({
     return () => clearInterval(intervalId);
   }, [router.pathname]);
 
-  // Open modal and stop event propagation to avoid closing it
   const handleModalToggle = (event, post) => {
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
@@ -301,7 +293,23 @@ function PostContainer({
               </div>
             </div>
             <p className="text-[#4A4A4A] mb-4 break-all">
-              {truncateDescription(post.description)}
+              {(() => {
+                const { text, isTruncated } = truncateDescription(post.description);
+                if (isTruncated) {
+                  return (
+                    <>
+                      {text}...{" "}
+                      <span
+                        className="font-bold text-[#4A4A4A] cursor-pointer hover:underline"
+                        onClick={() => handleCommentModalToggle(post)}
+                      >
+                        See more
+                      </span>
+                    </>
+                  );
+                }
+                return text;
+              })()}
             </p>
             {post.category_id && (
               <span className="inline-block bg-[#DFFFD6] text-[#22C55E] text-sm font-semibold py-1 px-3 rounded-lg mb-4">
