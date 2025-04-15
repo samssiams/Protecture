@@ -1,4 +1,4 @@
-// appeal-admin ui
+// appeal-admin.js
 import Navbar from "../../components/ui/navbar-admin";
 import Tabs from "./tabs";
 import { useState, useEffect } from "react";
@@ -10,6 +10,12 @@ export default function AppealAdmin() {
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedAppealId, setSelectedAppealId] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [isViewLoading, setIsViewLoading] = useState(false);
+  const [viewReason, setViewReason] = useState({
+    reason: "",
+    reportedBy: "Unknown",
+  });
 
   const fetchAppeals = async () => {
     setLoading(true);
@@ -79,6 +85,36 @@ export default function AppealAdmin() {
     setSelectedAppealId(null);
   };
 
+  const handleViewReason = async (username) => {
+    setIsViewLoading(true);
+    try {
+      const res = await fetch(
+        `/api/user/get-report-reason?username=${encodeURIComponent(username)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setViewReason({
+          reason: data.reason || "redundant",
+          reportedBy: data.reportedBy || "Unknown",
+        });
+      } else {
+        setViewReason({
+          reason: "redundant",
+          reportedBy: "Unknown",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching report reason:", error);
+      setViewReason({
+        reason: "Error fetching reason.",
+        reportedBy: "Unknown",
+      });
+    } finally {
+      setIsViewLoading(false);
+      setShowViewModal(true);
+    }
+  };
+
   const filteredAppeals = appeals.filter((appeal) =>
     appeal.user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
     appeal.msg.toLowerCase().includes(searchQuery.toLowerCase())
@@ -90,7 +126,6 @@ export default function AppealAdmin() {
       <div className="pt-24 px-8 flex justify-center">
         <div className="w-full max-w-4xl">
           <Tabs />
-          {/* Search Bar */}
           <div className="mb-6">
             <input
               type="text"
@@ -100,11 +135,11 @@ export default function AppealAdmin() {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-black placeholder-gray-500"
             />
           </div>
-          {/* Appeals List */}
           <div
             className="bg-white p-6 rounded-lg"
             style={{
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
             }}
           >
             <h2 className="text-lg font-bold text-black mb-6">Appeals Module</h2>
@@ -123,6 +158,7 @@ export default function AppealAdmin() {
                     <div className="flex space-x-4">
                       <div className="h-8 w-20 bg-gray-300 rounded"></div>
                       <div className="h-8 w-20 bg-gray-300 rounded"></div>
+                      <div className="h-8 w-20 bg-gray-300 rounded"></div>
                     </div>
                   </div>
                 ))}
@@ -131,12 +167,25 @@ export default function AppealAdmin() {
               <div className="space-y-4">
                 {filteredAppeals.length > 0 ? (
                   filteredAppeals.map((appeal) => (
-                    <div key={appeal.id} className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg">
+                    <div
+                      key={appeal.id}
+                      className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-lg"
+                    >
                       <div>
-                        <h3 className="text-black font-bold">Suspended User: {appeal.user.username}</h3>
-                        <p className="text-yellow-500 font-medium">Appeal Message: {appeal.msg}</p>
+                        <h3 className="text-black font-bold">
+                          Suspended User: {appeal.user.username}
+                        </h3>
+                        <p className="text-yellow-500 font-medium">
+                          Appeal Message: {appeal.msg}
+                        </p>
                       </div>
                       <div className="flex space-x-4">
+                        <button
+                          className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-600 transition"
+                          onClick={() => handleViewReason(appeal.user.username)}
+                        >
+                          View
+                        </button>
                         <button
                           className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
                           onClick={() => confirmCancel(appeal.id)}
@@ -160,6 +209,7 @@ export default function AppealAdmin() {
           </div>
         </div>
       </div>
+
       {showAcceptModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -186,6 +236,7 @@ export default function AppealAdmin() {
           </div>
         </div>
       )}
+
       {showCancelModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg">
@@ -207,6 +258,39 @@ export default function AppealAdmin() {
                 className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600 transition"
               >
                 Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showViewModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
+            <h2 className="text-lg font-bold text-black text-center mb-4">Suspension Details</h2>
+            {isViewLoading ? (
+              <p className="text-gray-500">Loading...</p>
+            ) : (
+              <div className="space-y-2 text-left text-gray-700">
+                <div>
+                  <span className="font-bold">Reason: </span>
+                  {viewReason.reason}
+                </div>
+                <div>
+                  <span className="font-bold">Reported By: </span>
+                  {viewReason.reportedBy}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => {
+                  setShowViewModal(false);
+                  setViewReason({ reason: "", reportedBy: "Unknown" });
+                }}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition"
+              >
+                Close
               </button>
             </div>
           </div>
