@@ -212,14 +212,14 @@ export default function AppealAdmin() {
 
       {showAcceptModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold text-green-600 mb-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-bold text-green-600 mb-4 text-center">
               Confirm Appeal Acceptance
             </h2>
-            <p className="text-black">
+            <p className="text-black text-center">
               Are you sure you want to accept this appeal?
             </p>
-            <div className="flex justify-end space-x-4 mt-4">
+            <div className="flex justify-center space-x-4 mt-4">
               <button
                 onClick={handleCancelAccept}
                 className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
@@ -239,14 +239,14 @@ export default function AppealAdmin() {
 
       {showCancelModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-lg font-bold text-red-600 mb-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h2 className="text-lg font-bold text-red-600 mb-4 text-center">
               Confirm Appeal Cancellation
             </h2>
-            <p className="text-black">
+            <p className="text-black text-center">
               Are you sure you want to cancel (reject) this appeal?
             </p>
-            <div className="flex justify-end space-x-4 mt-4">
+            <div className="flex justify-center space-x-4 mt-4">
               <button
                 onClick={handleCancelCancel}
                 className="bg-gray-300 text-black px-4 py-2 rounded-lg font-bold hover:bg-gray-400 transition"
@@ -266,12 +266,23 @@ export default function AppealAdmin() {
 
       {showViewModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-80">
-            <h2 className="text-lg font-bold text-black text-center mb-4">Suspension Details</h2>
+          <div
+            className="bg-white p-6 rounded-lg text-center w-80"
+            style={{
+              boxShadow:
+                "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+            }}
+          >
+            <h2 className="text-lg font-bold text-black text-center mb-4">
+              Suspension Details
+            </h2>
             {isViewLoading ? (
-              <p className="text-gray-500">Loading...</p>
+              <div className="animate-pulse space-y-4">
+                <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
+              </div>
             ) : (
-              <div className="space-y-2 text-left text-gray-700">
+              <div className="mt-4 space-y-2 text-left text-gray-700">
                 <div>
                   <span className="font-bold">Reason: </span>
                   {viewReason.reason}
@@ -282,7 +293,7 @@ export default function AppealAdmin() {
                 </div>
               </div>
             )}
-            <div className="flex justify-center mt-4">
+            <div className="mt-8">
               <button
                 onClick={() => {
                   setShowViewModal(false);
