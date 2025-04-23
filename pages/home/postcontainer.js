@@ -79,7 +79,7 @@ export default function PostContainer({
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Initial fetch: only when no initialPosts provided
+  // Initial fetch when no server-side posts
   useEffect(() => {
     if (initialPosts) {
       setIsLoading(false);
@@ -104,7 +104,7 @@ export default function PostContainer({
     })();
   }, [router.pathname, initialPosts]);
 
-  // Polling: only when no initialPosts
+  // Polling when client-only
   useEffect(() => {
     if (initialPosts) return;
     const fetchUpdated = async () => {
@@ -125,6 +125,17 @@ export default function PostContainer({
     const id = setInterval(fetchUpdated, 10000);
     return () => clearInterval(id);
   }, [router.pathname, initialPosts]);
+
+  // -------- Comment Modal Logic (from old PostContainer) --------
+  const handleCommentModalToggle = (post) => {
+    setSelectedPost(post);
+    setShowCommentModal(true);
+  };
+
+  const closeCommentModal = () => {
+    setShowCommentModal(false);
+  };
+  // --------------------------------------------------------------
 
   const handleVote = async (postId, action) => {
     try {
@@ -250,6 +261,7 @@ export default function PostContainer({
               </div>
             </div>
 
+            {/* Description with “See more” and comment modal trigger */}
             <p
               onClick={() =>
                 isExpanded &&
@@ -262,21 +274,36 @@ export default function PostContainer({
               {isExpanded ? (
                 post.description.trim().replace(/([.!?])?$/, "$1")
               ) : isTruncated ? (
-                <>
-                  {text}...
-                  <span
-                    className="font-bold cursor-pointer hover:underline ml-1"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setExpandedPosts((prev) => ({
-                        ...prev,
-                        [post.id]: true,
-                      }));
-                    }}
-                  >
-                    See more
-                  </span>
-                </>
+                hasImage ? (
+                  <>
+                    {text}...
+                    <span
+                      className="font-bold cursor-pointer hover:underline ml-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedPosts((prev) => ({
+                          ...prev,
+                          [post.id]: true,
+                        }));
+                      }}
+                    >
+                      See more
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {text}...
+                    <span
+                      className="font-bold cursor-pointer hover:underline ml-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCommentModalToggle(post);
+                      }}
+                    >
+                      See more
+                    </span>
+                  </>
+                )
               ) : (
                 text
               )}
@@ -291,7 +318,7 @@ export default function PostContainer({
             {hasImage && (
               <div
                 className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
-                onClick={() => setShowCommentModal(true)}
+                onClick={() => handleCommentModalToggle(post)}
               >
                 <Image
                   src={post.image_url}
@@ -348,7 +375,7 @@ export default function PostContainer({
                 </button>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => setShowCommentModal(true)}>
+                <button onClick={() => handleCommentModalToggle(post)}>
                   <Image
                     src="/svg/comments.svg"
                     alt="Comments"
@@ -362,8 +389,8 @@ export default function PostContainer({
 
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
-                isOpen
-                onClose={() => setShowCommentModal(false)}
+                isOpen={showCommentModal}
+                onClose={closeCommentModal}
                 comments={post.comments}
                 post={selectedPost}
                 updateComments={(newComments) =>
