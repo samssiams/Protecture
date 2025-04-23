@@ -1,3 +1,5 @@
+// components/PostContainer.js (updated)
+
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -44,12 +46,7 @@ const PostSkeleton = () => (
     </div>
     <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
     <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-    <Skeleton
-      width="100%"
-      height="250px"
-      borderRadius="15px"
-      className="mb-4"
-    />
+    <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2">
         <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -222,8 +219,8 @@ export default function PostContainer({
                       const rect = e.currentTarget.getBoundingClientRect();
                       setSelectedPost(post);
                       setModalPosition({
-                        left: rect.left,
-                        top: rect.bottom + 5,
+                        left: rect.right + window.scrollX - 10,
+                        top: rect.top + window.scrollY + 18,
                       });
                       setShowModal(true);
                     }}
@@ -328,7 +325,7 @@ export default function PostContainer({
                     }}
                   />
                 </button>
-                <span>{post.counter}</span>
+                <span className="text-black">{post.counter}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -359,7 +356,7 @@ export default function PostContainer({
                     height={21}
                   />
                 </button>
-                <span>{post.comments.length}</span>
+                <span className="text-black">{post.comments.length}</span>
               </div>
             </div>
 
