@@ -1,3 +1,4 @@
+// pages/api/post/createpost.js
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]";
@@ -44,29 +45,32 @@ export default async function handler(req, res) {
       const newPost = await prisma.post.create({
         data: {
           description,
-          // If category_id is provided, use it; otherwise store null.
           category_id: category_id || null,
-          // If no image, store null
           image_url: image_url || null,
-          // Connect the post to the user
           user: { connect: { id: userId } },
         },
       });
 
-      // If a community is specified, create the corresponding community post entry.
+      // If a community is specified, create the corresponding community post entry
+      // and update the community's lastPostAt timestamp
       if (community_id) {
+        const cid = parseInt(community_id, 10);
         await prisma.communityPost.create({
           data: {
             postId: newPost.id,
-            communityId: parseInt(community_id, 10),
+            communityId: cid,
           },
+        });
+        await prisma.community.update({
+          where: { id: cid },
+          data: { lastPostAt: new Date() },
         });
       }
 
       // Create a notification for the post creation.
       await prisma.notification.create({
         data: {
-          userId: userId,
+          userId,
           actionUserId: userId,
           type: "POST_CREATE",
           message: "You have successfully created a new post.",
