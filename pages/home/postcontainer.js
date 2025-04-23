@@ -24,7 +24,7 @@ const truncateDescription = (text, wordLimit = 30) => {
 const PostSkeleton = () => {
   return (
     <div
-      className="bg-white rounded-[15px] shadow-lg p-5 mb-4 animate-pulse"
+      className="bg-white rounded-[15px] p-5 mb-4 animate-pulse"
       style={{
         width: "656px",
         boxShadow:
@@ -297,11 +297,21 @@ function PostContainer({
               <div className="ml-auto">
                 {post.user?.id !== session?.user?.id && (
                   <button onClick={(e) => handleModalToggle(e, post)}>
-                    <Image src="/svg/dots.svg" alt="Options" width={4} height={16} />
+                    <Image
+                      src="/svg/dots.svg"
+                      alt="Options"
+                      width={4}
+                      height={16}
+                    />
                   </button>
                 )}
                 {post.user?.id === session?.user?.id &&
-                  router.pathname === "/home/profile" && (
+                  router.pathname === "/home/profile" &&
+                  !(
+                    activeTab === "Archived" &&
+                    post.archived === true &&
+                    post.status === "FULFILLED"
+                  ) && (
                     <button
                       className="bg-green-500 text-white px-3 py-1 rounded"
                       onClick={() => handleArchive(post.id)}
@@ -422,7 +432,12 @@ function PostContainer({
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={() => handleCommentModalToggle(post)}>
-                  <Image src="/svg/comments.svg" alt="Comments" width={21} height={21} />
+                  <Image
+                    src="/svg/comments.svg"
+                    alt="Comments"
+                    width={21}
+                    height={21}
+                  />
                 </button>
                 <span className="text-black">{post.comments.length}</span>
               </div>
