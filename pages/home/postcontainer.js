@@ -1,11 +1,10 @@
 import Image from "next/image";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
-import { createPortal } from "react-dom";
 
 // Truncate text to 30 words and return an object with the truncated text and a flag
 const truncateDescription = (text, wordLimit = 30) => {
@@ -21,59 +20,51 @@ const truncateDescription = (text, wordLimit = 30) => {
   return { text: trimmedText, isTruncated: false };
 };
 
-const PostSkeleton = () => {
-  return (
-    <div
-      className="bg-white rounded-[15px] p-5 mb-4 animate-pulse"
-      style={{
-        width: "656px",
-        boxShadow:
-          "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
-      }}
-    >
-      <div className="flex items-center mb-4">
-        <Skeleton width="40px" height="40px" borderRadius="50%" />
-        <div className="ml-4 flex-1">
-          <Skeleton
-            width="30%"
-            height="16px"
-            borderRadius="6px"
-            className="mb-2"
-          />
-          <Skeleton width="20%" height="12px" borderRadius="6px" />
-        </div>
-        <Skeleton width="20px" height="20px" borderRadius="6px" />
+const PostSkeleton = () => (
+  <div
+    className="bg-white rounded-[15px] p-5 mb-4 animate-pulse"
+    style={{
+      width: "656px",
+      boxShadow:
+        "0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 6px rgba(0, 0, 0, 0.2)",
+    }}
+  >
+    <div className="flex items-center mb-4">
+      <Skeleton width="40px" height="40px" borderRadius="50%" />
+      <div className="ml-4 flex-1">
+        <Skeleton
+          width="30%"
+          height="16px"
+          borderRadius="6px"
+          className="mb-2"
+        />
+        <Skeleton width="20%" height="12px" borderRadius="6px" />
       </div>
-      <Skeleton
-        width="100%"
-        height="16px"
-        borderRadius="6px"
-        className="mb-4"
-      />
-      <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-      <Skeleton
-        width="100%"
-        height="250px"
-        borderRadius="15px"
-        className="mb-4"
-      />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-          <Skeleton width="30px" height="16px" borderRadius="6px" />
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-        </div>
-        <div className="flex items-center space-x-2">
-          <Skeleton width="21px" height="21px" borderRadius="50%" />
-          <Skeleton width="30px" height="16px" borderRadius="6px" />
-        </div>
+      <Skeleton width="20px" height="20px" borderRadius="6px" />
+    </div>
+    <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
+    <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
+    <Skeleton
+      width="100%"
+      height="250px"
+      borderRadius="15px"
+      className="mb-4"
+    />
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        <Skeleton width="21px" height="21px" borderRadius="50%" />
+        <Skeleton width="30px" height="16px" borderRadius="6px" />
+        <Skeleton width="21px" height="21px" borderRadius="50%" />
+      </div>
+      <div className="flex items-center space-x-2">
+        <Skeleton width="21px" height="21px" borderRadius="50%" />
+        <Skeleton width="30px" height="16px" borderRadius="6px" />
       </div>
     </div>
-  );
-};
+  </div>
+);
 
-function PostContainer({
-  selectedCategory,
+export default function PostContainer({
   posts: initialPosts,
   activeTab,
   handleArchive,
@@ -81,165 +72,95 @@ function PostContainer({
 }) {
   const [posts, setPosts] = useState(initialPosts || []);
   const [votedPosts, setVotedPosts] = useState({});
+  const [isLoading, setIsLoading] = useState(!initialPosts);
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
-  const [isLoading, setIsLoading] = useState(!initialPosts);
-
-  // Track which posts have expanded text (for "See more")
   const [expandedPosts, setExpandedPosts] = useState({});
 
   const { data: session } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!initialPosts) {
-      const fetchPosts = async () => {
-        try {
-          const currentPath = router.pathname;
-          const query =
-            currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
-          const response = await fetch(`/api/post/getposts${query}`);
-          if (response.ok) {
-            const data = await response.json();
-            setPosts(data);
-            const initialVotes = data.reduce((acc, post) => {
-              if (post.userVote) {
-                acc[post.id] = post.userVote;
-              }
-              return acc;
-            }, {});
-            setVotedPosts(initialVotes);
-          }
-        } catch (error) {
-          console.error("Error fetching posts:", error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchPosts();
-    } else {
-      setIsLoading(false);
-    }
-  }, [router.pathname, initialPosts]);
-
+  // Initial fetch: only when no initialPosts provided
   useEffect(() => {
     if (initialPosts) {
-      setPosts(initialPosts);
+      setIsLoading(false);
+      return;
     }
-  }, [initialPosts]);
-
-  useEffect(() => {
-    const disableRightClick = (event) => {
-      if (event.target.tagName === "IMG") {
-        event.preventDefault();
-      }
-    };
-    document.addEventListener("contextmenu", disableRightClick);
-    return () => {
-      document.removeEventListener("contextmenu", disableRightClick);
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchUpdatedPosts = async () => {
+    (async () => {
       try {
-        const currentPath = router.pathname;
-        const query =
-          currentPath === "/home/profile" ? "?currentPath=/home/profile" : "";
-        const response = await fetch(`/api/post/getposts${query}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPosts(data);
-          const initialVotes = data.reduce((acc, post) => {
-            if (post.userVote) {
-              acc[post.id] = post.userVote;
-            }
-            return acc;
-          }, {});
-          setVotedPosts(initialVotes);
-        }
-      } catch (error) {
-        console.error("Error fetching posts during polling:", error);
+        const res = await fetch("/api/post/getposts");
+        if (!res.ok) throw new Error("fetch failed");
+        const data = await res.json();
+        setPosts(data);
+        const votes = data.reduce((acc, p) => {
+          if (p.userVote) acc[p.id] = p.userVote;
+          return acc;
+        }, {});
+        setVotedPosts(votes);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [router.pathname, initialPosts]);
+
+  // Polling: only when no initialPosts
+  useEffect(() => {
+    if (initialPosts) return;
+    const fetchUpdated = async () => {
+      try {
+        const res = await fetch("/api/post/getposts");
+        if (!res.ok) throw new Error("poll failed");
+        const data = await res.json();
+        setPosts(data);
+        const votes = data.reduce((acc, p) => {
+          if (p.userVote) acc[p.id] = p.userVote;
+          return acc;
+        }, {});
+        setVotedPosts(votes);
+      } catch (err) {
+        console.error("Polling error:", err);
       }
     };
-
-    const intervalId = setInterval(fetchUpdatedPosts, 10000);
-    return () => clearInterval(intervalId);
-  }, [router.pathname]);
-
-  const handleModalToggle = (event, post) => {
-    event.stopPropagation();
-    const rect = event.currentTarget.getBoundingClientRect();
-    const position = {
-      left: rect.left + window.scrollX,
-      top: rect.bottom + window.scrollY + 5,
-    };
-    setSelectedPost(post);
-    setModalPosition(position);
-    setShowModal(true);
-  };
-
-  const handleCommentModalToggle = (post) => {
-    setSelectedPost(post);
-    setShowCommentModal(true);
-  };
-
-  const closeCommentModal = () => {
-    setShowCommentModal(false);
-  };
+    const id = setInterval(fetchUpdated, 10000);
+    return () => clearInterval(id);
+  }, [router.pathname, initialPosts]);
 
   const handleVote = async (postId, action) => {
     try {
-      const requestBody = { postId, action };
-      const response = await fetch("/api/post/vote", {
+      const res = await fetch("/api/post/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ postId, action }),
       });
-      if (response.ok) {
-        const updatedPost = await response.json();
-        setVotedPosts((prevVotes) => ({
-          ...prevVotes,
-          [postId]: prevVotes[postId] === action ? null : action,
-        }));
-        setPosts((prevPosts) =>
-          prevPosts.map((post) =>
-            post.id === updatedPost.id ? updatedPost : post
-          )
-        );
-      } else {
-        const errorData = await response.json();
-        console.error("Error in vote request:", errorData);
-      }
-    } catch (error) {
-      console.error("Error in vote request:", error);
+      if (!res.ok) throw await res.json();
+      const updatedPost = await res.json();
+      setVotedPosts((prev) => ({
+        ...prev,
+        [postId]: prev[postId] === action ? null : action,
+      }));
+      setPosts((prev) =>
+        prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
+      );
+    } catch (err) {
+      console.error(err);
     }
   };
-
-  const handleToggleExpand = (postId) => {
-    setExpandedPosts((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-  };
-
-  const filteredPosts = selectedCategory
-    ? posts.filter((post) => post.category_id === selectedCategory)
-    : posts;
 
   if (isLoading) {
     return (
       <div>
-        {[...Array(5)].map((_, idx) => (
-          <PostSkeleton key={idx} />
+        {[...Array(5)].map((_, i) => (
+          <PostSkeleton key={i} />
         ))}
       </div>
     );
   }
 
-  if (filteredPosts.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="text-center text-black font-bold text-lg">
         No Post Available
@@ -249,7 +170,7 @@ function PostContainer({
 
   return (
     <div>
-      {filteredPosts.map((post) => {
+      {posts.map((post) => {
         const voteState = votedPosts[post.id];
         const { text, isTruncated } = truncateDescription(post.description);
         const hasImage = !!post.image_url;
@@ -279,10 +200,9 @@ function PostContainer({
               <div className="ml-4">
                 <h3
                   className="font-bold text-black cursor-pointer"
-                  onClick={() => {
-                    const userId = post.user?.id;
-                    router.push(`/home/profile?userId=${userId}`);
-                  }}
+                  onClick={() =>
+                    router.push(`/home/profile?userId=${post.user?.id}`)
+                  }
                 >
                   {post.user?.profile?.name || post.user?.username}
                 </h3>
@@ -296,7 +216,18 @@ function PostContainer({
               </div>
               <div className="ml-auto">
                 {post.user?.id !== session?.user?.id && (
-                  <button onClick={(e) => handleModalToggle(e, post)}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setSelectedPost(post);
+                      setModalPosition({
+                        left: rect.left,
+                        top: rect.bottom + 5,
+                      });
+                      setShowModal(true);
+                    }}
+                  >
                     <Image
                       src="/svg/dots.svg"
                       alt="Options"
@@ -322,43 +253,33 @@ function PostContainer({
               </div>
             </div>
 
-            {/* Updated “See more / collapse” block */}
             <p
-              onClick={() => isExpanded && handleToggleExpand(post.id)}
+              onClick={() =>
+                isExpanded &&
+                setExpandedPosts((prev) => ({ ...prev, [post.id]: false }))
+              }
               className={`text-[#4A4A4A] mb-4 break-all ${
                 isExpanded ? "cursor-pointer" : ""
               }`}
             >
               {isExpanded ? (
-                (() => {
-                  const fullText = post.description.trim();
-                  return /[.!?]$/.test(fullText) ? fullText : fullText + ".";
-                })()
+                post.description.trim().replace(/([.!?])?$/, "$1")
               ) : isTruncated ? (
-                hasImage ? (
-                  <>
-                    {text}...
-                    <span
-                      className="font-bold text-[#4A4A4A] cursor-pointer hover:underline ml-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleExpand(post.id);
-                      }}
-                    >
-                      See more
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    {text}...
-                    <span
-                      className="font-bold text-[#4A4A4A] cursor-pointer hover:underline ml-1"
-                      onClick={() => handleCommentModalToggle(post)}
-                    >
-                      See more
-                    </span>
-                  </>
-                )
+                <>
+                  {text}...
+                  <span
+                    className="font-bold cursor-pointer hover:underline ml-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedPosts((prev) => ({
+                        ...prev,
+                        [post.id]: true,
+                      }));
+                    }}
+                  >
+                    See more
+                  </span>
+                </>
               ) : (
                 text
               )}
@@ -369,29 +290,30 @@ function PostContainer({
                 {post.category_id}
               </span>
             )}
+
             {hasImage && (
               <div
                 className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
-                onClick={() => handleCommentModalToggle(post)}
+                onClick={() => setShowCommentModal(true)}
               >
                 <Image
                   src={post.image_url}
                   alt="Post Image"
-                  width={444}
-                  height={300}
-                  className="object-cover h-[250px] w-[656px] rounded-lg relative z-0"
+                  width={656}
+                  height={250}
+                  className="object-cover rounded-lg"
                 />
               </div>
             )}
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center justify-center space-x-2">
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleVote(post.id, "DOWNVOTE");
                   }}
-                  className="rounded-full p-2 transition-all duration-200 hover:bg-[#f9c2c2]"
+                  className="rounded-full p-2 hover:bg-[#f9c2c2]"
                 >
                   <Image
                     src="/svg/downvote.svg"
@@ -403,17 +325,16 @@ function PostContainer({
                         voteState === "DOWNVOTE"
                           ? "invert(28%) sepia(73%) saturate(2574%) hue-rotate(335deg) brightness(88%) contrast(89%)"
                           : "none",
-                      transition: "filter 0.2s ease-in-out",
                     }}
                   />
                 </button>
-                <span className="text-black">{post.counter}</span>
+                <span>{post.counter}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleVote(post.id, "UPVOTE");
                   }}
-                  className="rounded-full p-2 transition-all duration-200 hover:bg-[#DCFCE7]"
+                  className="rounded-full p-2 hover:bg-[#DCFCE7]"
                 >
                   <Image
                     src="/svg/upvote.svg"
@@ -425,13 +346,12 @@ function PostContainer({
                         voteState === "UPVOTE"
                           ? "invert(53%) sepia(81%) saturate(575%) hue-rotate(107deg) brightness(91%) contrast(92%)"
                           : "none",
-                      transition: "filter 0.2s ease-in-out",
                     }}
                   />
                 </button>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => handleCommentModalToggle(post)}>
+                <button onClick={() => setShowCommentModal(true)}>
                   <Image
                     src="/svg/comments.svg"
                     alt="Comments"
@@ -439,19 +359,19 @@ function PostContainer({
                     height={21}
                   />
                 </button>
-                <span className="text-black">{post.comments.length}</span>
+                <span>{post.comments.length}</span>
               </div>
             </div>
 
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
-                isOpen={showCommentModal}
-                onClose={closeCommentModal}
+                isOpen
+                onClose={() => setShowCommentModal(false)}
                 comments={post.comments}
                 post={selectedPost}
                 updateComments={(newComments) =>
-                  setPosts((prevPosts) =>
-                    prevPosts.map((p) =>
+                  setPosts((prev) =>
+                    prev.map((p) =>
                       p.id === post.id ? { ...p, comments: newComments } : p
                     )
                   )
@@ -459,15 +379,13 @@ function PostContainer({
               />
             )}
             {showModal && selectedPost?.id === post.id && (
-              <div onClick={(e) => e.stopPropagation()}>
-                <ModalDots
-                  isOpen={showModal}
-                  onClose={() => setShowModal(false)}
-                  position={modalPosition}
-                  postId={selectedPost?.id}
-                  reporterId={session?.user?.id}
-                />
-              </div>
+              <ModalDots
+                isOpen
+                onClose={() => setShowModal(false)}
+                position={modalPosition}
+                postId={post.id}
+                reporterId={session.user.id}
+              />
             )}
           </div>
         );
@@ -475,5 +393,3 @@ function PostContainer({
     </div>
   );
 }
-
-export default PostContainer;
