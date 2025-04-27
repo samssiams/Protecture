@@ -146,6 +146,7 @@ model Notification {
   actionUserId Int?
   type         String
   message      String
+  reason       String?      // ← added
   isRead       Boolean  @default(false)
   createdAt    DateTime @default(now())
 

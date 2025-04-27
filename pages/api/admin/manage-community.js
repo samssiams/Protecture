@@ -9,18 +9,18 @@ export default async function handler(req, res) {
   }
 
   const session = await getServerSession(req, res, authOptions);
-  if (!session || !session.user) {
+  if (!session?.user) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const { communityId, action } = req.body;
+  const { communityId, action, reason = "" } = req.body;
   if (!communityId || !action) {
     return res.status(400).json({ error: "communityId and action are required" });
   }
 
   const act = action.toUpperCase();
   if (!["APPROVE", "REJECT", "ARCHIVE"].includes(act)) {
-    return res.status(400).json({ error: "Invalid action. Use 'APPROVE', 'REJECT', or 'ARCHIVE'." });
+    return res.status(400).json({ error: "Invalid action" });
   }
 
   try {
@@ -33,31 +33,48 @@ export default async function handler(req, res) {
     }
 
     let updatedCommunity;
+
     if (act === "ARCHIVE") {
       updatedCommunity = await prisma.community.update({
         where: { id: communityId },
         data: { status: "INACTIVE" },
+      });
+
+      await prisma.notification.create({
+        data: {
+          userId: community.ownerId,
+          actionUserId: session.user.id,
+          message: `Your community "${community.name}" has been placed as Inactive.`,
+          type: "COMMUNITY_ARCHIVE",
+          isRead: false,
+        },
       });
     } else {
       updatedCommunity = await prisma.community.update({
         where: { id: communityId },
         data: { status: act },
       });
-      if (act === "APPROVE") {
-        await prisma.notification.create({
-          data: {
-            userId: community.ownerId,
-            actionUserId: session.user.id,
-            message: `Your community "${community.name}" has been approved by the admin.`,
-            type: "COMMUNITY_APPROVAL",
-            isRead: false,
-          },
-        });
-      }
+
+      await prisma.notification.create({
+        data: {
+          userId: community.ownerId,
+          actionUserId: session.user.id,
+          message:
+            act === "APPROVE"
+              ? `Your community "${community.name}" has been approved by the admin.`
+              : `Your community "${community.name}" has been rejected by the admin.`,
+          reason: act === "REJECT" ? reason : null,
+          type: act === "APPROVE" ? "COMMUNITY_APPROVE" : "COMMUNITY_REJECT",
+          isRead: false,
+        },
+      });
     }
 
     res.status(200).json({
-      message: `Community ${act.toLowerCase()}d successfully.`,
+      message:
+        act === "ARCHIVE"
+          ? "Community archived successfully."
+          : `Community ${act.toLowerCase()}d successfully.`,
       community: updatedCommunity,
     });
   } catch (error) {

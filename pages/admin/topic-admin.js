@@ -24,6 +24,7 @@ export default function TopicAdmin() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [selectedCommunity, setSelectedCommunity] = useState(null);
   const [pendingAction, setPendingAction] = useState("");
+  const [reasonText, setReasonText] = useState("");
 
   const fetchPending = async () => {
     setLoading(true);
@@ -63,6 +64,7 @@ export default function TopicAdmin() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
+
     setError(null);
     setPendingVisibleCount(5);
     setActiveVisibleCount(5);
@@ -73,31 +75,21 @@ export default function TopicAdmin() {
     else if (activeTab === "INACTIVE") fetchInactive();
   }, [status, activeTab]);
 
-  if (status === "loading") return <p>Loading…</p>;
-  if (status === "unauthenticated")
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F5FDF4]">
-        <div className="text-center">
-          <p className="mb-4">You must be signed in as an admin to access this page.</p>
-          <button
-            onClick={() => signIn()}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-
   const openConfirmModal = (community, action) => {
     setSelectedCommunity(community);
     setPendingAction(action);
+    setReasonText("");
     setShowConfirmModal(true);
   };
 
   const handleManage = async (id, action) => {
     try {
-      await axios.post("/api/admin/manage-community", { communityId: id, action });
+      await axios.post("/api/admin/manage-community", {
+        communityId: id,
+        action,
+        reason: action === "REJECT" ? reasonText.trim() : undefined,
+      });
+
       if (action === "APPROVE" || action === "REJECT") {
         setPending(p => p.filter(c => c.id !== id));
       } else if (action === "ARCHIVE") {
@@ -119,6 +111,23 @@ export default function TopicAdmin() {
   const filteredPending  = filterFn(pendingCommunities);
   const filteredActive   = filterFn(activeCommunities);
   const filteredInactive = filterFn(inactiveCommunities);
+
+  if (status === "loading") return <p>Loading…</p>;
+
+  if (status === "unauthenticated")
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5FDF4]">
+        <div className="text-center">
+          <p className="mb-4">You must be signed in as an admin to access this page.</p>
+          <button
+            onClick={() => signIn()}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
 
   return (
     <div className="min-h-screen bg-[#F5FDF4]">
@@ -144,7 +153,7 @@ export default function TopicAdmin() {
             style={{ boxShadow: "0 4px 8px rgba(0,0,0,0.1), inset 0 2px 6px rgba(0,0,0,0.2)" }}
           >
             <div className="flex space-x-4 mb-6 border-b">
-              {["REQUEST","ACTIVE","INACTIVE"].map(tab => (
+              {["REQUEST", "ACTIVE", "INACTIVE"].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -154,7 +163,7 @@ export default function TopicAdmin() {
                       : "text-gray-600"
                   }`}
                 >
-                  {tab.charAt(0)+tab.slice(1).toLowerCase()}
+                  {tab.charAt(0) + tab.slice(1).toLowerCase()}
                 </button>
               ))}
             </div>
@@ -163,7 +172,7 @@ export default function TopicAdmin() {
               <>
                 <h2 className="text-lg font-bold mb-4 text-black">Community Requests</h2>
                 {loading ? (
-                  Array.from({ length: 5 }).map((_,i) => (
+                  Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="bg-gray-100 p-4 rounded-lg mb-4 animate-pulse flex flex-col relative">
                       <div className="absolute top-4 right-4 h-4 w-12 bg-gray-300 rounded"></div>
                       <div className="h-6 bg-gray-300 rounded w-1/3 mb-2"></div>
@@ -177,7 +186,7 @@ export default function TopicAdmin() {
                     </div>
                   ))
                 ) : filteredPending.length ? (
-                  filteredPending.slice(0,pendingVisibleCount).map(c => (
+                  filteredPending.slice(0, pendingVisibleCount).map(c => (
                     <div key={c.id} className="bg-gray-100 p-4 rounded-lg mb-4 flex flex-col relative">
                       <div className="absolute top-4 right-4">
                         <span className="text-sm font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-lg">
@@ -187,34 +196,46 @@ export default function TopicAdmin() {
                       <div className="mb-4">
                         <h3 className="text-black font-bold">{c.name}</h3>
                         <p className="text-gray-500 mb-1">
-                          <span className="font-semibold">Owner: </span>{c.owner.username}
+                          <span className="font-semibold">Owner: </span>
+                          {c.owner.username}
                         </p>
                         <p className="text-gray-500 mb-1">
-                          <span className="font-semibold">Description: </span>{c.description}
+                          <span className="font-semibold">Description: </span>
+                          {c.description}
                         </p>
                         <p className="text-gray-500">
                           <span className="font-semibold">Created: </span>
-                          {`${new Date(c.createdAt).getMonth()+1}-${new Date(c.createdAt).getDate()}-${new Date(c.createdAt).getFullYear()}`}
+                          {`${new Date(c.createdAt).getMonth() + 1}-${new Date(c.createdAt).getDate()}-${new Date(
+                            c.createdAt
+                          ).getFullYear()}`}
                         </p>
                       </div>
                       <div className="mt-auto flex space-x-4">
                         <button
-                          onClick={() => openConfirmModal(c,"APPROVE")}
+                          onClick={() => openConfirmModal(c, "APPROVE")}
                           className="bg-green-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-600"
-                        >Approve</button>
+                        >
+                          Approve
+                        </button>
                         <button
-                          onClick={() => openConfirmModal(c,"REJECT")}
+                          onClick={() => openConfirmModal(c, "REJECT")}
                           className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600"
-                        >Reject</button>
+                        >
+                          Reject
+                        </button>
                       </div>
                     </div>
                   ))
-                ) : <p className="text-gray-600">No request community found</p>}
+                ) : (
+                  <p className="text-gray-600">No request community found</p>
+                )}
                 {filteredPending.length > pendingVisibleCount && (
                   <button
                     onClick={() => setPendingVisibleCount(n => n + 5)}
                     className="w-full text-center py-2 text-black font-semibold"
-                  >Load More</button>
+                  >
+                    Load More
+                  </button>
                 )}
               </>
             )}
@@ -223,7 +244,7 @@ export default function TopicAdmin() {
               <>
                 <h2 className="text-lg font-bold mb-4 text-black">Active Communities</h2>
                 {loading ? (
-                  Array.from({ length: 5 }).map((_,i) => (
+                  Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="bg-gray-100 p-4 rounded-lg mb-4 animate-pulse flex flex-col relative">
                       <div className="absolute top-4 right-4 h-4 w-12 bg-gray-300 rounded"></div>
                       <div className="h-6 bg-gray-300 rounded w-1/3 mb-2"></div>
@@ -236,8 +257,8 @@ export default function TopicAdmin() {
                     </div>
                   ))
                 ) : filteredActive.length ? (
-                  filteredActive.slice(0,activeVisibleCount).map(c => {
-                    const sevenDaysAgo = Date.now() - 7*24*60*60*1000;
+                  filteredActive.slice(0, activeVisibleCount).map(c => {
+                    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
                     const lastActivity = c.lastPostAt
                       ? new Date(c.lastPostAt).getTime()
                       : new Date(c.updatedAt).getTime();
@@ -258,24 +279,31 @@ export default function TopicAdmin() {
                         <div className="mb-4">
                           <h3 className="text-black font-bold">{c.name}</h3>
                           <p className="text-gray-500 mb-1">
-                            <span className="font-semibold">Owner: </span>{c.owner.username}
+                            <span className="font-semibold">Owner: </span>
+                            {c.owner.username}
                           </p>
                           <p className="text-gray-500 mb-1">
-                            <span className="font-semibold">Description: </span>{c.description}
+                            <span className="font-semibold">Description: </span>
+                            {c.description}
                           </p>
                           <p className="text-gray-500 mb-1">
-                            <span className="font-semibold">Members: </span>{c.members.length}
+                            <span className="font-semibold">Members: </span>
+                            {c.members.length}
                           </p>
                           <p className="text-gray-500">
                             <span className="font-semibold">Created: </span>
-                            {`${new Date(c.createdAt).getMonth()+1}-${new Date(c.createdAt).getDate()}-${new Date(c.createdAt).getFullYear()}`}
+                            {`${new Date(c.createdAt).getMonth() + 1}-${new Date(c.createdAt).getDate()}-${new Date(
+                              c.createdAt
+                            ).getFullYear()}`}
                           </p>
                         </div>
                         <div className="mt-auto flex">
                           <button
-                            onClick={() => openConfirmModal(c,"ARCHIVE")}
+                            onClick={() => openConfirmModal(c, "ARCHIVE")}
                             className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-600"
-                          >Archive</button>
+                          >
+                            Archive
+                          </button>
                         </div>
                       </div>
                     );
@@ -287,7 +315,9 @@ export default function TopicAdmin() {
                   <button
                     onClick={() => setActiveVisibleCount(n => n + 5)}
                     className="w-full text-center py-2 text-black font-semibold"
-                  >Load More</button>
+                  >
+                    Load More
+                  </button>
                 )}
               </>
             )}
@@ -296,7 +326,7 @@ export default function TopicAdmin() {
               <>
                 <h2 className="text-lg font-bold mb-4 text-black">Inactive Communities</h2>
                 {loading ? (
-                  Array.from({ length: 5 }).map((_,i) => (
+                  Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="bg-gray-100 p-4 rounded-lg mb-4 animate-pulse flex flex-col relative">
                       <div className="absolute top-4 right-4 h-4 w-12 bg-gray-300 rounded"></div>
                       <div className="h-6 bg-gray-300 rounded w-1/3 mb-2"></div>
@@ -309,7 +339,7 @@ export default function TopicAdmin() {
                     </div>
                   ))
                 ) : filteredInactive.length ? (
-                  filteredInactive.slice(0,inactiveVisibleCount).map(c => (
+                  filteredInactive.slice(0, inactiveVisibleCount).map(c => (
                     <div key={c.id} className="bg-gray-100 p-4 rounded-lg mb-4 flex flex-col relative">
                       <div className="absolute top-4 right-4">
                         <span className="text-sm font-semibold text-white bg-red-500 px-2 py-1 rounded-lg">
@@ -319,17 +349,22 @@ export default function TopicAdmin() {
                       <div className="mb-4">
                         <h3 className="text-black font-bold">{c.name}</h3>
                         <p className="text-gray-500 mb-1">
-                          <span className="font-semibold">Owner: </span>{c.owner.username}
+                          <span className="font-semibold">Owner: </span>
+                          {c.owner.username}
                         </p>
                         <p className="text-gray-500 mb-1">
-                          <span className="font-semibold">Description: </span>{c.description}
+                          <span className="font-semibold">Description: </span>
+                          {c.description}
                         </p>
                         <p className="text-gray-500 mb-1">
-                          <span className="font-semibold">Members: </span>{c.members.length}
+                          <span className="font-semibold">Members: </span>
+                          {c.members.length}
                         </p>
                         <p className="text-gray-500">
                           <span className="font-semibold">Created: </span>
-                          {`${new Date(c.createdAt).getMonth()+1}-${new Date(c.createdAt).getDate()}-${new Date(c.createdAt).getFullYear()}`}
+                          {`${new Date(c.createdAt).getMonth() + 1}-${new Date(c.createdAt).getDate()}-${new Date(
+                            c.createdAt
+                          ).getFullYear()}`}
                         </p>
                       </div>
                     </div>
@@ -341,7 +376,9 @@ export default function TopicAdmin() {
                   <button
                     onClick={() => setInactiveVisibleCount(n => n + 5)}
                     className="w-full text-center py-2 text-black font-semibold"
-                  >Load More</button>
+                  >
+                    Load More
+                  </button>
                 )}
               </>
             )}
@@ -351,7 +388,7 @@ export default function TopicAdmin() {
 
       {showConfirmModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
             <h2 className="text-lg font-bold mb-4 text-black">
               {pendingAction === "ARCHIVE"
                 ? "Confirm Archive"
@@ -359,13 +396,26 @@ export default function TopicAdmin() {
                 ? "Confirm Approval"
                 : "Confirm Rejection"}
             </h2>
-            <p className="text-black mb-4">
-              {pendingAction === "ARCHIVE"
-                ? "Are you sure you want to archive this community?"
-                : pendingAction === "APPROVE"
-                ? "Are you sure you want to approve this community?"
-                : "Are you sure you want to reject this community?"}
-            </p>
+
+            {pendingAction === "REJECT" && (
+              <textarea
+                value={reasonText}
+                onChange={e => setReasonText(e.target.value)}
+                placeholder="Enter rejection reason..."
+                className="w-full h-24 p-2 border border-gray-300 rounded mb-4 text-black"
+              />
+            )}
+
+            {pendingAction !== "REJECT" && (
+              <p className="text-black mb-4">
+                {pendingAction === "ARCHIVE"
+                  ? "Are you sure you want to archive this community?"
+                  : pendingAction === "APPROVE"
+                  ? "Are you sure you want to approve this community?"
+                  : "Are you sure you want to reject this community?"}
+              </p>
+            )}
+
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowConfirmModal(false)}
@@ -385,6 +435,7 @@ export default function TopicAdmin() {
                     ? "bg-green-500 text-white hover:bg-green-600"
                     : "bg-red-500 text-white hover:bg-red-600"
                 }`}
+                disabled={pendingAction === "REJECT" && reasonText.trim() === ""}
               >
                 Confirm
               </button>
