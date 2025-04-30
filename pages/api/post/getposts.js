@@ -1,25 +1,30 @@
 // pages/api/post/getposts.js
+
 import prisma from "../../../lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
+    res.setHeader("Allow", ["GET"]);
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
   try {
+    // ensure user is signed in
     const session = await getServerSession(req, res, authOptions);
     if (!session) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const userId = session.user.id;
-    const { countOnly } = req.query;
 
-    // When countOnly is true, include the filter for posts not in CommunityPost
+    // read query params
+    const { limit = "10", category, countOnly } = req.query;
+
+    // if only asking for count of this user's posts
     if (countOnly === "true") {
       const postCount = await prisma.post.count({
-        where: { 
+        where: {
           user_id: userId,
           archived: false,
         },
@@ -27,12 +32,18 @@ export default async function handler(req, res) {
       return res.status(200).json({ count: postCount });
     }
 
-    // Fetch posts that are not in CommunityPost using the `none` operator.
+    const take = parseInt(limit, 10);
+
+    // build filters
+    const whereFilter = {
+      archived: false,
+      communityPosts: { none: {} },
+      ...(category ? { category_id: category } : {}),
+    };
+
+    // fetch posts up to `take` with optional category filter
     const posts = await prisma.post.findMany({
-      where: {
-        archived: false,
-        communityPosts: { none: {} }
-      },
+      where: whereFilter,
       include: {
         comments: {
           include: {
@@ -62,16 +73,18 @@ export default async function handler(req, res) {
         },
       },
       orderBy: { created_at: "desc" },
+      take,
     });
 
+    // reshape for frontend: flatten comments and compute userVote
     const postsWithVoteState = posts.map((post) => ({
       ...post,
-      comments: post.comments.map((comment) => ({
-        id: comment.id,
-        userImage: comment.user.profile?.profile_img || "/images/user.svg",
-        username: comment.user.username,
-        text: comment.comment_text,
-        timestamp: comment.created_at,
+      comments: post.comments.map((c) => ({
+        id: c.id,
+        userImage: c.user.profile?.profile_img || "/images/user.svg",
+        username: c.user.username,
+        text: c.comment_text,
+        timestamp: c.created_at,
       })),
       userVote:
         post.upvotes.length > 0

@@ -1,4 +1,4 @@
-// components/PostContainer.js (updated)
+// components/home/postcontainer.js
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
@@ -8,18 +8,18 @@ import ModalDots from "../../pages/home/profile/modal-dots";
 import CommentModal from "../../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 
-// Truncate text to 30 words and return an object with the truncated text and a flag
+// Truncate text to 30 words
 const truncateDescription = (text, wordLimit = 30) => {
   const words = text.trim().split(/\s+/);
   if (words.length > wordLimit) {
     const truncatedText = words.slice(0, wordLimit).join(" ");
     return { text: truncatedText, isTruncated: true };
   }
-  const trimmedText = text.trim();
-  if (!/[.!?]$/.test(trimmedText)) {
-    return { text: trimmedText + ".", isTruncated: false };
-  }
-  return { text: trimmedText, isTruncated: false };
+  const trimmed = text.trim();
+  return {
+    text: /[.!?]$/.test(trimmed) ? trimmed : trimmed + ".",
+    isTruncated: false,
+  };
 };
 
 const PostSkeleton = () => (
@@ -34,12 +34,7 @@ const PostSkeleton = () => (
     <div className="flex items-center mb-4">
       <Skeleton width="40px" height="40px" borderRadius="50%" />
       <div className="ml-4 flex-1">
-        <Skeleton
-          width="30%"
-          height="16px"
-          borderRadius="6px"
-          className="mb-2"
-        />
+        <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
         <Skeleton width="20%" height="12px" borderRadius="6px" />
       </div>
       <Skeleton width="20px" height="20px" borderRadius="6px" />
@@ -61,15 +56,11 @@ const PostSkeleton = () => (
   </div>
 );
 
-export default function PostContainer({
-  posts: initialPosts,
-  activeTab,
-  handleArchive,
-  isCurrentUser,
-}) {
-  const [posts, setPosts] = useState(initialPosts || []);
+export default function PostContainer({ selectedCategory }) {
+  const [posts, setPosts] = useState([]);
   const [votedPosts, setVotedPosts] = useState({});
-  const [isLoading, setIsLoading] = useState(!initialPosts);
+  const [isLoading, setIsLoading] = useState(true);
+  const [limit, setLimit] = useState(10);
   const [showModal, setShowModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
@@ -79,16 +70,15 @@ export default function PostContainer({
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Initial fetch when no server-side posts
+  // fetch posts whenever limit or category changes
   useEffect(() => {
-    if (initialPosts) {
-      setIsLoading(false);
-      return;
-    }
+    setIsLoading(true);
     (async () => {
       try {
-        const res = await fetch("/api/post/getposts");
-        if (!res.ok) throw new Error("fetch failed");
+        let url = `/api/post/getposts?limit=${limit}`;
+        if (selectedCategory) url += `&category=${selectedCategory}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Fetch failed");
         const data = await res.json();
         setPosts(data);
         const votes = data.reduce((acc, p) => {
@@ -102,31 +92,8 @@ export default function PostContainer({
         setIsLoading(false);
       }
     })();
-  }, [router.pathname, initialPosts]);
+  }, [limit, selectedCategory, router.pathname]);
 
-  // Polling when client-only
-  useEffect(() => {
-    if (initialPosts) return;
-    const fetchUpdated = async () => {
-      try {
-        const res = await fetch("/api/post/getposts");
-        if (!res.ok) throw new Error("poll failed");
-        const data = await res.json();
-        setPosts(data);
-        const votes = data.reduce((acc, p) => {
-          if (p.userVote) acc[p.id] = p.userVote;
-          return acc;
-        }, {});
-        setVotedPosts(votes);
-      } catch (err) {
-        console.error("Polling error:", err);
-      }
-    };
-    const id = setInterval(fetchUpdated, 10000);
-    return () => clearInterval(id);
-  }, [router.pathname, initialPosts]);
-
-  // -------- Comment Modal Logic (from old PostContainer) --------
   const handleCommentModalToggle = (post) => {
     setSelectedPost(post);
     setShowCommentModal(true);
@@ -135,7 +102,6 @@ export default function PostContainer({
   const closeCommentModal = () => {
     setShowCommentModal(false);
   };
-  // --------------------------------------------------------------
 
   const handleVote = async (postId, action) => {
     try {
@@ -145,14 +111,12 @@ export default function PostContainer({
         body: JSON.stringify({ postId, action }),
       });
       if (!res.ok) throw await res.json();
-      const updatedPost = await res.json();
+      const updated = await res.json();
       setVotedPosts((prev) => ({
         ...prev,
         [postId]: prev[postId] === action ? null : action,
       }));
-      setPosts((prev) =>
-        prev.map((p) => (p.id === updatedPost.id ? updatedPost : p))
-      );
+      setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } catch (err) {
       console.error(err);
     }
@@ -244,24 +208,9 @@ export default function PostContainer({
                     />
                   </button>
                 )}
-                {post.user?.id === session?.user?.id &&
-                  router.pathname === "/home/profile" &&
-                  !(
-                    activeTab === "Archived" &&
-                    post.archived === true &&
-                    post.status === "FULFILLED"
-                  ) && (
-                    <button
-                      className="bg-green-500 text-white px-3 py-1 rounded"
-                      onClick={() => handleArchive(post.id)}
-                    >
-                      {activeTab === "Archived" ? "Unarchive" : "Archive"}
-                    </button>
-                  )}
               </div>
             </div>
 
-            {/* Description with “See more” and comment modal trigger */}
             <p
               onClick={() =>
                 isExpanded &&
@@ -274,36 +223,21 @@ export default function PostContainer({
               {isExpanded ? (
                 post.description.trim().replace(/([.!?])?$/, "$1")
               ) : isTruncated ? (
-                hasImage ? (
-                  <>
-                    {text}...
-                    <span
-                      className="font-bold cursor-pointer hover:underline ml-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedPosts((prev) => ({
-                          ...prev,
-                          [post.id]: true,
-                        }));
-                      }}
-                    >
-                      See more
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    {text}...
-                    <span
-                      className="font-bold cursor-pointer hover:underline ml-1"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCommentModalToggle(post);
-                      }}
-                    >
-                      See more
-                    </span>
-                  </>
-                )
+                <>
+                  {text}...
+                  <span
+                    className="font-bold cursor-pointer hover:underline ml-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setExpandedPosts((prev) => ({
+                        ...prev,
+                        [post.id]: true,
+                      }));
+                    }}
+                  >
+                    See more
+                  </span>
+                </>
               ) : (
                 text
               )}
@@ -389,7 +323,7 @@ export default function PostContainer({
 
             {showCommentModal && selectedPost?.id === post.id && (
               <CommentModal
-                isOpen={showCommentModal}
+                isOpen
                 onClose={closeCommentModal}
                 comments={post.comments}
                 post={selectedPost}
@@ -414,6 +348,17 @@ export default function PostContainer({
           </div>
         );
       })}
+
+      {posts.length === limit && (
+        <div className="flex justify-center mt-6">
+          <button
+            onClick={() => setLimit((prev) => prev + 10)}
+            className="font-semibold text-black"
+          >
+            Load More
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+// pages/index.js
+
 import Link from 'next/link';
 import Navbar from '../components/ui/navbar';
 import Image from 'next/image';
@@ -234,7 +236,6 @@ export default function Home() {
             </motion.button>
           </div>
 
-          {/* The PostContainer will fetch and display the global posts */}
           <PostContainer selectedCategory={selectedCategory} />
         </div>
 
@@ -258,5 +259,5 @@ export default function Home() {
       />
       <Chatbot />
     </div>
-  );
+    );
 }
