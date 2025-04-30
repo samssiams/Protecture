@@ -7,11 +7,12 @@ import ModalDots from "../pages/home/profile/modal-dots";
 import CommentModal from "../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 
-// Truncate a description to `wordLimit` words
+// Truncate text to 30 words
 const truncateDescription = (text, wordLimit = 30) => {
   const words = text.trim().split(/\s+/);
   if (words.length > wordLimit) {
-    return { text: words.slice(0, wordLimit).join(" "), isTruncated: true };
+    const truncatedText = words.slice(0, wordLimit).join(" ");
+    return { text: truncatedText, isTruncated: true };
   }
   const trimmed = text.trim();
   return {
@@ -32,14 +33,24 @@ const PostSkeleton = () => (
     <div className="flex items-center mb-4">
       <Skeleton width="40px" height="40px" borderRadius="50%" />
       <div className="ml-4 flex-1">
-        <Skeleton width="30%" height="16px" borderRadius="6px" className="mb-2" />
+        <Skeleton
+          width="30%"
+          height="16px"
+          borderRadius="6px"
+          className="mb-2"
+        />
         <Skeleton width="20%" height="12px" borderRadius="6px" />
       </div>
       <Skeleton width="20px" height="20px" borderRadius="6px" />
     </div>
     <Skeleton width="100%" height="16px" borderRadius="6px" className="mb-4" />
     <Skeleton width="50%" height="16px" borderRadius="6px" className="mb-4" />
-    <Skeleton width="100%" height="250px" borderRadius="15px" className="mb-4" />
+    <Skeleton
+      width="100%"
+      height="250px"
+      borderRadius="15px"
+      className="mb-4"
+    />
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-2">
         <Skeleton width="21px" height="21px" borderRadius="50%" />
@@ -57,18 +68,19 @@ const PostSkeleton = () => (
 export default function UserPostContainer({
   userId,
   activeTab,
-  handleArchive,
   isCurrentUser,
 }) {
   const [posts, setPosts] = useState([]);
   const [votedPosts, setVotedPosts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [limit, setLimit] = useState(10);
-  const [showModal, setShowModal] = useState(false);
+  const [showDotsModal, setShowDotsModal] = useState(false);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [modalPosition, setModalPosition] = useState({ left: 0, top: 0 });
   const [selectedPost, setSelectedPost] = useState(null);
   const [expandedPosts, setExpandedPosts] = useState({});
+  const [archiveMessage, setArchiveMessage] = useState(null);
+
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -78,9 +90,12 @@ export default function UserPostContainer({
       try {
         const archived =
           isCurrentUser && activeTab === "Archived" ? "true" : "false";
-        const res = await fetch(
-          `/api/post/getuserposts?archived=${archived}&userId=${userId}&limit=${limit}`
-        );
+        const params = new URLSearchParams({
+          archived,
+          limit: limit.toString(),
+          ...(userId ? { userId } : {}),
+        });
+        const res = await fetch(`/api/post/getuserposts?${params}`);
         if (!res.ok) throw new Error("Fetch failed");
         const data = await res.json();
         setPosts(data);
@@ -97,13 +112,25 @@ export default function UserPostContainer({
     })();
   }, [limit, activeTab, userId, isCurrentUser, router.pathname]);
 
-  const handleCommentModalToggle = (post) => {
-    setSelectedPost(post);
-    setShowCommentModal(true);
-  };
-
-  const closeCommentModal = () => {
-    setShowCommentModal(false);
+  const handleArchiveToggle = async (postId) => {
+    if (!isCurrentUser) return;
+    const isArchive = activeTab === "Posts";
+    try {
+      const res = await fetch("/api/post/archive", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          action: isArchive ? "archive" : "unarchive",
+        }),
+      });
+      if (!res.ok) return;
+      setArchiveMessage(isArchive ? "Post Archived" : "Post Unarchived");
+      setTimeout(() => setArchiveMessage(null), 2000);
+      setLimit((n) => n);
+    } catch (err) {
+      console.error("Archive toggle error:", err);
+    }
   };
 
   const handleVote = async (postId, action) => {
@@ -119,13 +146,17 @@ export default function UserPostContainer({
         ...prev,
         [postId]: prev[postId] === action ? null : action,
       }));
-      setPosts((prev) =>
-        prev.map((p) => (p.id === updated.id ? updated : p))
-      );
+      setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     } catch (err) {
       console.error("Voting error:", err);
     }
   };
+
+  const toggleCommentModal = (post) => {
+    setSelectedPost(post);
+    setShowCommentModal(true);
+  };
+  const closeCommentModal = () => setShowCommentModal(false);
 
   if (isLoading) {
     return (
@@ -147,16 +178,24 @@ export default function UserPostContainer({
 
   return (
     <div>
+      {archiveMessage && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-4 rounded">
+            <p className="text-green-600 font-bold">{archiveMessage}</p>
+          </div>
+        </div>
+      )}
+
       {posts.map((post) => {
         const voteState = votedPosts[post.id];
         const { text, isTruncated } = truncateDescription(post.description);
-        const hasImage = !!post.image_url;
-        const isExpanded = expandedPosts[post.id];
+        const hasImage = Boolean(post.image_url);
+        const isExpanded = Boolean(expandedPosts[post.id]);
 
         return (
           <div
             key={post.id}
-            className="bg-white rounded-[15px] shadow-lg p-5 mb-4"
+            className="bg-white rounded-[15px] p-5 mb-4"
             style={{
               width: "656px",
               boxShadow:
@@ -191,7 +230,15 @@ export default function UserPostContainer({
                   })}
                 </span>
               </div>
-              <div className="ml-auto">
+              <div className="ml-auto flex items-center space-x-4">
+                {isCurrentUser && (
+                  <button
+                    onClick={() => handleArchiveToggle(post.id)}
+                    className="bg-green-500 text-white font-medium py-1 px-3 rounded-md text-base shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
+                  >
+                    {activeTab === "Posts" ? "Archive" : "Unarchive"}
+                  </button>
+                )}
                 {post.user?.id !== session?.user?.id && (
                   <button
                     onClick={(e) => {
@@ -202,7 +249,7 @@ export default function UserPostContainer({
                         left: rect.right + window.scrollX - 10,
                         top: rect.top + window.scrollY + 18,
                       });
-                      setShowModal(true);
+                      setShowDotsModal(true);
                     }}
                   >
                     <Image
@@ -219,7 +266,7 @@ export default function UserPostContainer({
             <p
               onClick={() =>
                 isExpanded &&
-                setExpandedPosts((prev) => ({ ...prev, [post.id]: false }))
+                setExpandedPosts((p) => ({ ...p, [post.id]: false }))
               }
               className={`text-[#4A4A4A] mb-4 break-all ${
                 isExpanded ? "cursor-pointer" : ""
@@ -234,10 +281,7 @@ export default function UserPostContainer({
                     className="font-bold cursor-pointer hover:underline ml-1"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setExpandedPosts((prev) => ({
-                        ...prev,
-                        [post.id]: true,
-                      }));
+                      setExpandedPosts((p) => ({ ...p, [post.id]: true }));
                     }}
                   >
                     See more
@@ -250,8 +294,8 @@ export default function UserPostContainer({
 
             {hasImage && (
               <div
-                className="bg-gray-300 flex items-center justify-center rounded-lg h-[250px] mb-4 relative overflow-hidden cursor-pointer"
-                onClick={() => handleCommentModalToggle(post)}
+                className="bg-gray-300 rounded-lg h-[250px] mb-4 overflow-hidden cursor-pointer"
+                onClick={() => toggleCommentModal(post)}
               >
                 <Image
                   src={post.image_url}
@@ -308,7 +352,7 @@ export default function UserPostContainer({
                 </button>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => handleCommentModalToggle(post)}>
+                <button onClick={() => toggleCommentModal(post)}>
                   <Image
                     src="/svg/comments.svg"
                     alt="Comments"
@@ -327,18 +371,19 @@ export default function UserPostContainer({
                 comments={post.comments}
                 post={selectedPost}
                 updateComments={(newComments) =>
-                  setPosts((prev) =>
-                    prev.map((p) =>
-                      p.id === post.id ? { ...p, comments: newComments } : p
+                  setPosts((p) =>
+                    p.map((x) =>
+                      x.id === post.id ? { ...x, comments: newComments } : x
                     )
                   )
                 }
               />
             )}
-            {showModal && selectedPost?.id === post.id && (
+
+            {showDotsModal && selectedPost?.id === post.id && (
               <ModalDots
                 isOpen
-                onClose={() => setShowModal(false)}
+                onClose={() => setShowDotsModal(false)}
                 position={modalPosition}
                 postId={post.id}
                 reporterId={session.user.id}
@@ -351,7 +396,7 @@ export default function UserPostContainer({
       {posts.length === limit && (
         <div className="flex justify-center mt-6">
           <button
-            onClick={() => setLimit((prev) => prev + 10)}
+            onClick={() => setLimit((p) => p + 10)}
             className="font-semibold text-black"
           >
             Load More

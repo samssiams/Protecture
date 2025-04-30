@@ -1,4 +1,3 @@
-// pages/home/profile/index.js
 import Link from "next/link";
 import Navbar from "../../../components/ui/navbar";
 import Image from "next/image";
@@ -25,7 +24,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [userPostCount, setUserPostCount] = useState(0);
-  const [archiveModalMessage, setArchiveModalMessage] = useState(null);
 
   const isRouterReady = router.isReady;
   const userId = router.query.userId;
@@ -98,31 +96,6 @@ export default function Profile() {
     setIsEditProfileModalOpen(false);
     fetchUserData();
     fetchUserPostCount();
-  };
-
-  const handleArchive = async (postId) => {
-    if (!isCurrentUser) return;
-    const isArchive = activeTab === "Posts";
-    try {
-      const res = await fetch("/api/post/archive", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postId,
-          action: isArchive ? "archive" : "unarchive",
-        }),
-      });
-      if (!res.ok) {
-        const e = await res.json();
-        console.error("Error archiving:", e.message);
-        return;
-      }
-      setArchiveModalMessage(isArchive ? "Post Archived" : "Post Unarchived");
-      if (!isArchive) setActiveTab("Posts");
-      setTimeout(() => setArchiveModalMessage(null), 2000);
-    } catch (error) {
-      console.error("Archive/unarchive error:", error);
-    }
   };
 
   if (!isRouterReady) return <div>Loading router...</div>;
@@ -203,9 +176,7 @@ export default function Profile() {
                     <p className="font-bold text-[18px] text-black">
                       {userPostCount || 0}
                     </p>
-                    <p className="text-[15px] text-[#787070]">
-                      User’s Posts
-                    </p>
+                    <p className="text-[15px] text-[#787070]">User’s Posts</p>
                   </div>
                 </div>
                 {isCurrentUser && (
@@ -250,7 +221,7 @@ export default function Profile() {
                 </button>
                 <button
                   onClick={() => setActiveTab("Archived")}
-                  className={`px-4 py-2 font-semibold rounded-r-[5px] transform transition-transform	duration-100 ${
+                  className={`px-4 py-2 font-semibold rounded-r-[5px] transform transition-transform duration-100 ${
                     activeTab === "Archived"
                       ? "bg-[#E4FCDE] text-[#22C55E] scale-105"
                       : "bg-[#D9D9D9] text-black"
@@ -267,7 +238,6 @@ export default function Profile() {
             <UserPostContainer
               userId={userId}
               activeTab={activeTab}
-              handleArchive={handleArchive}
               isCurrentUser={isCurrentUser}
             />
           </div>
@@ -296,13 +266,6 @@ export default function Profile() {
         onProfileUpdate={handleProfileUpdate}
         currentProfileData={userData}
       />
-      {archiveModalMessage && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-4 rounded">
-            <p className="text-green-600 font-bold">{archiveModalMessage}</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
