@@ -1,4 +1,3 @@
-// pages/api/user/get-report-reason.js
 import prisma from "../../../lib/prisma";
 
 export default async function handler(req, res) {
@@ -39,6 +38,14 @@ export default async function handler(req, res) {
             username: true,
           },
         },
+        post: {
+          select: {
+            id: true,
+            description: true,
+            image_url: true,
+            created_at: true,
+          },
+        },
       },
     });
 
@@ -46,9 +53,10 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "No report found for this user." });
     }
 
-    return res.status(200).json({ 
-      reason: report.reason, 
-      reportedBy: report.reporter?.username || "Unknown" 
+    return res.status(200).json({
+      reason: report.reason,
+      reportedBy: report.reporter?.username || "Unknown",
+      post: report.post,
     });
   } catch (error) {
     console.error("Error fetching report:", error);

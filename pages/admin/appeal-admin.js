@@ -1,4 +1,3 @@
-// appeal-admin.js
 import Navbar from "../../components/ui/navbar-admin";
 import Tabs from "./tabs";
 import { useState, useEffect } from "react";
@@ -12,9 +11,10 @@ export default function AppealAdmin() {
   const [selectedAppealId, setSelectedAppealId] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [isViewLoading, setIsViewLoading] = useState(false);
-  const [viewReason, setViewReason] = useState({
+  const [viewDetails, setViewDetails] = useState({
     reason: "",
     reportedBy: "Unknown",
+    post: null,
   });
 
   const fetchAppeals = async () => {
@@ -93,21 +93,24 @@ export default function AppealAdmin() {
       );
       if (res.ok) {
         const data = await res.json();
-        setViewReason({
+        setViewDetails({
           reason: data.reason || "redundant",
           reportedBy: data.reportedBy || "Unknown",
+          post: data.post || null,
         });
       } else {
-        setViewReason({
+        setViewDetails({
           reason: "redundant",
           reportedBy: "Unknown",
+          post: null,
         });
       }
     } catch (error) {
       console.error("Error fetching report reason:", error);
-      setViewReason({
+      setViewDetails({
         reason: "Error fetching reason.",
         reportedBy: "Unknown",
+        post: null,
       });
     } finally {
       setIsViewLoading(false);
@@ -210,6 +213,7 @@ export default function AppealAdmin() {
         </div>
       </div>
 
+      {/* Accept Confirmation Modal */}
       {showAcceptModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
@@ -237,6 +241,7 @@ export default function AppealAdmin() {
         </div>
       )}
 
+      {/* Cancel Confirmation Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
@@ -264,6 +269,7 @@ export default function AppealAdmin() {
         </div>
       )}
 
+      {/* View Suspension & Post Details Modal */}
       {showViewModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div
@@ -282,14 +288,35 @@ export default function AppealAdmin() {
                 <div className="h-4 bg-gray-300 rounded w-1/2 mx-auto"></div>
               </div>
             ) : (
-              <div className="mt-4 space-y-2 text-left text-gray-700">
+              <div className="mt-4 space-y-4 text-left text-gray-700">
+                {viewDetails.post && (
+                  <div>
+                    <span className="font-bold">Reported Post:</span>
+                    <p className="mt-2">
+                      Description: {viewDetails.post.description}
+                    </p>
+                    {viewDetails.post.image_url && (
+                      <img
+                        src={viewDetails.post.image_url}
+                        alt="Post Image"
+                        className="mt-2 max-w-full h-auto rounded-md"
+                      />
+                    )}
+                    <p className="mt-2">
+                      Posted At:{" "}
+                      {new Date(
+                        viewDetails.post.created_at
+                      ).toLocaleString()}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <span className="font-bold">Reason: </span>
-                  {viewReason.reason}
+                  {viewDetails.reason}
                 </div>
                 <div>
                   <span className="font-bold">Reported By: </span>
-                  {viewReason.reportedBy}
+                  {viewDetails.reportedBy}
                 </div>
               </div>
             )}
@@ -297,7 +324,11 @@ export default function AppealAdmin() {
               <button
                 onClick={() => {
                   setShowViewModal(false);
-                  setViewReason({ reason: "", reportedBy: "Unknown" });
+                  setViewDetails({
+                    reason: "",
+                    reportedBy: "Unknown",
+                    post: null,
+                  });
                 }}
                 className="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-600 transition"
               >
