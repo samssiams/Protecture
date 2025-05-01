@@ -7,7 +7,6 @@ import ModalDots from "../pages/home/profile/modal-dots";
 import CommentModal from "../pages/home/modal-comment";
 import Skeleton from "@/components/ui/skeleton";
 
-// Truncate text to 30 words
 const truncateDescription = (text, wordLimit = 30) => {
   const words = text.trim().split(/\s+/);
   if (words.length > wordLimit) {
@@ -65,11 +64,7 @@ const PostSkeleton = () => (
   </div>
 );
 
-export default function UserPostContainer({
-  userId,
-  activeTab,
-  isCurrentUser,
-}) {
+export default function UserPostContainer({ userId, activeTab, isCurrentUser }) {
   const [posts, setPosts] = useState([]);
   const [votedPosts, setVotedPosts] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -84,32 +79,33 @@ export default function UserPostContainer({
   const { data: session } = useSession();
   const router = useRouter();
 
+  const fetchPosts = async (customLimit = limit) => {
+    try {
+      const archived = isCurrentUser && activeTab === "Archived" ? "true" : "false";
+      const params = new URLSearchParams({
+        archived,
+        limit: customLimit.toString(),
+        ...(userId ? { userId } : {}),
+      });
+      const res = await fetch(`/api/post/getuserposts?${params}`);
+      if (!res.ok) throw new Error("Fetch failed");
+      const data = await res.json();
+      setPosts(data);
+      const votes = data.reduce((acc, p) => {
+        if (p.userVote) acc[p.id] = p.userVote;
+        return acc;
+      }, {});
+      setVotedPosts(votes);
+    } catch (err) {
+      console.error("Error fetching user posts:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     setIsLoading(true);
-    (async () => {
-      try {
-        const archived =
-          isCurrentUser && activeTab === "Archived" ? "true" : "false";
-        const params = new URLSearchParams({
-          archived,
-          limit: limit.toString(),
-          ...(userId ? { userId } : {}),
-        });
-        const res = await fetch(`/api/post/getuserposts?${params}`);
-        if (!res.ok) throw new Error("Fetch failed");
-        const data = await res.json();
-        setPosts(data);
-        const votes = data.reduce((acc, p) => {
-          if (p.userVote) acc[p.id] = p.userVote;
-          return acc;
-        }, {});
-        setVotedPosts(votes);
-      } catch (err) {
-        console.error("Error fetching user posts:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    fetchPosts();
   }, [limit, activeTab, userId, isCurrentUser, router.pathname]);
 
   const handleArchiveToggle = async (postId) => {
@@ -125,9 +121,11 @@ export default function UserPostContainer({
         }),
       });
       if (!res.ok) return;
+
       setArchiveMessage(isArchive ? "Post Archived" : "Post Unarchived");
       setTimeout(() => setArchiveMessage(null), 2000);
-      setLimit((n) => n);
+      setIsLoading(true);
+      fetchPosts();
     } catch (err) {
       console.error("Archive toggle error:", err);
     }
@@ -156,6 +154,7 @@ export default function UserPostContainer({
     setSelectedPost(post);
     setShowCommentModal(true);
   };
+
   const closeCommentModal = () => setShowCommentModal(false);
 
   if (isLoading) {
@@ -205,8 +204,7 @@ export default function UserPostContainer({
             <div className="flex items-center mb-4">
               <Image
                 src={
-                  post.user?.profile?.profile_img ||
-                  "/images/default-profile.png"
+                  post.user?.profile?.profile_img || "/images/default-profile.png"
                 }
                 alt="Profile"
                 width={40}
@@ -231,14 +229,19 @@ export default function UserPostContainer({
                 </span>
               </div>
               <div className="ml-auto flex items-center space-x-4">
-                {isCurrentUser && (
-                  <button
-                    onClick={() => handleArchiveToggle(post.id)}
-                    className="bg-green-500 text-white font-medium py-1 px-3 rounded-md text-base shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
-                  >
-                    {activeTab === "Posts" ? "Archive" : "Unarchive"}
-                  </button>
-                )}
+                {isCurrentUser &&
+                  !(
+                    activeTab === "Archived" &&
+                    post.archived === true &&
+                    post.status === "FULFILLED"
+                  ) && (
+                    <button
+                      onClick={() => handleArchiveToggle(post.id)}
+                      className="bg-green-500 text-white font-medium py-1 px-3 rounded-md text-base shadow-lg hover:bg-green-600 transition duration-300 ease-in-out"
+                    >
+                      {activeTab === "Posts" ? "Archive" : "Unarchive"}
+                    </button>
+                  )}
                 {post.user?.id !== session?.user?.id && (
                   <button
                     onClick={(e) => {
@@ -265,8 +268,7 @@ export default function UserPostContainer({
 
             <p
               onClick={() =>
-                isExpanded &&
-                setExpandedPosts((p) => ({ ...p, [post.id]: false }))
+                isExpanded && setExpandedPosts((p) => ({ ...p, [post.id]: false }))
               }
               className={`text-[#4A4A4A] mb-4 break-all ${
                 isExpanded ? "cursor-pointer" : ""
